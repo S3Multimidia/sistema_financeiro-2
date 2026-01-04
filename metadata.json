@@ -1,0 +1,8 @@
+{
+  "name": "Controle Financeiro S3 Multimidia",
+  "description": "Dashboard financeiro completo e agenda inteligente para o ciclo 2026.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
