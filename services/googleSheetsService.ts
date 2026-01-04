@@ -16,6 +16,8 @@ export const GoogleSheetsService = {
         },
         body: JSON.stringify({
           transactions: data.transactions,
+          appConfig: data.appConfig,
+          categoriesMap: data.categoriesMap,
           timestamp: new Date().toISOString(),
           origin: 'FINANCEIRO_PRO_2026'
         })

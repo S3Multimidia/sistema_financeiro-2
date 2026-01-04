@@ -77,7 +77,7 @@ const App: React.FC = () => {
     }
     setCloudStatus('syncing');
     try {
-      await GoogleSheetsService.sync({ transactions });
+      await GoogleSheetsService.sync({ transactions, appConfig, categoriesMap });
       setCloudStatus('ok');
       localStorage.setItem(LAST_SYNC_KEY, Date.now().toString());
       console.log("✅ Sincronismo automático realizado com sucesso.");
@@ -109,6 +109,9 @@ const App: React.FC = () => {
       const data = await GoogleSheetsService.load();
       if (data && data.transactions) {
         setTransactions(data.transactions);
+        if (data.appConfig) setAppConfig(data.appConfig);
+        if (data.categoriesMap) setCategoriesMap(data.categoriesMap);
+
         setCloudStatus('ok');
         console.log("✅ Dados carregados da nuvem com sucesso.");
       } else {
