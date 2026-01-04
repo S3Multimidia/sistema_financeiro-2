@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { INITIAL_TRANSACTIONS, INITIAL_PREVIOUS_BALANCE } from './constants';
+import { INITIAL_TRANSACTIONS, INITIAL_PREVIOUS_BALANCE, APP_VERSION } from './constants';
 import { Transaction, INITIAL_CATEGORIES_MAP } from './types';
 import { SummaryCards } from './components/SummaryCards';
 import { TransactionList } from './components/TransactionList';
@@ -18,13 +18,13 @@ import { AdvancedDashboard } from './components/AdvancedDashboard';
 import { AppointmentsSidebarList } from './components/AppointmentsSidebarList';
 import { GoogleSheetsService } from './services/googleSheetsService';
 import { PerfexService } from './services/perfexService';
-import { 
-  LayoutDashboard, 
-  ChevronLeft, 
-  ChevronRight, 
-  BarChart3, 
-  Settings, 
-  Wallet, 
+import {
+  LayoutDashboard,
+  ChevronLeft,
+  ChevronRight,
+  BarChart3,
+  Settings,
+  Wallet,
   CloudCheck,
   AlertTriangle,
   Loader2,
@@ -90,7 +90,7 @@ const App: React.FC = () => {
     setIsCrmSyncing(true);
     try {
       const crmData = await PerfexService.getAllTransactions();
-      if(crmData.length > 0) {
+      if (crmData.length > 0) {
         setTransactions(prev => {
           const nonCrm = prev.filter(t => !t.id.startsWith('perfex-'));
           return [...nonCrm, ...crmData];
@@ -102,6 +102,32 @@ const App: React.FC = () => {
       setIsCrmSyncing(false);
     }
   };
+
+  const loadFromCloud = async () => {
+    setCloudStatus('syncing');
+    try {
+      const data = await GoogleSheetsService.load();
+      if (data && data.transactions) {
+        setTransactions(data.transactions);
+        setCloudStatus('ok');
+        console.log("✅ Dados carregados da nuvem com sucesso.");
+      } else {
+        setCloudStatus('idle'); // Sem dados ou erro silencioso
+      }
+    } catch (e) {
+      setCloudStatus('error');
+    }
+  };
+
+  // Carregar dados ao iniciar se houver URL configurada e não tiver dados recentes
+  useEffect(() => {
+    const hasSheets = !!localStorage.getItem('google_sheets_url');
+    // Só carrega automaticamente se o usuário não tiver dados ou explicitamente pedir (futuro)
+    // Por enquanto, vamos carregar se a lista estiver vazia (primeiro acesso)
+    if (hasSheets && transactions.length <= 1) { // <= 1 considerando exemplo inicial ou vazio
+      loadFromCloud();
+    }
+  }, []);
 
   // Timer de 1 minuto (MODO TESTE ATIVADO)
   useEffect(() => {
@@ -184,31 +210,31 @@ const App: React.FC = () => {
       <AppointmentPopup appointments={transactions.filter(t => t.type === 'appointment' && t.day === new Date().getDate() && t.month === new Date().getMonth() && !t.completed && !acknowledgedIds.has(t.id))} onAcknowledge={id => setAcknowledgedIds(prev => new Set([...prev, id]))} />
 
       {editingTransaction && (
-        <EditTransactionModal 
-          transaction={editingTransaction} 
-          categoriesMap={categoriesMap} 
-          onSave={(u) => { setTransactions(prev => prev.map(t => t.id === u.id ? u : t)); setEditingTransaction(null); }} 
-          onClose={() => setEditingTransaction(null)} 
+        <EditTransactionModal
+          transaction={editingTransaction}
+          categoriesMap={categoriesMap}
+          onSave={(u) => { setTransactions(prev => prev.map(t => t.id === u.id ? u : t)); setEditingTransaction(null); }}
+          onClose={() => setEditingTransaction(null)}
         />
       )}
 
       {showSettings && (
-        <SettingsModal 
-          transactions={transactions} 
-          categories={Object.keys(categoriesMap)} 
-          onImport={d => { setTransactions(d.transactions); if(d.categories) setCategoriesMap(prev => ({...prev, ...d.categories})); }} 
-          onClose={() => setShowSettings(false)} 
-          onOpenCategoryManager={() => { setShowSettings(false); setShowCategoryManager(true); }} 
+        <SettingsModal
+          transactions={transactions}
+          categories={Object.keys(categoriesMap)}
+          onImport={d => { setTransactions(d.transactions); if (d.categories) setCategoriesMap(prev => ({ ...prev, ...d.categories })); }}
+          onClose={() => setShowSettings(false)}
+          onOpenCategoryManager={() => { setShowSettings(false); setShowCategoryManager(true); }}
         />
       )}
 
       {showCategoryManager && (
-        <CategoryManager 
-          categoriesMap={categoriesMap} 
-          setCategoriesMap={setCategoriesMap} 
-          onUpdateCategory={() => {}} 
-          onRemoveCategory={(c) => { const {[c]:_, ...rest} = categoriesMap; setCategoriesMap(rest); }} 
-          onClose={() => setShowCategoryManager(false)} 
+        <CategoryManager
+          categoriesMap={categoriesMap}
+          setCategoriesMap={setCategoriesMap}
+          onUpdateCategory={() => { }}
+          onRemoveCategory={(c) => { const { [c]: _, ...rest } = categoriesMap; setCategoriesMap(rest); }}
+          onClose={() => setShowCategoryManager(false)}
         />
       )}
 
@@ -242,13 +268,23 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => { syncToCloud(); syncFromCRM(); }}
               disabled={isCrmSyncing}
               className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl border border-slate-200 transition-all group disabled:opacity-50"
+              title="Salvar na Nuvem"
             >
               <RefreshCw size={14} className={`text-slate-500 ${isCrmSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform'}`} />
-              <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Atualizar Tudo</span>
+              <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Salvar</span>
+            </button>
+
+            <button
+              onClick={() => { loadFromCloud(); }}
+              className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-xl border border-indigo-200 transition-all group"
+              title="Carregar da Nuvem"
+            >
+              <CloudCheck size={14} className="text-indigo-500 group-hover:scale-110 transition-transform" />
+              <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Restaurar</span>
             </button>
 
             <div className="bg-slate-900 text-white rounded-xl px-4 py-2 flex items-center gap-3 shadow-xl">
@@ -271,12 +307,12 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-               <button onClick={() => { const d = new Date(currentYear, currentMonth - 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-1 hover:bg-white rounded-lg transition-all text-slate-400"><ChevronLeft size={16}/></button>
-               <div className="text-center min-w-[120px]">
-                 <p className="text-[10px] font-black text-indigo-500 uppercase leading-none mb-1">{MONTHS_NAMES[currentMonth]}</p>
-                 <p className="text-xs font-bold text-slate-800 leading-none">{currentYear}</p>
-               </div>
-               <button onClick={() => { const d = new Date(currentYear, currentMonth + 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-1 hover:bg-white rounded-lg transition-all text-slate-400"><ChevronRight size={16}/></button>
+              <button onClick={() => { const d = new Date(currentYear, currentMonth - 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-1 hover:bg-white rounded-lg transition-all text-slate-400"><ChevronLeft size={16} /></button>
+              <div className="text-center min-w-[120px]">
+                <p className="text-[10px] font-black text-indigo-500 uppercase leading-none mb-1">{MONTHS_NAMES[currentMonth]}</p>
+                <p className="text-xs font-bold text-slate-800 leading-none">{currentYear}</p>
+              </div>
+              <button onClick={() => { const d = new Date(currentYear, currentMonth + 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-1 hover:bg-white rounded-lg transition-all text-slate-400"><ChevronRight size={16} /></button>
             </div>
 
             <button onClick={() => setShowSettings(true)} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-all border border-slate-200">
@@ -290,13 +326,13 @@ const App: React.FC = () => {
         {currentView === 'dashboard' ? (
           <div className="space-y-8">
             <SummaryCards summary={summary} onUpdateStartingBalance={handleUpdateStartingBalance} />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-3">
                 <TransactionForm onAdd={handleAddTransaction} categoriesMap={categoriesMap} currentMonth={currentMonth} currentYear={currentYear} />
               </div>
               <div className="lg:col-span-3">
-                <AppointmentsSidebarList transactions={transactions} currentMonth={currentMonth} onToggleComplete={(id) => setTransactions(prev => prev.map(t => t.id === id ? {...t, completed: !t.completed} : t))} />
+                <AppointmentsSidebarList transactions={transactions} currentMonth={currentMonth} onToggleComplete={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))} />
               </div>
               <div className="lg:col-span-3">
                 <DailyFlowChart transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} />
@@ -308,28 +344,28 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-9">
-                 <TransactionList 
-                    transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} 
-                    onDelete={id => setTransactions(prev => prev.filter(t => t.id !== id))} 
-                    onEdit={setEditingTransaction} 
-                    onMove={(id, d) => setTransactions(prev => prev.map(t => t.id === id ? {...t, day: d} : t))} 
-                    onToggleComplete={id => setTransactions(prev => prev.map(t => t.id === id ? {...t, completed: !t.completed} : t))}
-                    selectedDay={selectedDayFilter} 
-                    onSelectedDayChange={setSelectedDayFilter} 
-                    categoriesMap={categoriesMap} 
-                    onManageCategories={() => setShowCategoryManager(true)} 
-                 />
+                <TransactionList
+                  transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)}
+                  onDelete={id => setTransactions(prev => prev.filter(t => t.id !== id))}
+                  onEdit={setEditingTransaction}
+                  onMove={(id, d) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, day: d } : t))}
+                  onToggleComplete={id => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))}
+                  selectedDay={selectedDayFilter}
+                  onSelectedDayChange={setSelectedDayFilter}
+                  categoriesMap={categoriesMap}
+                  onManageCategories={() => setShowCategoryManager(true)}
+                />
               </div>
 
               <div className="lg:col-span-3 space-y-6">
-                 <Calculator />
-                 <ChatAgent 
-                  transactions={transactions} 
-                  currentBalance={totalOverallBalance} 
-                  categoriesMap={categoriesMap} 
-                  setTransactions={setTransactions} 
-                  setCategoriesMap={setCategoriesMap} 
-                 />
+                <Calculator />
+                <ChatAgent
+                  transactions={transactions}
+                  currentBalance={totalOverallBalance}
+                  categoriesMap={categoriesMap}
+                  setTransactions={setTransactions}
+                  setCategoriesMap={setCategoriesMap}
+                />
               </div>
             </div>
 
@@ -339,6 +375,12 @@ const App: React.FC = () => {
           <YearlyReport transactions={transactions} year={currentYear} />
         )}
       </main>
+
+      <footer className="max-w-[1800px] mx-auto px-6 py-4 text-center">
+        <p className="text-[10px] text-slate-400 font-medium uppercas tracking-wider">
+          Versão {APP_VERSION} dev • © 2026 S3 Multimídia
+        </p>
+      </footer>
     </div>
   );
 };

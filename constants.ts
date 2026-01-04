@@ -2,6 +2,7 @@
 import { Transaction, INITIAL_CATEGORIES_MAP } from './types';
 
 export const INITIAL_PREVIOUS_BALANCE = 0.00;
+export const APP_VERSION = '1.1.0';
 
 /**
  * CONFIGURAÇÃO DA API PERFEX
@@ -9,7 +10,7 @@ export const INITIAL_PREVIOUS_BALANCE = 0.00;
  * Basta garantir que o TOKEN abaixo seja um Token de API válido gerado no módulo de API do seu Perfex.
  */
 export const API_CONFIG = {
-  BASE_URL: 'https://admin.s3m.com.br/api', 
+  BASE_URL: 'https://admin.s3m.com.br/api',
   TOKEN: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoibjhuIiwibmFtZSI6Im44biIsIkFQSV9USU1FIjoxNzQ3MDgwMjUyfQ.pZ4ZhUTHMyo6VwJSs3Y6133kcXwk4UcV9DbvcIAfoPY'
 };
 
