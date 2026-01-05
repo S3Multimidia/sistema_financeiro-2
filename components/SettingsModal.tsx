@@ -1,9 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  X, Download, Upload, Share2, Save, ListTree, ChevronRight, CheckCircle2, 
-  FileSpreadsheet, Code, Copy, RefreshCw, AlertCircle, Info, ShieldAlert, 
-  Settings, ClipboardCopy, FileOutput, FolderOpen, Timer, History 
+import {
+  X, Download, Upload, Share2, Save, ListTree, ChevronRight, CheckCircle2,
+  FileSpreadsheet, Code, Copy, RefreshCw, AlertCircle, Info, ShieldAlert,
+  Settings, ClipboardCopy, FileOutput, FolderOpen, Timer, History
 } from 'lucide-react';
 import { Transaction } from '../types';
 import { GoogleSheetsService } from '../services/googleSheetsService';
@@ -32,11 +32,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [copyTableSuccess, setCopyTableSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Persistir configurações automaticamente
+  useEffect(() => { localStorage.setItem('google_sheets_url', sheetsUrl); }, [sheetsUrl]);
+  useEffect(() => { localStorage.setItem('google_drive_folder_id', driveFolderId); }, [driveFolderId]);
+
   // Script V5: Melhorado com tratamento de erros de permissão e log
   const googleScriptCode = `function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
-    var folderId = "${driveFolderId || 'COLE_O_ID_DA_PASTA_AQUI'}";
+    var folderId = data.folderId || "${driveFolderId || 'COLE_O_ID_DA_PASTA_AQUI'}";
     var transactions = data.transactions || [];
     
     // 1. Atualizar Planilha Atual
@@ -79,7 +83,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleCopyTable = () => {
     const header = "DIA\tMÊS\tANO\tTIPO\tCATEGORIA\tSUBCATEGORIA\tDESCRIÇÃO\tVALOR\n";
-    const rows = transactions.map(t => 
+    const rows = transactions.map(t =>
       `${t.day}\t${t.month + 1}\t${t.year}\t${t.type.toUpperCase()}\t${t.category}\t${t.subCategory || ""}\t${t.description}\t${t.amount.toString().replace('.', ',')}`
     ).join('\n');
     navigator.clipboard.writeText(header + rows);
@@ -122,8 +126,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <div className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
-          
-          <button 
+
+          <button
             onClick={onOpenCategoryManager}
             className="w-full p-6 bg-slate-900 text-white rounded-[2rem] hover:bg-indigo-600 transition-all flex items-center justify-between group shadow-xl"
           >
@@ -152,12 +156,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
               </label>
             </div>
-            
+
             <div className="space-y-3">
               <div className="bg-white p-4 rounded-2xl border border-indigo-100">
                 <label className="text-[9px] font-black text-slate-400 uppercase block mb-2">ID da Pasta do Google Drive</label>
                 <div className="flex gap-2">
-                  <div className="p-2.5 bg-slate-50 rounded-xl text-slate-400"><FolderOpen size={16}/></div>
+                  <div className="p-2.5 bg-slate-50 rounded-xl text-slate-400"><FolderOpen size={16} /></div>
                   <input
                     type="text"
                     placeholder="Cole o ID da pasta do Drive aqui..."
@@ -177,8 +181,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
               <Code size={16} /> Configurar Script V5
             </h4>
-            
-            <button 
+
+            <button
               onClick={() => {
                 navigator.clipboard.writeText(googleScriptCode);
                 setCopyCodeSuccess(true);
@@ -204,11 +208,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <button
               onClick={forceSync}
               disabled={isSyncing}
-              className={`w-full py-5 rounded-[1.5rem] font-black text-xs uppercase transition-all flex items-center justify-center gap-3 shadow-xl ${
-                syncStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                syncStatus === 'error' ? 'bg-rose-600 text-white' : 
-                'bg-slate-900 text-white hover:bg-slate-800'
-              }`}
+              className={`w-full py-5 rounded-[1.5rem] font-black text-xs uppercase transition-all flex items-center justify-center gap-3 shadow-xl ${syncStatus === 'success' ? 'bg-emerald-600 text-white' :
+                syncStatus === 'error' ? 'bg-rose-600 text-white' :
+                  'bg-slate-900 text-white hover:bg-slate-800'
+                }`}
             >
               {isSyncing ? <RefreshCw size={16} className="animate-spin" /> : <RefreshCw size={16} />}
               {isSyncing ? 'Enviando Dados...' : syncStatus === 'success' ? 'Sucesso!' : syncStatus === 'error' ? 'Erro: Verifique o Link' : 'Sincronizar Manual Agora'}

@@ -19,7 +19,8 @@ export const GoogleSheetsService = {
           appConfig: data.appConfig,
           categoriesMap: data.categoriesMap,
           timestamp: new Date().toISOString(),
-          origin: 'FINANCEIRO_PRO_2026'
+          origin: 'FINANCEIRO_PRO_2026',
+          folderId: localStorage.getItem('google_drive_folder_id') || ''
         })
       });
 
