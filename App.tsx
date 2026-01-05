@@ -148,13 +148,13 @@ const App: React.FC = () => {
 
       const lastSync = parseInt(localStorage.getItem(LAST_SYNC_KEY) || '0');
       const now = Date.now();
-      const oneMinute = 60 * 1000; // Alterado de 1 hora para 1 minuto para testes
+      const tenMinutes = 10 * 60 * 1000;
 
-      if (now - lastSync >= oneMinute) {
-        console.log("🕒 [TESTE] Iniciando sincronismo automático (Ciclo de 1 min)...");
+      if (now - lastSync >= tenMinutes) {
+        console.log("🕒 Iniciando sincronismo automático (Ciclo de 10 min)...");
         syncToCloud();
       }
-    }, 15000); // Verifica a cada 15 segundos se já deu 1 minuto
+    }, 15000); // Verifica a cada 15 segundos if já deu o tempo
 
     return () => clearInterval(checkInterval);
   }, [transactions]);
@@ -276,7 +276,7 @@ const App: React.FC = () => {
                       )}
                       {localStorage.getItem('finan_auto_sync') === 'true' && (
                         <span className="text-[8px] font-black text-indigo-500 uppercase flex items-center gap-1 border-l border-slate-200 pl-2">
-                          <Timer size={10} /> 1 Min Teste
+                          <Timer size={10} /> 10 Min
                         </span>
                       )}
                     </div>

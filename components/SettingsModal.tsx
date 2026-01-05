@@ -146,7 +146,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <section className="bg-indigo-50 p-6 rounded-[2.5rem] border border-indigo-100 space-y-4">
             <div className="flex justify-between items-start">
               <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                <Timer size={16} /> Upload Automático (1 min)
+                <Timer size={16} /> Upload Automático (10 min)
               </h4>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" checked={autoSync} onChange={(e) => {
@@ -173,7 +173,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </div>
             <p className="text-[8px] font-bold text-indigo-400 uppercase text-center italic">
-              Se ligado, o sistema enviará um CSV para o Drive a cada 60 segundos se a aba estiver aberta.
+              Se ligado, o sistema enviará um CSV para o Drive a cada 10 minutos se a aba estiver aberta.
             </p>
           </section>
 
