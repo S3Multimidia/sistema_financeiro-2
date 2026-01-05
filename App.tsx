@@ -131,15 +131,14 @@ const App: React.FC = () => {
     }
   };
 
-  // Carregar dados ao iniciar se houver URL configurada e não tiver dados recentes
+  // Carregar dados automaticamente assim que o usuário fizer login
   useEffect(() => {
     const hasSheets = !!localStorage.getItem('google_sheets_url');
-    // Só carrega automaticamente se o usuário não tiver dados ou explicitamente pedir (futuro)
-    // Por enquanto, vamos carregar se a lista estiver vazia (primeiro acesso)
-    if (hasSheets && transactions.length <= 1) { // <= 1 considerando exemplo inicial ou vazio
+    if (user && hasSheets) {
+      console.log("👤 Usuário logado detected. Iniciando restauração automática...");
       loadFromCloud();
     }
-  }, []);
+  }, [user]);
 
   // Timer de 1 minuto (MODO TESTE ATIVADO)
   useEffect(() => {
