@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
-import { jwtDecode } from 'jwt-decode';
-import { ALLOWED_EMAILS, AUTO_CONFIG_URL, APP_VERSION } from '../constants';
+import { ALLOWED_EMAILS, APP_VERSION } from '../constants';
 import { Lock, ShieldCheck, AlertCircle } from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
 
 interface LoginPageProps {
     onLoginSuccess: (user: any) => void;
@@ -11,32 +11,32 @@ interface LoginPageProps {
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     const [error, setError] = useState<string | null>(null);
 
-    const handleSuccess = (credentialResponse: CredentialResponse) => {
+    const handleSuccess = async (credentialResponse: CredentialResponse) => {
         try {
             if (!credentialResponse.credential) {
                 throw new Error('Falha ao receber credenciais do Google.');
             }
 
-            const decoded: any = jwtDecode(credentialResponse.credential);
-            const email = decoded.email;
+            // Supabase Auth Integration
+            const { data, error } = await supabase.auth.signInWithIdToken({
+                provider: 'google',
+                token: credentialResponse.credential,
+            });
 
-            if (!ALLOWED_EMAILS.includes(email)) {
+            if (error) throw error;
+
+            const email = data.user?.email;
+
+            if (email && !ALLOWED_EMAILS.includes(email)) {
+                await supabase.auth.signOut();
                 setError(`Acesso negado para o email: ${email}. Contate o administrador.`);
                 return;
             }
 
-            // Auto-configuração da URL do Script
-            const currentUrl = localStorage.getItem('google_sheets_url');
-            if (currentUrl !== AUTO_CONFIG_URL) {
-                localStorage.setItem('google_sheets_url', AUTO_CONFIG_URL);
-                localStorage.setItem('finan_auto_sync', 'true');
-                console.log("✅ Configuração automática aplicada com sucesso.");
-            }
-
-            onLoginSuccess(decoded);
-        } catch (err) {
+            onLoginSuccess(data.user);
+        } catch (err: any) {
             console.error('Login Error:', err);
-            setError('Ocorreu um erro ao processar seu login.');
+            setError(err.message || 'Ocorreu um erro ao processar seu login.');
         }
     };
 

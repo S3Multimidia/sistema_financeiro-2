@@ -16,8 +16,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { ChatAgent } from './components/ChatAgent';
 import { AdvancedDashboard } from './components/AdvancedDashboard';
 import { AppointmentsSidebarList } from './components/AppointmentsSidebarList';
-import { GoogleSheetsService } from './services/googleSheetsService';
-import { PerfexService } from './services/perfexService';
+import { SupabaseService } from './services/supabaseService';
+import { supabase } from './services/supabaseClient'; // Import client for auth state
 import {
   LayoutDashboard,
   ChevronLeft,
@@ -30,7 +30,8 @@ import {
   Loader2,
   RefreshCw,
   Timer,
-  LogOut
+  LogOut,
+  Database
 } from 'lucide-react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { GOOGLE_CLIENT_ID } from './constants';
@@ -45,7 +46,6 @@ const App: React.FC = () => {
   const STORAGE_KEY = 'finan_agenda_data_2026_v2';
   const CAT_STORAGE_KEY = 'finan_categories_map_2026';
   const CONFIG_STORAGE_KEY = 'finan_app_config_2026';
-  const LAST_SYNC_KEY = 'finan_last_sync_timestamp';
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -71,100 +71,79 @@ const App: React.FC = () => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [acknowledgedIds, setAcknowledgedIds] = useState<Set<string>>(new Set());
   const [cloudStatus, setCloudStatus] = useState<'idle' | 'syncing' | 'error' | 'ok'>('idle');
-  const [isCrmSyncing, setIsCrmSyncing] = useState(false);
-  const [user, setUser] = useState<any>(null); // State para usuário logado
+  const [user, setUser] = useState<any>(null);
 
-  // Se não houver usuário logado, mostra tela de login (apenas se tiver Client ID configurado)
-  // Se não tiver Client ID configurado em dev, permite bypass ou mostra aviso.
-  // Vamos assumir production-first: Bloqueia.
+  // Monitor Auth State
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) loadFromCloud();
+    });
 
-  const syncToCloud = async () => {
-    const hasSheets = !!localStorage.getItem('google_sheets_url');
-    if (!hasSheets) {
-      setCloudStatus('idle');
-      return;
-    }
-    setCloudStatus('syncing');
-    try {
-      await GoogleSheetsService.sync({ transactions, appConfig, categoriesMap });
-      setCloudStatus('ok');
-      localStorage.setItem(LAST_SYNC_KEY, Date.now().toString());
-      console.log("✅ Sincronismo automático realizado com sucesso.");
-    } catch (e) {
-      setCloudStatus('error');
-    }
-  };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) loadFromCloud();
+    });
 
-  const syncFromCRM = async () => {
-    setIsCrmSyncing(true);
-    try {
-      const crmData = await PerfexService.getAllTransactions();
-      if (crmData.length > 0) {
-        setTransactions(prev => {
-          const nonCrm = prev.filter(t => !t.id.startsWith('perfex-'));
-          return [...nonCrm, ...crmData];
-        });
-      }
-    } catch (err) {
-      console.error("CRM Sync Error:", err);
-    } finally {
-      setIsCrmSyncing(false);
-    }
-  };
+    return () => subscription.unsubscribe();
+  }, []);
 
   const loadFromCloud = async () => {
     setCloudStatus('syncing');
     try {
-      const data = await GoogleSheetsService.load();
-      if (data && data.transactions) {
-        setTransactions(data.transactions);
-        if (data.appConfig) setAppConfig(data.appConfig);
-        if (data.categoriesMap) setCategoriesMap(data.categoriesMap);
-
+      const data = await SupabaseService.fetchTransactions();
+      if (data && data.length > 0) {
+        setTransactions(data);
         setCloudStatus('ok');
-        console.log("✅ Dados carregados da nuvem com sucesso.");
+        console.log("✅ Dados carregados do Supabase com sucesso.");
       } else {
-        setCloudStatus('idle'); // Sem dados ou erro silencioso
+        setCloudStatus('idle');
       }
     } catch (e) {
+      console.error("Erro ao carregar do Supabase:", e);
       setCloudStatus('error');
     }
   };
 
-  // Carregar dados automaticamente assim que o usuário fizer login
-  useEffect(() => {
-    const hasSheets = !!localStorage.getItem('google_sheets_url');
-    if (user && hasSheets) {
-      console.log("👤 Usuário logado detected. Iniciando restauração automática...");
-      loadFromCloud();
-    }
-  }, [user]);
+  // Wrapper for modifying transactions to ensure DB sync
+  const updateTransactions = async (
+    action: 'add' | 'update' | 'delete',
+    payload: any,
+    optimisticUpdate: (prev: Transaction[]) => Transaction[]
+  ) => {
+    // 1. Optimistic Update
+    setTransactions(optimisticUpdate);
+    setCloudStatus('syncing');
 
-  // Timer de 1 minuto (MODO TESTE ATIVADO)
-  useEffect(() => {
-    const checkInterval = setInterval(() => {
-      const isAutoSyncEnabled = localStorage.getItem('finan_auto_sync') === 'true';
-      if (!isAutoSyncEnabled) return;
-
-      const lastSync = parseInt(localStorage.getItem(LAST_SYNC_KEY) || '0');
-      const now = Date.now();
-      const tenMinutes = 10 * 60 * 1000;
-
-      if (now - lastSync >= tenMinutes) {
-        console.log("🕒 Iniciando sincronismo automático (Ciclo de 10 min)...");
-        syncToCloud();
+    try {
+      if (action === 'add') {
+        // If payload is an array (installments), add each
+        if (Array.isArray(payload)) {
+          for (const t of payload) await SupabaseService.addTransaction(t);
+        } else {
+          await SupabaseService.addTransaction(payload);
+        }
+      } else if (action === 'update') {
+        await SupabaseService.updateTransaction(payload.id, payload.updates);
+      } else if (action === 'delete') {
+        await SupabaseService.deleteTransaction(payload);
       }
-    }, 15000); // Verifica a cada 15 segundos if já deu o tempo
+      setCloudStatus('ok');
+    } catch (e) {
+      console.error("Supabase Sync Error:", e);
+      setCloudStatus('error');
+      // Optionally revert optimistic update here
+    }
+  };
 
-    return () => clearInterval(checkInterval);
-  }, [transactions]);
+  // No automatic timer sync needed for Supabase as we save on write.
+  // Keeping local storage sync for redundancy/offline support if needed, 
+  // but for now relying on DB as source of truth.
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
     localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(categoriesMap));
     localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(appConfig));
-    const timeout = setTimeout(() => syncToCloud(), 3000);
-    return () => clearTimeout(timeout);
   }, [transactions, categoriesMap, appConfig]);
 
   const handleUpdateStartingBalance = (value: number) => {
@@ -196,13 +175,18 @@ const App: React.FC = () => {
 
   const handleAddTransaction = (tData: Omit<Transaction, 'id'>, options: { installments: number, isFixed: boolean }) => {
     const newId = Math.random().toString(36).substr(2, 9);
+
+    // Logic for new transactions
+    const transactionsToAdd: any[] = [];
+
     if (options.installments > 1 && tData.type !== 'appointment') {
-      const installmentTransactions: Transaction[] = [];
       for (let i = 0; i < options.installments; i++) {
         const d = new Date(tData.year, tData.month + i, tData.day);
-        installmentTransactions.push({
+        transactionsToAdd.push({
           ...tData,
-          id: `${newId}-${i}`,
+          // Optimization: Let DB generate ID, but for optimistic UI we might need temp ID.
+          // But supabaseService.addTransaction ignores ID input usually if we Omit 'id'.
+          // However, SupabaseService.addTransaction takes Omit<Transaction, 'id'>.
           day: d.getDate(),
           month: d.getMonth(),
           year: d.getFullYear(),
@@ -210,10 +194,15 @@ const App: React.FC = () => {
           totalInstallments: options.installments
         });
       }
-      setTransactions(prev => [...prev, ...installmentTransactions]);
     } else {
-      setTransactions(prev => [...prev, { ...tData, id: newId }]);
+      transactionsToAdd.push(tData); // ID will be generated by DB
     }
+
+    // Call updateTransactions
+    updateTransactions('add', transactionsToAdd, (prev) => {
+      // Optimistic UI: We need IDs. We can generate temp ones.
+      return [...prev, ...transactionsToAdd.map(t => ({ ...t, id: 'temp-' + Math.random() }))];
+    });
   };
 
   return (
@@ -228,7 +217,10 @@ const App: React.FC = () => {
             <EditTransactionModal
               transaction={editingTransaction}
               categoriesMap={categoriesMap}
-              onSave={(u) => { setTransactions(prev => prev.map(t => t.id === u.id ? u : t)); setEditingTransaction(null); }}
+              onSave={(u) => {
+                updateTransactions('update', { id: u.id, updates: u }, prev => prev.map(t => t.id === u.id ? u : t));
+                setEditingTransaction(null);
+              }}
               onClose={() => setEditingTransaction(null)}
             />
           )}
@@ -284,22 +276,12 @@ const App: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => { syncToCloud(); syncFromCRM(); }}
-                  disabled={isCrmSyncing}
-                  className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl border border-slate-200 transition-all group disabled:opacity-50"
-                  title="Salvar na Nuvem"
-                >
-                  <RefreshCw size={14} className={`text-slate-500 ${isCrmSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform'}`} />
-                  <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Salvar</span>
-                </button>
-
-                <button
-                  onClick={() => { loadFromCloud(); }}
+                  onClick={() => loadFromCloud()}
                   className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-xl border border-indigo-200 transition-all group"
-                  title="Carregar da Nuvem"
+                  title="Recarregar Dados"
                 >
-                  <CloudCheck size={14} className="text-indigo-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Restaurar</span>
+                  <RefreshCw size={14} className="text-indigo-500 group-hover:rotate-180 transition-transform" />
+                  <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Recarregar</span>
                 </button>
 
                 <div className="bg-slate-900 text-white rounded-xl px-4 py-2 flex items-center gap-3 shadow-xl">
@@ -369,10 +351,16 @@ const App: React.FC = () => {
                   <div className="lg:col-span-9">
                     <TransactionList
                       transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)}
-                      onDelete={id => setTransactions(prev => prev.filter(t => t.id !== id))}
+                      onDelete={id => updateTransactions('delete', id, prev => prev.filter(t => t.id !== id))}
                       onEdit={setEditingTransaction}
-                      onMove={(id, d) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, day: d } : t))}
-                      onToggleComplete={id => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))}
+                      // For simplicity, move and toggle complete can also be wrapped if needed, 
+                      // but for this task I will focus on Add/Delete/Edit-Save which is in EditModal.
+                      // Toggle Complete logic:
+                      onMove={(id, d) => updateTransactions('update', { id, updates: { day: d } }, prev => prev.map(t => t.id === id ? { ...t, day: d } : t))}
+                      onToggleComplete={id => {
+                        const t = transactions.find(tx => tx.id === id);
+                        if (t) updateTransactions('update', { id, updates: { completed: !t.completed } }, prev => prev.map(tx => tx.id === id ? { ...tx, completed: !tx.completed } : tx));
+                      }}
                       selectedDay={selectedDayFilter}
                       onSelectedDayChange={setSelectedDayFilter}
                       categoriesMap={categoriesMap}
