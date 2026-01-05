@@ -36,8 +36,48 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   useEffect(() => { localStorage.setItem('google_sheets_url', sheetsUrl); }, [sheetsUrl]);
   useEffect(() => { localStorage.setItem('google_drive_folder_id', driveFolderId); }, [driveFolderId]);
 
-  // Script V5: Melhorado com tratamento de erros de permissão e log
-  const googleScriptCode = `function doPost(e) {
+  // Script V6: Adicionado suporte para leitura (GET)
+  const googleScriptCode = `function doGet(e) {
+  var action = e.parameter.action;
+  
+  if (action == "read") {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("LANÇAMENTOS");
+    
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({ transactions: [] })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var data = sheet.getDataRange().getValues();
+    var transactions = [];
+    
+    // Pular cabeçalho (i=1)
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      // Ignora linhas vazias
+      if (!row[0]) continue;
+
+      transactions.push({
+        id: "gs-" + i, // ID temporário
+        day: parseInt(row[0]),
+        month: parseInt(row[1]) - 1, // Sheets usa 1-12, App usa 0-11
+        year: parseInt(row[2]),
+        type: row[3].toLowerCase() == "expense" ? "expense" : "income",
+        category: row[4],
+        subCategory: row[5],
+        description: row[6],
+        amount: parseFloat(row[7]),
+        completed: true 
+      });
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ transactions: transactions })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  return ContentService.createTextOutput("Action not found").setMimeType(ContentService.MimeType.TEXT);
+}
+
+function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var folderId = data.folderId || "${driveFolderId || 'COLE_O_ID_DA_PASTA_AQUI'}";
@@ -179,7 +219,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <section className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-200 space-y-4">
             <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-              <Code size={16} /> Configurar Script V5
+              <Code size={16} /> Configurar Script V6 (Leitura/Escrita)
             </h4>
 
             <button
@@ -190,7 +230,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               }}
               className="w-full py-4 px-5 bg-white border-2 border-dashed border-indigo-100 rounded-2xl text-indigo-600 flex items-center justify-between"
             >
-              <div className="flex items-center gap-3"><Code size={20} /><span className="text-[10px] font-black uppercase">Copiar Novo Script V5</span></div>
+              <div className="flex items-center gap-3"><Code size={20} /><span className="text-[10px] font-black uppercase">Copiar Novo Script V6</span></div>
               {copyCodeSuccess ? <CheckCircle2 size={18} className="text-emerald-500" /> : <Copy size={18} />}
             </button>
 
