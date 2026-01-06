@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { INITIAL_TRANSACTIONS, INITIAL_PREVIOUS_BALANCE, APP_VERSION } from './constants';
 import { Transaction, INITIAL_CATEGORIES_MAP } from './types';
@@ -16,8 +15,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { ChatAgent } from './components/ChatAgent';
 import { AdvancedDashboard } from './components/AdvancedDashboard';
 import { AppointmentsSidebarList } from './components/AppointmentsSidebarList';
-import { SupabaseService } from './services/supabaseService';
-import { supabase } from './services/supabaseClient'; // Import client for auth state
+import { ApiService } from './services/apiService';
 import {
   LayoutDashboard,
   ChevronLeft,
@@ -31,10 +29,7 @@ import {
   RefreshCw,
   Timer,
   LogOut,
-  Database
 } from 'lucide-react';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import { GOOGLE_CLIENT_ID } from './constants';
 import { LoginPage } from './components/LoginPage';
 
 const MONTHS_NAMES = [
@@ -75,32 +70,28 @@ const App: React.FC = () => {
 
   // Monitor Auth State
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) loadFromCloud();
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) loadFromCloud();
-    });
-
-    return () => subscription.unsubscribe();
+    checkUser();
   }, []);
+
+  const checkUser = async () => {
+    const u = await ApiService.getUser();
+    setUser(u);
+    if (u) loadFromCloud();
+  };
 
   const loadFromCloud = async () => {
     setCloudStatus('syncing');
     try {
-      const data = await SupabaseService.fetchTransactions();
+      const data = await ApiService.fetchTransactions();
       if (data && data.length > 0) {
         setTransactions(data);
         setCloudStatus('ok');
-        console.log("✅ Dados carregados do Supabase com sucesso.");
+        console.log("✅ Dados carregados da API Local com sucesso.");
       } else {
         setCloudStatus('idle');
       }
     } catch (e) {
-      console.error("Erro ao carregar do Supabase:", e);
+      console.error("Erro ao carregar da API:", e);
       setCloudStatus('error');
     }
   };
@@ -119,18 +110,18 @@ const App: React.FC = () => {
       if (action === 'add') {
         // If payload is an array (installments), add each
         if (Array.isArray(payload)) {
-          for (const t of payload) await SupabaseService.addTransaction(t);
+          for (const t of payload) await ApiService.addTransaction(t);
         } else {
-          await SupabaseService.addTransaction(payload);
+          await ApiService.addTransaction(payload);
         }
       } else if (action === 'update') {
-        await SupabaseService.updateTransaction(payload.id, payload.updates);
+        await ApiService.updateTransaction(payload.id, payload.updates);
       } else if (action === 'delete') {
-        await SupabaseService.deleteTransaction(payload);
+        await ApiService.deleteTransaction(payload);
       }
       setCloudStatus('ok');
     } catch (e) {
-      console.error("Supabase Sync Error:", e);
+      console.error("API Sync Error:", e);
       setCloudStatus('error');
       // Optionally revert optimistic update here
     }
@@ -174,8 +165,6 @@ const App: React.FC = () => {
   }, [transactions, currentMonth, currentYear, appConfig.startingBalance]);
 
   const handleAddTransaction = (tData: Omit<Transaction, 'id'>, options: { installments: number, isFixed: boolean }) => {
-    const newId = Math.random().toString(36).substr(2, 9);
-
     // Logic for new transactions
     const transactionsToAdd: any[] = [];
 
@@ -206,9 +195,9 @@ const App: React.FC = () => {
   };
 
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <>
       {!user ? (
-        <LoginPage onLoginSuccess={setUser} />
+        <LoginPage onLoginSuccess={(u) => { setUser(u); loadFromCloud(); }} />
       ) : (
         <div className="min-h-screen bg-slate-50 pb-12 font-sans">
           <AppointmentPopup appointments={transactions.filter(t => t.type === 'appointment' && t.day === new Date().getDate() && t.month === new Date().getMonth() && !t.completed && !acknowledgedIds.has(t.id))} onAcknowledge={id => setAcknowledgedIds(prev => new Set([...prev, id]))} />
@@ -321,7 +310,7 @@ const App: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => setUser(null)}
+                  onClick={() => { ApiService.logout(); setUser(null); }}
                   className="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-all border border-rose-200"
                   title="Sair"
                 >
@@ -393,12 +382,12 @@ const App: React.FC = () => {
 
           <footer className="max-w-[1800px] mx-auto px-6 py-4 text-center">
             <p className="text-[10px] text-slate-400 font-medium uppercas tracking-wider">
-              Versão {APP_VERSION} dev • © 2026 S3 Multimídia
+              Versão {APP_VERSION} dev • © 2026 S3 Multimídia (VPS Edition)
             </p>
           </footer>
         </div>
       )}
-    </GoogleOAuthProvider>
+    </>
   );
 };
 
