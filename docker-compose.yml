@@ -16,7 +16,8 @@ services:
 
   # O App (Backend Node.js + Frontend React buildado)
   app:
-    build: .
+    # Em modo Swarm, não podemos usar 'build'. Usamos a imagem gerada pelo GitHub Actions.
+    image: ghcr.io/s3multimidia/sistema_financeiro-2:latest
     restart: always
     ports:
       - "3000:3001"
