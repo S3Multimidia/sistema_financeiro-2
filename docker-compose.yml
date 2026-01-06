@@ -4,7 +4,9 @@ services:
   # O Banco de Dados PostgreSQL
   db:
     image: postgres:15-alpine
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
@@ -18,15 +20,15 @@ services:
   app:
     # Em modo Swarm, não podemos usar 'build'. Usamos a imagem gerada pelo GitHub Actions.
     image: ghcr.io/s3multimidia/sistema_financeiro-2:latest
-    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
     ports:
       - "3000:3001"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-admin123}@db:5432/${POSTGRES_DB:-financeiro_db}
       - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_s3m}
       - NODE_ENV=production
-    depends_on:
-      - db
     networks:
       - finance-network
 
@@ -35,4 +37,5 @@ volumes:
 
 networks:
   finance-network:
-    driver: bridge
+    driver: overlay
+    attachable: true
