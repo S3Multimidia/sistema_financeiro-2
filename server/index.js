@@ -19,15 +19,20 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
-// Test DB Connection
-pool.connect((err, client, release) => {
-    if (err) {
-        console.error('❌ Erro ao conectar no Banco de Dados:', err.stack);
-    } else {
-        console.log('✅ Conectado ao Banco de Dados PostgreSQL');
-        release();
-    }
-});
+// Retry logic for Swarm startup race conditions
+const connectWithRetry = () => {
+    console.log('⏳ Tentando conectar ao Banco de Dados...');
+    pool.connect((err, client, release) => {
+        if (err) {
+            console.error('❌ Falha na conexão com BD. Retentando em 5 segundos...', err.message);
+            setTimeout(connectWithRetry, 5000); // Retry after 5s
+        } else {
+            console.log('✅ Conectado ao Banco de Dados PostgreSQL');
+            release();
+            initDb(); // Only run migration after successful connection
+        }
+    });
+};
 
 // Init DB Schema (Simple Migration)
 const initDb = async () => {
