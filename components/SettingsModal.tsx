@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, Save, Key, Database, RefreshCw, CheckCircle2,
-  ShieldAlert, Settings, AlertTriangle
+  ShieldAlert, Settings, AlertTriangle, Globe, Lock
 } from 'lucide-react';
 import { Transaction } from '../types';
 import { SupabaseService } from '../services/supabaseService';
@@ -16,17 +16,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onOpenCategoryManager
 }) => {
   const [geminiKey, setGeminiKey] = useState('');
+  const [supabaseUrl, setSupabaseUrl] = useState('');
+  const [supabaseKey, setSupabaseKey] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const key = SupabaseService.getGeminiKey();
     if (key) setGeminiKey(key);
+
+    const sUrl = localStorage.getItem('supabase_url') || '';
+    const sKey = localStorage.getItem('supabase_key') || '';
+    setSupabaseUrl(sUrl);
+    setSupabaseKey(sKey);
   }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
+
+    // Save Gemini Key
     await SupabaseService.saveGeminiKey(geminiKey);
-    setTimeout(() => setIsSaving(false), 1000);
+
+    // Save Supabase Config
+    localStorage.setItem('supabase_url', supabaseUrl);
+    localStorage.setItem('supabase_key', supabaseKey);
+
+    setTimeout(() => {
+      setIsSaving(false);
+      // Reload page to apply Supabase changes (since client is initialized at top level)
+      if (supabaseUrl || supabaseKey) {
+        window.location.reload();
+      }
+    }, 1000);
   };
 
   return (
@@ -68,7 +88,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </div>
             <p className="text-[9px] text-slate-500 font-bold leading-relaxed">
-              O Gemini analisa seus gastos para dar dicas inteligentes. A chave fica salva apenas no seu navegador.
+              O Gemini analisa seus gastos para dar dicas inteligentes. A chave fica salva no seu navegador e no Supabase.
             </p>
           </section>
 
@@ -77,21 +97,42 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
               <Database size={16} /> Banco de Dados (Supabase)
             </h4>
-            <div className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200">
-              <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-              <div>
-                <p className="text-xs font-black text-slate-700">Conectado ao Cloud</p>
-                <p className="text-[9px] font-bold text-slate-400">Sincronização em tempo real ativa</p>
+
+            <div className="space-y-3">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <label className="text-[9px] font-black text-slate-400 uppercase block mb-2 flex items-center gap-2">
+                  <Globe size={12} /> Supabase URL
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://xxx.supabase.co"
+                  value={supabaseUrl}
+                  onChange={(e) => setSupabaseUrl(e.target.value)}
+                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
+                />
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <label className="text-[9px] font-black text-slate-400 uppercase block mb-2 flex items-center gap-2">
+                  <Lock size={12} /> Supabase Anon Key
+                </label>
+                <input
+                  type="password"
+                  placeholder="sua-chave-anon-aqui"
+                  value={supabaseKey}
+                  onChange={(e) => setSupabaseKey(e.target.value)}
+                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
+                />
               </div>
             </div>
 
-            {/* Migration/Sync Placeholder */}
-            <div className="p-4 bg-orange-50 border border-orange-100 rounded-2xl flex gap-3">
-              <AlertTriangle size={20} className="text-orange-500 shrink-0" />
+            {/* Warning about reload */}
+            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
+              <AlertTriangle size={20} className="text-amber-500 shrink-0" />
               <div>
-                <p className="text-[10px] font-black text-orange-600 uppercase mb-1">Migração de Dados</p>
-                <p className="text-[9px] text-orange-700/80 font-bold leading-tight">
-                  Seus dados antigos do Planilhas Google precisam ser importados manualmente se ainda não estiverem aqui.
+                <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Atenção</p>
+                <p className="text-[9px] text-amber-700/80 font-bold leading-tight">
+                  Ao salvar as chaves do Supabase, a página será recarregada para aplicar a nova conexão.
                 </p>
               </div>
             </div>

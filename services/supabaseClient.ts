@@ -1,7 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// TODO: Move these to .env file for security
-const supabaseUrl = 'https://ujhdduyljjdkdblhtqic.supabase.co';
-const supabaseKey = 'sb_publishable_H3WXUMpY4aHZiAXaxOf1dA_XQZl4-Qu';
+// Default keys (fallbacks)
+const DEFAULT_URL = 'https://ujhdduyljjdkdblhtqic.supabase.co';
+const DEFAULT_KEY = 'sb_publishable_H3WXUMpY4aHZiAXaxOf1dA_XQZl4-Qu';
+
+// Get from localStorage or use default
+const supabaseUrl = localStorage.getItem('supabase_url') || DEFAULT_URL;
+const supabaseKey = localStorage.getItem('supabase_key') || DEFAULT_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseKey);

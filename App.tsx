@@ -261,6 +261,10 @@ const App: React.FC = () => {
                         <span className="text-[8px] font-black text-amber-500 uppercase flex items-center gap-1">
                           <Loader2 size={10} className="animate-spin" /> Salvando...
                         </span>
+                      ) : cloudStatus === 'idle' ? (
+                        <span className="text-[8px] font-black text-indigo-500 uppercase flex items-center gap-1">
+                          <CloudCheck size={10} /> Nuvem Ativa
+                        </span>
                       ) : (
                         <span className="text-[8px] font-black text-rose-500 uppercase flex items-center gap-1">
                           <AlertTriangle size={10} /> Erro Nuvem
