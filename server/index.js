@@ -82,6 +82,22 @@ const initDb = async () => {
             console.log('Columns already exist or error adding them:', e.message);
         }
 
+        // 1. Clean up existing duplicates (Keeping the oldest/first imported)
+        await pool.query(`
+            DELETE FROM transactions a USING transactions b 
+            WHERE a.id > b.id 
+            AND a.original_id = b.original_id 
+            AND a.original_id IS NOT NULL;
+        `);
+        console.log('🧹 Duplicatas removidas.');
+
+        // 2. Add Unique Constraint to original_id to prevents future duplicates
+        try {
+            await pool.query('ALTER TABLE transactions ADD CONSTRAINT unique_original_id UNIQUE (original_id)');
+        } catch (e) {
+            // Constraint might already exist
+        }
+
         // Check if admin exists, if not create
         const adminCheck = await pool.query("SELECT * FROM users WHERE email = 'financeiro@s3m.com.br'");
         if (adminCheck.rows.length === 0) {
@@ -151,17 +167,19 @@ app.post('/api/transactions/migrate', authenticateToken, async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // Optional: Clear existing for this user or specific sync strategy?
-        // For MVP migration: Insert ignore or Insert if not exists
-
         for (const t of transactions) {
-            // Check existence logic or just insert
+            // Upsert Logic (Insert or Update if exists)
+            // Relies on the unique_original_id constraint added in initDb
             await client.query(
                 `INSERT INTO transactions 
                 (description, amount, type, category, date, year, month, day, completed, installments_total, installment_number, user_id, original_id, external_url, client_name) 
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-                ON CONFLICT (id) DO NOTHING`, // Assuming ID conflict handling is needed, but serial IDs might differ.
-                // Better strategy: Use original_id to track client-side IDs
+                ON CONFLICT (original_id) 
+                DO UPDATE SET 
+                    completed = EXCLUDED.completed,
+                    amount = EXCLUDED.amount,
+                    external_url = EXCLUDED.external_url, 
+                    client_name = EXCLUDED.client_name`,
                 [t.description, t.amount, t.type, t.category, t.date || `${t.year}-${t.month + 1}-${t.day}`, t.year, t.month, t.day, t.completed, t.totalInstallments, t.installmentNumber, req.user.id, t.id, t.external_url, t.client_name]
             );
         }
