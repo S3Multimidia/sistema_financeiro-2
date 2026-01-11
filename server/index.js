@@ -5,6 +5,7 @@ const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -204,10 +205,37 @@ app.put('/api/transactions/:id', authenticateToken, async (req, res) => {
     res.json({ success: true, message: "Update not fully implemented in MVP yet" });
 });
 
-// --- PERFEX INTEGRATION PLACEHOLDER ---
-app.get('/api/perfex/sync', authenticateToken, async (req, res) => {
-    // Logic to fetch from Perfex API and sync local DB
-    res.json({ message: "Perfex Sync Endpoint" });
+// --- PERFEX INTEGRATION PROXY ---
+app.post('/api/perfex/proxy', authenticateToken, async (req, res) => {
+    const { targetUrl, token, method = 'GET', data } = req.body;
+
+    if (!targetUrl || !token) {
+        return res.status(400).json({ error: 'Target URL and Token are required' });
+    }
+
+    try {
+        console.log(`🔌 Proxying request to Perfex: ${method} ${targetUrl}`);
+        const response = await axios({
+            method,
+            url: targetUrl,
+            headers: {
+                'authtoken': token,
+                'Content-Type': 'application/json'
+            },
+            data,
+            // Ignore self-signed certs if needed (optional but handled by node usually)
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        console.error('❌ Perfex Proxy Error:', error.message);
+        if (error.response) {
+            console.error('Status:', error.response.status);
+            console.error('Data:', error.response.data);
+            return res.status(error.response.status).json(error.response.data);
+        }
+        res.status(500).json({ error: 'Failed to connect to Perfex CRM' });
+    }
 });
 
 // --- SERVE STATIC FRONTEND (PRODUCTION) ---

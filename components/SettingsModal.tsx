@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, Save, Key, Database, RefreshCw, CheckCircle2,
-  ShieldAlert, Settings, AlertTriangle, Globe, Lock
+  ShieldAlert, Settings, AlertTriangle, Globe, Lock, FileText
 } from 'lucide-react';
 import { Transaction } from '../types';
 import { SupabaseService } from '../services/supabaseService';
 import { ApiService } from '../services/apiService';
+import { PerfexService } from '../services/perfexService';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -19,6 +20,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [geminiKey, setGeminiKey] = useState('');
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseKey, setSupabaseKey] = useState('');
+  const [perfexUrl, setPerfexUrl] = useState('');
+  const [perfexToken, setPerfexToken] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -29,6 +32,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     const sKey = localStorage.getItem('supabase_key') || '';
     setSupabaseUrl(sUrl);
     setSupabaseKey(sKey);
+
+    // Perfex
+    setPerfexUrl(localStorage.getItem('perfex_url') || '');
+    setPerfexToken(localStorage.getItem('perfex_token') || '');
   }, []);
 
   const handleSave = async () => {
@@ -41,10 +48,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     localStorage.setItem('supabase_url', supabaseUrl);
     localStorage.setItem('supabase_key', supabaseKey);
 
+    // Save Perfex Config
+    localStorage.setItem('perfex_url', perfexUrl);
+    localStorage.setItem('perfex_token', perfexToken);
+
     setTimeout(() => {
       setIsSaving(false);
       // Reload page to apply Supabase changes (since client is initialized at top level)
-      if (supabaseUrl || supabaseKey) {
+      if (supabaseUrl || supabaseKey || perfexUrl || perfexToken) {
         window.location.reload();
       }
     }, 1000);
@@ -90,6 +101,66 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
             <p className="text-[9px] text-slate-500 font-bold leading-relaxed">
               O Gemini analisa seus gastos para dar dicas inteligentes. A chave fica salva no seu navegador e no Supabase.
+            </p>
+          </section>
+
+          {/* Perfex CRM Integration */}
+          <section className="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-[2rem] border border-red-100 space-y-4 shadow-sm">
+            <div className="flex justify-between items-start">
+              <h4 className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-2">
+                <FileText size={16} /> Integração Perfex CRM
+              </h4>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-red-100 shadow-inner space-y-3">
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase block mb-2">URL do CRM</label>
+                <input
+                  type="text"
+                  placeholder="https://admin.s3m.com.br/api"
+                  value={perfexUrl}
+                  onChange={(e) => setPerfexUrl(e.target.value)}
+                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
+                />
+              </div>
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase block mb-2">Token API</label>
+                <input
+                  type="password"
+                  placeholder="Cole o token aqui..."
+                  value={perfexToken}
+                  onChange={(e) => setPerfexToken(e.target.value)}
+                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
+                />
+              </div>
+
+              <button
+                onClick={async () => {
+                  setIsSaving(true);
+                  try {
+                    if (!perfexUrl || !perfexToken) {
+                      alert('Configure URL e Token primeiro.');
+                      setIsSaving(false);
+                      return;
+                    }
+                    await PerfexService.syncInvoicesToSystem({ url: perfexUrl, token: perfexToken });
+                    alert('✅ Sincronização com Perfex concluída!');
+                    window.location.reload();
+                  } catch (e: any) {
+                    alert('❌ Erro: ' + e.message);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                disabled={isSaving}
+                className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-4"
+              >
+                <RefreshCw size={14} className={isSaving ? "animate-spin" : ""} />
+                {isSaving ? "Sincronizando..." : "Sincronizar Faturas"}
+              </button>
+            </div>
+            <p className="text-[9px] text-slate-500 font-bold leading-relaxed">
+              Importa faturas "A vencer", "Vencida" e "Paga" como receitas.
             </p>
           </section>
 
@@ -169,8 +240,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className={`w-full py-5 rounded-[1.5rem] font-black text-xs uppercase transition-all flex items-center justify-center gap-3 shadow-xl ${isSaving ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-white hover:bg-slate-800'
-              }`}
+            className={`w-full py-5 rounded-[1.5rem] font-black text-xs uppercase transition-all flex items-center justify-center gap-3 shadow-xl ${isSaving ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
           >
             {isSaving ? <CheckCircle2 size={18} /> : <Save size={18} />}
             {isSaving ? 'Configuração Salva!' : 'Salvar Configurações'}
