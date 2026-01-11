@@ -75,9 +75,26 @@ export const PerfexService = {
       throw new Error('Formato de resposta inválido do Perfex CRM');
     }
 
-    if (progressCallback) progressCallback(`Encontradas ${invoices.length} faturas. Processando...`);
+    if (progressCallback) progressCallback(`Baixado com sucesso! Processando...`);
 
-    const transactions = invoices.map((inv: any) => this.mapInvoiceToTransaction(inv));
+    // Filter for Current Month Only (User Request)
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const filteredInvoices = invoices.filter((inv: any) => {
+      if (!inv.date) return false;
+      const invDate = new Date(inv.date);
+      // Fix timezone offset issues by treating string as local or UTC? 
+      // inv.date is usually YYYY-MM-DD. new Date('2024-01-01') is UTC, which might be previous day in local.
+      // Safer: split string.
+      const [year, month] = inv.date.split('-');
+      return parseInt(year) === currentYear && (parseInt(month) - 1) === currentMonth;
+    });
+
+    if (progressCallback) progressCallback(`Filtrado: ${filteredInvoices.length} faturas deste mês (de ${invoices.length} total).`);
+
+    const transactions = filteredInvoices.map((inv: any) => this.mapInvoiceToTransaction(inv));
 
     if (progressCallback) progressCallback('Enviando para o Banco de Dados (em lotes)...');
 
