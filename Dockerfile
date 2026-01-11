@@ -33,7 +33,7 @@ COPY server/ ./
 
 # Copia o build do frontend do Stage 1 para a pasta 'public' ou 'dist' do backend
 # No server/index.js precisamos configurar app.use(express.static('dist'))
-COPY --from=frontend-build /app/dist ./dist
+COPY --from=frontend-build /app/server/dist ./dist
 
 # Expõe porta do backend
 EXPOSE 3001

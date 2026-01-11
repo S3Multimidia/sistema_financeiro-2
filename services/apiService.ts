@@ -58,6 +58,11 @@ export const ApiService = {
         await api.delete(`/transactions/${id}`);
     },
 
+    async syncLocalDataToCloud(transactions: Transaction[]) {
+        const response = await api.post('/transactions/migrate', { transactions });
+        return response.data;
+    },
+
     // --- Auth (Opicional aqui, mas útil) ---
     async login(email: string, pass: string) {
         const response = await api.post('/auth/login', { email, password: pass });

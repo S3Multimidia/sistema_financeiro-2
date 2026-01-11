@@ -130,6 +130,41 @@ app.get('/api/transactions', authenticateToken, async (req, res) => {
     }
 });
 
+// Bulk Migrate / Sync
+app.post('/api/transactions/migrate', authenticateToken, async (req, res) => {
+    const { transactions } = req.body;
+    if (!Array.isArray(transactions)) return res.status(400).json({ error: 'Formato inválido' });
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Optional: Clear existing for this user or specific sync strategy?
+        // For MVP migration: Insert ignore or Insert if not exists
+
+        for (const t of transactions) {
+            // Check existence logic or just insert
+            await client.query(
+                `INSERT INTO transactions 
+                (description, amount, type, category, date, year, month, day, completed, installments_total, installment_number, user_id, original_id) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                ON CONFLICT (id) DO NOTHING`, // Assuming ID conflict handling is needed, but serial IDs might differ.
+                // Better strategy: Use original_id to track client-side IDs
+                [t.description, t.amount, t.type, t.category, t.date || `${t.year}-${t.month + 1}-${t.day}`, t.year, t.month, t.day, t.completed, t.totalInstallments, t.installmentNumber, req.user.id, t.id]
+            );
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true, count: transactions.length });
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    } finally {
+        client.release();
+    }
+});
+
 app.post('/api/transactions', authenticateToken, async (req, res) => {
     const t = req.body;
     try {

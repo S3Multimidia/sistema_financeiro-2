@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { Transaction } from '../types';
 import { SupabaseService } from '../services/supabaseService';
+import { ApiService } from '../services/apiService';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -95,47 +96,74 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Database Section */}
           <section className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 space-y-4">
             <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-              <Database size={16} /> Banco de Dados (Supabase)
+              <Database size={16} /> Servidor Próprio (aaPanel)
             </h4>
 
-            <div className="space-y-3">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <label className="text-[9px] font-black text-slate-400 uppercase block mb-2 flex items-center gap-2">
-                  <Globe size={12} /> Supabase URL
-                </label>
-                <input
-                  type="text"
-                  placeholder="https://xxx.supabase.co"
-                  value={supabaseUrl}
-                  onChange={(e) => setSupabaseUrl(e.target.value)}
-                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
-                />
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <label className="text-[9px] font-black text-slate-400 uppercase block mb-2 flex items-center gap-2">
-                  <Lock size={12} /> Supabase Anon Key
-                </label>
-                <input
-                  type="password"
-                  placeholder="sua-chave-anon-aqui"
-                  value={supabaseKey}
-                  onChange={(e) => setSupabaseKey(e.target.value)}
-                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
-                />
-              </div>
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <p className="text-[10px] text-slate-500 font-medium">
+                Seus dados estão na memória do navegador. Envie para o novo servidor para salvar com segurança.
+              </p>
+              <button
+                onClick={async () => {
+                  setIsSaving(true);
+                  try {
+                    const saved = localStorage.getItem('finan_agenda_data_2026_v2');
+                    if (saved) {
+                      const transactions = JSON.parse(saved);
+                      await ApiService.syncLocalDataToCloud(transactions);
+                      alert('✅ Sucesso! Seus dados locais foram enviados para o Banco de Dados.');
+                      window.location.reload(); // Reload to fetch fresh from DB
+                    } else {
+                      alert('Nenhum dado local encontrado para enviar.');
+                    }
+                  } catch (e: any) {
+                    alert('❌ Erro ao enviar dados: ' + e.message);
+                    console.error(e);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                disabled={isSaving}
+                className="w-full py-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={14} className={isSaving ? "animate-spin" : ""} />
+                {isSaving ? "Enviando para o Banco..." : "Sincronizar (Enviar Dados Locais)"}
+              </button>
             </div>
 
-            {/* Warning about reload */}
-            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex gap-3">
-              <AlertTriangle size={20} className="text-amber-500 shrink-0" />
-              <div>
-                <p className="text-[10px] font-black text-amber-600 uppercase mb-1">Atenção</p>
-                <p className="text-[9px] text-amber-700/80 font-bold leading-tight">
-                  Ao salvar as chaves do Supabase, a página será recarregada para aplicar a nova conexão.
-                </p>
+            {/* Legacy Supabase (Collapsed or Optional) */}
+            <details className="group">
+              <summary className="cursor-pointer text-[9px] font-black text-slate-400 uppercase flex items-center gap-2 list-none">
+                <Settings size={12} /> Configurações Avançadas (Legado)
+              </summary>
+              <div className="mt-4 space-y-3 pl-4 border-l-2 border-slate-100">
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                  <label className="text-[9px] font-black text-slate-400 uppercase block mb-2 flex items-center gap-2">
+                    <Globe size={12} /> Supabase URL
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://xxx.supabase.co"
+                    value={supabaseUrl}
+                    onChange={(e) => setSupabaseUrl(e.target.value)}
+                    className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
+                  />
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                  <label className="text-[9px] font-black text-slate-400 uppercase block mb-2 flex items-center gap-2">
+                    <Lock size={12} /> Supabase Anon Key
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="sua-chave-anon-aqui"
+                    value={supabaseKey}
+                    onChange={(e) => setSupabaseKey(e.target.value)}
+                    className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
+                  />
+                </div>
               </div>
-            </div>
+            </details>
           </section>
 
           <button
