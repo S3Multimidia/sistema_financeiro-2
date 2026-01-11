@@ -4,7 +4,7 @@ export type TransactionType = 'income' | 'expense' | 'appointment';
 export interface Transaction {
   id: string;
   day: number;
-  month: number; 
+  month: number;
   year: number;
   category: string;
   subCategory?: string; // Novo campo opcional
@@ -13,11 +13,14 @@ export interface Transaction {
   type: TransactionType;
   acknowledged?: boolean;
   completed?: boolean;
-  
+
   isFixed?: boolean;
   installmentId?: string;
   installmentNumber?: number;
   totalInstallments?: number;
+
+  external_url?: string;
+  client_name?: string;
 }
 
 export interface MonthSummary {

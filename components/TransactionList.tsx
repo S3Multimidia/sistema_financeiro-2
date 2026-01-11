@@ -22,13 +22,13 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-export const TransactionList: React.FC<TransactionListProps> = ({ 
-  transactions, 
-  onDelete, 
+export const TransactionList: React.FC<TransactionListProps> = ({
+  transactions,
+  onDelete,
   onEdit,
   onMove,
   onToggleComplete,
-  selectedDay, 
+  selectedDay,
   onSelectedDayChange,
   categoriesMap,
   onManageCategories
@@ -42,21 +42,21 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
   const groupedTransactions = useMemo(() => {
     let filtered = transactions;
-    
+
     // Filtro por Tipo (Novo)
     if (filterType !== 'ALL') filtered = filtered.filter(t => t.type === filterType);
-    
+
     if (filterCategory !== 'ALL') filtered = filtered.filter(t => t.category === filterCategory);
-    
+
     if (searchTerm.trim() !== '') {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(t => 
-        t.description.toLowerCase().includes(term) || 
+      filtered = filtered.filter(t =>
+        t.description.toLowerCase().includes(term) ||
         t.category.toLowerCase().includes(term) ||
         (t.subCategory && t.subCategory.toLowerCase().includes(term))
       );
     }
-    
+
     if (selectedDay) {
       const day = parseInt(selectedDay);
       if (!isNaN(day)) filtered = filtered.filter(t => t.day === day);
@@ -83,28 +83,28 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               {transactions.length} registros
             </div>
           </div>
-          
+
           {/* Botões de Filtro de Tipo */}
           <div className="flex items-center bg-slate-100 p-1 rounded-xl">
-            <button 
+            <button
               onClick={() => setFilterType('ALL')}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${filterType === 'ALL' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Todos
             </button>
-            <button 
+            <button
               onClick={() => setFilterType('income')}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1.5 ${filterType === 'income' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-emerald-500'}`}
             >
               <TrendingUp size={12} /> Receitas
             </button>
-            <button 
+            <button
               onClick={() => setFilterType('expense')}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1.5 ${filterType === 'expense' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-rose-500'}`}
             >
               <TrendingDown size={12} /> Despesas
             </button>
-            <button 
+            <button
               onClick={() => setFilterType('appointment')}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1.5 ${filterType === 'appointment' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-indigo-500'}`}
             >
@@ -112,7 +112,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             </button>
           </div>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -133,7 +133,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all"
             >
               <option value="">Todos Dias</option>
-              {Array.from({length: 31}, (_, i) => i+1).map(d => <option key={d} value={d}>Dia {d}</option>)}
+              {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>Dia {d}</option>)}
             </select>
           </div>
         </div>
@@ -144,7 +144,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           <div className="flex flex-col items-center justify-center h-64 text-slate-400 bg-slate-50/30 rounded-xl border-2 border-dashed border-slate-100">
             <Search size={40} className="mb-3 opacity-20" />
             <p className="text-xs font-bold uppercase tracking-widest opacity-60">Nenhum registro encontrado com estes filtros.</p>
-            <button 
+            <button
               onClick={() => { setFilterType('ALL'); setSearchTerm(''); onSelectedDayChange(''); }}
               className="mt-4 text-[10px] font-black text-indigo-600 uppercase hover:underline"
             >
@@ -176,20 +176,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     <div key={t.id} className={`group flex items-center justify-between p-3 rounded-xl border transition-all bg-white ${t.type === 'appointment' ? (t.completed ? 'border-slate-100 bg-slate-50 opacity-60' : 'border-indigo-100 bg-indigo-50/30 shadow-sm shadow-indigo-500/5') : 'border-slate-100 hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200 hover:-translate-y-0.5'}`}>
                       <div className="flex items-start gap-3 overflow-hidden">
                         {t.type === 'appointment' ? (
-                          <button 
+                          <button
                             onClick={() => onToggleComplete?.(t.id)}
                             className={`mt-1 transition-colors shrink-0 ${t.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-indigo-500'}`}
                           >
                             {t.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
                           </button>
                         ) : (
-                          <div className={`mt-1 p-2 rounded-xl shrink-0 shadow-sm ${
-                            t.type === 'income' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
-                          }`}>
+                          <div className={`mt-1 p-2 rounded-xl shrink-0 shadow-sm ${t.type === 'income' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
+                            }`}>
                             {t.type === 'income' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                           </div>
                         )}
-                        
+
                         <div className="min-w-0">
                           <p className={`font-bold text-sm truncate leading-tight ${t.type === 'appointment' ? (t.completed ? 'text-slate-400 line-through' : 'text-indigo-900 italic font-black') : 'text-slate-800'}`}>
                             {t.description}
@@ -206,6 +205,26 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                                 </span>
                               </>
                             )}
+                            {/* Client Name & External Link Badge */}
+                            {t.client_name && (
+                              <>
+                                <ChevronRight size={10} className="text-slate-300" />
+                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter truncate max-w-[100px]">
+                                  {t.client_name}
+                                </span>
+                              </>
+                            )}
+                            {t.external_url && (
+                              <a
+                                href={t.external_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ml-1 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-tighter transition-colors"
+                                title="Ver Fatura"
+                              >
+                                Ver Fatura <Move size={8} className="-rotate-45" />
+                              </a>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -220,24 +239,24 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                             {t.completed ? 'Concluído' : 'Agenda'}
                           </span>
                         )}
-                        
+
                         <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity bg-slate-50 rounded-lg p-1 border border-slate-100">
-                           <button onClick={() => onEdit(t)} className="text-slate-400 hover:text-indigo-600 p-1.5 transition-colors" title="Editar"><Pencil size={14} /></button>
-                           {movingId === t.id ? (
-                             <div className="flex items-center gap-1 mx-1">
-                               <input 
-                                 type="number" 
-                                 className="w-10 text-[10px] p-1 border border-indigo-200 rounded focus:ring-1 focus:ring-indigo-400 outline-none" 
-                                 value={newDayVal}
-                                 autoFocus
-                                 onChange={(e) => setNewDayVal(e.target.value)}
-                               />
-                               <button onClick={() => { onMove(t.id, parseInt(newDayVal)); setMovingId(null); }} className="text-emerald-500 hover:scale-110 transition-transform"><Settings size={14} /></button>
-                             </div>
-                           ) : (
-                             <button onClick={() => { setMovingId(t.id); setNewDayVal(t.day.toString()); }} className="text-slate-400 hover:text-amber-500 p-1.5 transition-colors" title="Mudar Dia"><Move size={14} /></button>
-                           )}
-                           <button onClick={() => onDelete(t.id)} className="text-slate-300 hover:text-rose-500 p-1.5 transition-colors" title="Excluir"><Trash2 size={14} /></button>
+                          <button onClick={() => onEdit(t)} className="text-slate-400 hover:text-indigo-600 p-1.5 transition-colors" title="Editar"><Pencil size={14} /></button>
+                          {movingId === t.id ? (
+                            <div className="flex items-center gap-1 mx-1">
+                              <input
+                                type="number"
+                                className="w-10 text-[10px] p-1 border border-indigo-200 rounded focus:ring-1 focus:ring-indigo-400 outline-none"
+                                value={newDayVal}
+                                autoFocus
+                                onChange={(e) => setNewDayVal(e.target.value)}
+                              />
+                              <button onClick={() => { onMove(t.id, parseInt(newDayVal)); setMovingId(null); }} className="text-emerald-500 hover:scale-110 transition-transform"><Settings size={14} /></button>
+                            </div>
+                          ) : (
+                            <button onClick={() => { setMovingId(t.id); setNewDayVal(t.day.toString()); }} className="text-slate-400 hover:text-amber-500 p-1.5 transition-colors" title="Mudar Dia"><Move size={14} /></button>
+                          )}
+                          <button onClick={() => onDelete(t.id)} className="text-slate-300 hover:text-rose-500 p-1.5 transition-colors" title="Excluir"><Trash2 size={14} /></button>
                         </div>
                       </div>
                     </div>

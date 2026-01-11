@@ -68,9 +68,19 @@ const initDb = async () => {
         installment_number INTEGER DEFAULT 1,
         original_id VARCHAR(100),
         user_id INTEGER REFERENCES users(id),
+        external_url TEXT,
+        client_name VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+        // Add columns if not exist (Migration for existing DB)
+        try {
+            await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS external_url TEXT');
+            await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS client_name VARCHAR(255)');
+        } catch (e) {
+            console.log('Columns already exist or error adding them:', e.message);
+        }
 
         // Check if admin exists, if not create
         const adminCheck = await pool.query("SELECT * FROM users WHERE email = 'financeiro@s3m.com.br'");
@@ -148,11 +158,11 @@ app.post('/api/transactions/migrate', authenticateToken, async (req, res) => {
             // Check existence logic or just insert
             await client.query(
                 `INSERT INTO transactions 
-                (description, amount, type, category, date, year, month, day, completed, installments_total, installment_number, user_id, original_id) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                (description, amount, type, category, date, year, month, day, completed, installments_total, installment_number, user_id, original_id, external_url, client_name) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                 ON CONFLICT (id) DO NOTHING`, // Assuming ID conflict handling is needed, but serial IDs might differ.
                 // Better strategy: Use original_id to track client-side IDs
-                [t.description, t.amount, t.type, t.category, t.date || `${t.year}-${t.month + 1}-${t.day}`, t.year, t.month, t.day, t.completed, t.totalInstallments, t.installmentNumber, req.user.id, t.id]
+                [t.description, t.amount, t.type, t.category, t.date || `${t.year}-${t.month + 1}-${t.day}`, t.year, t.month, t.day, t.completed, t.totalInstallments, t.installmentNumber, req.user.id, t.id, t.external_url, t.client_name]
             );
         }
 
@@ -173,10 +183,10 @@ app.post('/api/transactions', authenticateToken, async (req, res) => {
         // Normally you extract fields to avoid SQL injection via columns, but using parameterized query
         const result = await pool.query(
             `INSERT INTO transactions 
-      (description, amount, type, category, date, year, month, day, completed, installments_total, installment_number, user_id) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+      (description, amount, type, category, date, year, month, day, completed, installments_total, installment_number, user_id, external_url, client_name) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
       RETURNING *`,
-            [t.description, t.amount, t.type, t.category, t.date, t.year, t.month, t.day, t.completed, t.totalInstallments, t.installmentNumber, req.user.id]
+            [t.description, t.amount, t.type, t.category, t.date, t.year, t.month, t.day, t.completed, t.totalInstallments, t.installmentNumber, req.user.id, t.external_url, t.client_name]
         );
         res.json(result.rows[0]);
     } catch (e) {

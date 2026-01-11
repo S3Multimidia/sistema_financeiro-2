@@ -117,7 +117,9 @@ export const PerfexService = {
         completed: inv.status === '2', // Strictly Paid
         totalInstallments: 1,
         installmentNumber: 1,
-        original_id: `perfex_inv_${inv.id}`
+        original_id: `perfex_inv_${inv.id}`,
+        client_name: inv.client?.company || 'Cliente Perfex',
+        external_url: `${config.url.replace('/api', '')}/invoice/${inv.id}/${inv.hash}` // Construct public link
       };
     });
 
