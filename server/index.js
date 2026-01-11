@@ -82,21 +82,38 @@ const initDb = async () => {
             console.log('Columns already exist or error adding them:', e.message);
         }
 
-        // 1. Clean up existing duplicates (Keeping the oldest/first imported)
+        // 1. Robust Deduplication (CTE to keep only the latest entry for each original_id)
+        // This removes ALL duplicates leaving only one (the one with highest ID)
         await pool.query(`
-            DELETE FROM transactions a USING transactions b 
-            WHERE a.id > b.id 
-            AND a.original_id = b.original_id 
-            AND a.original_id IS NOT NULL;
+            DELETE FROM transactions
+            WHERE id IN (
+                SELECT id
+                FROM (
+                    SELECT id,
+                    ROW_NUMBER() OVER (PARTITION BY original_id ORDER BY id DESC) as rnum
+                    FROM transactions
+                    WHERE original_id IS NOT NULL
+                ) t
+                WHERE t.rnum > 1
+            );
         `);
-        console.log('🧹 Duplicatas removidas.');
+        console.log('🧹 Limpeza PROFUNDA de duplicatas realizada.');
 
         // 2. Add Unique Constraint to original_id to prevents future duplicates
+        // We drop first to ensure we can recreate it cleanly if it was half-baked
         try {
+            await pool.query('ALTER TABLE transactions DROP CONSTRAINT IF EXISTS unique_original_id');
             await pool.query('ALTER TABLE transactions ADD CONSTRAINT unique_original_id UNIQUE (original_id)');
+            console.log('🔒 Constraint UNIQUE aplicada com sucesso!');
         } catch (e) {
-            // Constraint might already exist
+            console.error('❌ Erro ao criar constraint UNIQUE:', e.message);
         }
+
+        // 3. Ensure columns exist (Safeguard)
+        try {
+            await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS external_url TEXT');
+            await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS client_name VARCHAR(255)');
+        } catch (e) { console.log('Columns sync error:', e.message); }
 
         // Check if admin exists, if not create
         const adminCheck = await pool.query("SELECT * FROM users WHERE email = 'financeiro@s3m.com.br'");
