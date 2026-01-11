@@ -73,10 +73,46 @@ const App: React.FC = () => {
     checkUser();
   }, []);
 
+  // Check User and Auto-Sync Perfex
   const checkUser = async () => {
     const u = await ApiService.getUser();
     setUser(u);
-    if (u) loadFromCloud();
+    if (u) {
+      loadFromCloud();
+      handlePerfexAutoSync(); // Auto-sync on login
+    }
+  };
+
+  const handlePerfexAutoSync = async () => {
+    // Default Credentials
+    const DEFAULT_PERFEX_URL = 'https://admin.s3m.com.br/api';
+    const DEFAULT_PERFEX_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiczNtdWx0aW1pZGlhQGdtYWlsLmNvbSIsIm5hbWUiOiJQbGFuaWxoYSIsIkFQSV9USU1FIjoxNzU4MDUxOTc5fQ.SbhzQOgmMHh_eTiw_HuJUBgz-2POwkXj1umAe4kT6Uc';
+
+    // Get current config or use defaults
+    let url = localStorage.getItem('perfex_url');
+    let token = localStorage.getItem('perfex_token');
+
+    // Setup Defaults if missing
+    if (!url || !token) {
+      url = DEFAULT_PERFEX_URL;
+      token = DEFAULT_PERFEX_TOKEN;
+      localStorage.setItem('perfex_url', url);
+      localStorage.setItem('perfex_token', token);
+    }
+
+    try {
+      console.log('🔄 Iniciando Sincronização Automática com Perfex...');
+      // We import PerfexService dynamically to avoid circular deps if any, or just assumes it's available.
+      // Actually, importing at top level is fine in App.tsx. I need to add the import.
+      const { PerfexService } = await import('./services/perfexService'); // Dynamic import to be safe
+      await PerfexService.syncInvoicesToSystem({ url, token }, (msg) => console.log('Perfex Auto-Sync:', msg));
+
+      // Refresh transactions after sync
+      loadFromCloud();
+      console.log('✅ Sincronização Automática Perfex Concluída!');
+    } catch (e) {
+      console.error('❌ Erro na Sincronização Automática Perfex:', e);
+    }
   };
 
   const loadFromCloud = async () => {
