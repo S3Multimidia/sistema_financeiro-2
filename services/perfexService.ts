@@ -77,24 +77,49 @@ export const PerfexService = {
 
     if (progressCallback) progressCallback(`Baixado com sucesso! Processando...`);
 
-    // Filter for Current Month Only (User Request)
+    // Filter: Current Month onwards (including future)
+    // User requested "Current Month" but also "Next Month" sync naturally.
+    // Logic: Date >= First Day of Current Month
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    // Start of current month (e.g., 2024-01-01)
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const filteredInvoices = invoices.filter((inv: any) => {
       if (!inv.date) return false;
-      const invDate = new Date(inv.date);
-      // Fix timezone offset issues by treating string as local or UTC? 
-      // inv.date is usually YYYY-MM-DD. new Date('2024-01-01') is UTC, which might be previous day in local.
-      // Safer: split string.
-      const [year, month] = inv.date.split('-');
-      return parseInt(year) === currentYear && (parseInt(month) - 1) === currentMonth;
+      // Parse inv.date carefully (YYYY-MM-DD)
+      const [year, month, day] = inv.date.split('-');
+      const invoiceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
+      // Return if invoice date is equal or greater than start of current month
+      return invoiceDate >= startOfCurrentMonth;
     });
 
-    if (progressCallback) progressCallback(`Filtrado: ${filteredInvoices.length} faturas deste mês (de ${invoices.length} total).`);
+    if (progressCallback) progressCallback(`Filtrado: ${filteredInvoices.length} faturas (Mês Atual + Futuro).`);
 
-    const transactions = filteredInvoices.map((inv: any) => this.mapInvoiceToTransaction(inv));
+    const transactions = filteredInvoices.map((inv: any) => {
+      // Recurrence logic: usually 'recurring' > 0 in Perfex
+      let desc = `Fatura Perfex #${inv.number} - ${inv.client?.company || 'Cliente'}`;
+
+      // If recurring > 0, append info
+      if (inv.recurring && inv.recurring != '0') {
+        desc += ' (Recorrente)';
+      }
+
+      return {
+        description: desc,
+        amount: parseFloat(inv.total),
+        type: 'income',
+        category: 'Perfex CRM',
+        date: inv.date, // YYYY-MM-DD
+        year: new Date(inv.date).getFullYear(),
+        month: new Date(inv.date).getMonth(),
+        day: new Date(inv.date).getDate(),
+        completed: inv.status === '2', // Strictly Paid
+        totalInstallments: 1,
+        installmentNumber: 1,
+        original_id: `perfex_inv_${inv.id}`
+      };
+    });
 
     if (progressCallback) progressCallback('Enviando para o Banco de Dados (em lotes)...');
 
