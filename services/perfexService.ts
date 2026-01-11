@@ -79,12 +79,21 @@ export const PerfexService = {
 
     const transactions = invoices.map((inv: any) => this.mapInvoiceToTransaction(inv));
 
-    if (progressCallback) progressCallback('Enviando para o Banco de Dados...');
+    if (progressCallback) progressCallback('Enviando para o Banco de Dados (em lotes)...');
 
-    // Use the migration endpoint to bulk insert/ignore
-    await api.post('/transactions/migrate', { transactions });
+    // Batch processing to avoid 413 Payload Too Large
+    const BATCH_SIZE = 50;
+    let processed = 0;
+
+    for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
+      const batch = transactions.slice(i, i + BATCH_SIZE);
+      if (progressCallback) progressCallback(`Sincronizando lote ${Math.ceil((i + 1) / BATCH_SIZE)} de ${Math.ceil(transactions.length / BATCH_SIZE)}...`);
+
+      await api.post('/transactions/migrate', { transactions: batch });
+      processed += batch.length;
+    }
 
     if (progressCallback) progressCallback('Sincronização concluída com sucesso!');
-    return transactions.length;
+    return processed;
   }
 };
