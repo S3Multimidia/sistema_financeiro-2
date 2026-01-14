@@ -46,8 +46,9 @@ export const PerfexService = {
     const isPaid = invoice.status === '2'; // Strictly Paid
     const isExpense = false; // Invoices are income
 
+    const clientName = invoice.client?.company || invoice.company || (invoice.clientid ? `#${invoice.clientid}` : 'Cliente');
     return {
-      description: `Fatura Perfex #${invoice.number} - ${invoice.client?.company || 'Cliente'}`,
+      description: `Fatura Perfex #${invoice.number} - ${clientName}`,
       amount: parseFloat(invoice.total),
       type: 'income',
       category: 'Perfex CRM',
@@ -98,7 +99,8 @@ export const PerfexService = {
 
     const transactions = filteredInvoices.map((inv: any) => {
       // Recurrence logic: usually 'recurring' > 0 in Perfex
-      let desc = `Fatura Perfex #${inv.number} - ${inv.client?.company || 'Cliente'}`;
+      const clientName = inv.client?.company || inv.company || (inv.clientid ? `#${inv.clientid}` : 'Cliente');
+      let desc = `Fatura Perfex #${inv.number} - ${clientName}`;
 
       // If recurring > 0, append info
       if (inv.recurring && inv.recurring != '0') {
@@ -118,7 +120,7 @@ export const PerfexService = {
         totalInstallments: 1,
         installmentNumber: 1,
         original_id: `perfex_inv_${inv.id}`,
-        client_name: inv.client?.company || 'Cliente Perfex',
+        client_name: inv.client?.company || inv.company || (inv.clientid ? `Cliente #${inv.clientid}` : 'Cliente Perfex'),
         external_url: `${config.url.replace('/api', '')}/invoice/${inv.id}/${inv.hash}` // Construct public link
       };
     });

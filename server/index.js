@@ -97,7 +97,32 @@ const initDb = async () => {
                 WHERE t.rnum > 1
             );
         `);
-        console.log('🧹 Limpeza PROFUNDA de duplicatas realizada.');
+
+        // 1.5 BACKFILL: Populate original_id for old Perfex transactions that are missing it
+        // Pattern: "Fatura Perfex #123 - ..."
+        await pool.query(`
+            UPDATE transactions
+            SET original_id = 'perfex_inv_' || substring(description from 'Fatura Perfex #([0-9]+)')
+            WHERE original_id IS NULL 
+            AND description LIKE 'Fatura Perfex #%';
+        `);
+        console.log('🔄 Backfill de IDs originais do Perfex realizado com sucesso.');
+
+        // 1.6 Re-run Deduplication after Backfill (to clean up old duplicates that just got IDs)
+        await pool.query(`
+            DELETE FROM transactions
+            WHERE id IN (
+                SELECT id
+                FROM (
+                    SELECT id,
+                    ROW_NUMBER() OVER (PARTITION BY original_id ORDER BY id DESC) as rnum
+                    FROM transactions
+                    WHERE original_id IS NOT NULL
+                ) t
+                WHERE t.rnum > 1
+            );
+        `);
+        console.log('🧹 Limpeza PROFUNDA de duplicatas realizada (pós-backfill).');
 
         // 2. Add Unique Constraint to original_id to prevents future duplicates
         // We drop first to ensure we can recreate it cleanly if it was half-baked
