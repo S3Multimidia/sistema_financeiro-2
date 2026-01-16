@@ -37,22 +37,39 @@ export const PerfexService = {
 
 
   async getClients(config: PerfexConfig) {
-    let targetUrl = config.url.trim();
-    if (targetUrl.endsWith('/')) targetUrl = targetUrl.slice(0, -1);
-    // Try standard endpoint for customers
-    if (!targetUrl.endsWith('/customers')) targetUrl += '/customers';
+    let baseUrl = config.url.trim();
+    if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
 
-    try {
-      const response = await api.post('/perfex/proxy', {
-        targetUrl: targetUrl,
-        token: config.token,
-        method: 'GET'
-      });
-      return response.data;
-    } catch (error) {
-      console.warn('Erro ao buscar clientes do Perfex:', error);
-      return []; // Fail gracefully
+    // Helper to fetch from a specific endpoint
+    const fetchFromEndpoint = async (endpoint: string) => {
+      let fullUrl = baseUrl;
+      if (!fullUrl.endsWith(endpoint)) fullUrl += endpoint;
+
+      try {
+        console.log(`Tentando buscar clientes em: ${fullUrl}`);
+        const response = await api.post('/perfex/proxy', {
+          targetUrl: fullUrl,
+          token: config.token,
+          method: 'GET'
+        });
+        return response.data;
+      } catch (error) {
+        console.warn(`Falha ao buscar em ${endpoint}:`, error);
+        return null;
+      }
+    };
+
+    // Try '/customers' first (Standard for many modules)
+    let data = await fetchFromEndpoint('/customers');
+
+    // If failed or empty, try '/clients' (Alternative)
+    if (!data || (Array.isArray(data) && data.length === 0) || (data.data && Array.isArray(data.data) && data.data.length === 0)) {
+      console.log("Endpoint '/customers' não retornou dados. Tentando '/clients'...");
+      const dataClients = await fetchFromEndpoint('/clients');
+      if (dataClients) data = dataClients;
     }
+
+    return data || [];
   },
 
   mapInvoiceToTransaction(invoice: any, config: PerfexConfig, clientMap: Record<string, string> = {}) {
@@ -70,12 +87,17 @@ export const PerfexService = {
     // Priority: Company from Invoice Object > Mapped Name from Client List > Fallback ID > Default
     let clientName = invoice.client?.company || invoice.company;
 
-    if (!clientName && invoice.clientid && clientMap[invoice.clientid]) {
-      clientName = clientMap[invoice.clientid];
+    // Convert IDs to strings for reliable lookup
+    const invClientId = String(invoice.clientid || '');
+
+    if (!clientName && invClientId && clientMap[invClientId]) {
+      clientName = clientMap[invClientId];
     }
 
     if (!clientName) {
-      clientName = invoice.clientid ? `Cliente #${invoice.clientid}` : 'Cliente Perfex';
+      // Log for debugging if name is still missing but we have an ID
+      if (invClientId) console.warn(`Cliente não encontrado no mapa para ID: ${invClientId}`);
+      clientName = invClientId ? `Cliente #${invClientId}` : 'Cliente Perfex';
     }
 
     // Construct public invoice link
@@ -121,16 +143,22 @@ export const PerfexService = {
       const clientsData = await this.getClients(config);
       const clients = Array.isArray(clientsData) ? clientsData : (clientsData.data || []);
 
+      console.log(`Clientes encontrados: ${clients.length}`); // Debug log
+
       if (Array.isArray(clients)) {
         clients.forEach((c: any) => {
-          if (c.userid && c.company) {
-            clientMap[c.userid] = c.company;
+          // Determine ID and Company fields (Handle variations)
+          const id = c.userid || c.id || c.client_id;
+          const name = c.company || c.name || c.client_name;
+
+          if (id && name) {
+            clientMap[String(id)] = name;
           }
         });
-        if (progressCallback) progressCallback(`Mapeamento de clientes concluído (${clients.length} encontrados).`);
+        if (progressCallback) progressCallback(`Mapeamento de clientes concluído (${Object.keys(clientMap).length} nomes).`);
       }
     } catch (e) {
-      console.warn('Não foi possível buscar a lista de clientes para mapeamento de nomes.');
+      console.warn('Não foi possível buscar a lista de clientes para mapeamento de nomes:', e);
     }
 
     if (progressCallback) progressCallback(`Processando faturas...`);
