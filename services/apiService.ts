@@ -3,6 +3,8 @@ import { Transaction } from '../types';
 
 // Helper to map DB snake_case to App camelCase
 // Mantemos a mesma lógica pois o banco Postgres usa snake_case
+// Helper to map DB snake_case to App camelCase
+// Mantemos a mesma lógica pois o banco Postgres usa snake_case
 const mapToApp = (t: any): Transaction => ({
     id: t.id ? t.id.toString() : Math.random().toString(), // Ensure ID is string
     day: t.day,
@@ -18,7 +20,9 @@ const mapToApp = (t: any): Transaction => ({
     isFixed: t.is_fixed,
     installmentId: t.installment_id,
     installmentNumber: t.installment_number,
-    totalInstallments: t.total_installments
+    totalInstallments: t.total_installments,
+    client_name: t.client_name,
+    external_url: t.external_url
 });
 
 // Helper to map App camelCase to DB snake_case
@@ -29,6 +33,11 @@ const mapToDB = (t: Partial<Transaction>) => {
     if (t.installmentId !== undefined) mapped.installment_id = t.installmentId;
     if (t.installmentNumber !== undefined) mapped.installment_number = t.installmentNumber;
     if (t.totalInstallments !== undefined) mapped.total_installments = t.totalInstallments;
+    // client_name/external_url matches DB column names, so no change needed, 
+    // but good to map explicitly if we want to support camelCase input for snake_case db
+    if (t.client_name !== undefined) mapped.client_name = t.client_name;
+    if (t.external_url !== undefined) mapped.external_url = t.external_url;
+
     return mapped;
 };
 
@@ -56,6 +65,22 @@ export const ApiService = {
 
     async deleteTransaction(id: string) {
         await api.delete(`/transactions/${id}`);
+    },
+
+    async clearAllTransactions() {
+        // Since we don't have a direct /transactions/all DELETE endpoint in the backend code I saw,
+        // we might need to implement it or use a loop.
+        // Wait, I saw `app.post('/api/transactions/migrate')`.
+        // I'll assume we can add a delete all endpoint or just iterate. 
+        // BUT better: I can add `app.delete('/api/transactions/all')` if I could edit backend easily and redeploy.
+        // However, the backend file `server/index.js` acts on `d:\Sistema Financeiro\server\index.js`.
+        // I CAN edit `server/index.js`!
+        // So I will first edit the backend to include a logical clear all route, OR just use the loop here.
+        // Backend edit is cleaner.
+        // But for now, to avoid restarting server issues if user is running it separately (though I can restart it?),
+        // I'll check if I can just implement it in backend.
+        // For now, let's just make a call to a new endpoint I'll add: DELETE /api/transactions/reset
+        await api.delete('/transactions/reset');
     },
 
     async syncLocalDataToCloud(transactions: Transaction[]) {

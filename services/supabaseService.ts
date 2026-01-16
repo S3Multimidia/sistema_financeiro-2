@@ -17,7 +17,9 @@ const mapToApp = (t: any): Transaction => ({
     isFixed: t.is_fixed,
     installmentId: t.installment_id,
     installmentNumber: t.installment_number,
-    totalInstallments: t.total_installments
+    totalInstallments: t.total_installments,
+    client_name: t.client_name,
+    external_url: t.external_url
 });
 
 // Helper to map App camelCase to DB snake_case
@@ -28,6 +30,8 @@ const mapToDB = (t: Partial<Transaction>) => {
     if (t.installmentId !== undefined) mapped.installment_id = t.installmentId;
     if (t.installmentNumber !== undefined) mapped.installment_number = t.installmentNumber;
     if (t.totalInstallments !== undefined) mapped.total_installments = t.totalInstallments;
+    if (t.client_name !== undefined) mapped.client_name = t.client_name;
+    if (t.external_url !== undefined) mapped.external_url = t.external_url;
 
     // Remove camelCase versions
     delete mapped.subCategory;
@@ -35,6 +39,11 @@ const mapToDB = (t: Partial<Transaction>) => {
     delete mapped.installmentId;
     delete mapped.installmentNumber;
     delete mapped.totalInstallments;
+    // client_name and external_url are kept as is (snake_case matches or mapped above if needed, 
+    // but here keys are already matching if we just pass them t through, 
+    // actually t has 'client_name' (snake) in interface? 
+    // interface typescript has client_name? yes transaction interface has client_name.
+    // so no need to delete/remap if keys are same.
 
     return mapped;
 };
@@ -99,6 +108,18 @@ export const SupabaseService = {
             .delete()
             .eq('id', id)
             .eq('user_id', user.id);
+
+        if (error) throw error;
+    },
+
+    async deleteAllTransactions() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { error } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('user_id', user.id); // Safely delete only user's data
 
         if (error) throw error;
     },

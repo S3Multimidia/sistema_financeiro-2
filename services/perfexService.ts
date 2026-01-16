@@ -34,7 +34,28 @@ export const PerfexService = {
     }
   },
 
-  mapInvoiceToTransaction(invoice: any) {
+
+
+  async getClients(config: PerfexConfig) {
+    let targetUrl = config.url.trim();
+    if (targetUrl.endsWith('/')) targetUrl = targetUrl.slice(0, -1);
+    // Try standard endpoint for customers
+    if (!targetUrl.endsWith('/customers')) targetUrl += '/customers';
+
+    try {
+      const response = await api.post('/perfex/proxy', {
+        targetUrl: targetUrl,
+        token: config.token,
+        method: 'GET'
+      });
+      return response.data;
+    } catch (error) {
+      console.warn('Erro ao buscar clientes do Perfex:', error);
+      return []; // Fail gracefully
+    }
+  },
+
+  mapInvoiceToTransaction(invoice: any, config: PerfexConfig, clientMap: Record<string, string> = {}) {
     // Map Perfex Invoice to App Transaction
     // Status mapping (approximate based on standard Perfex):
     // 1: Unpaid
@@ -44,10 +65,25 @@ export const PerfexService = {
     // 6: Draft
 
     const isPaid = invoice.status === '2'; // Strictly Paid
-    const isExpense = false; // Invoices are income
 
-    const clientName = invoice.client?.company || invoice.company || (invoice.clientid ? `#${invoice.clientid}` : 'Cliente');
+    // Better client name capture
+    // Priority: Company from Invoice Object > Mapped Name from Client List > Fallback ID > Default
+    let clientName = invoice.client?.company || invoice.company;
+
+    if (!clientName && invoice.clientid && clientMap[invoice.clientid]) {
+      clientName = clientMap[invoice.clientid];
+    }
+
+    if (!clientName) {
+      clientName = invoice.clientid ? `Cliente #${invoice.clientid}` : 'Cliente Perfex';
+    }
+
+    // Construct public invoice link
+    const baseUrl = config.url.replace('/api', '').replace('/invoices', '');
+    const externalUrl = (invoice.id && invoice.hash) ? `${baseUrl}/invoice/${invoice.id}/${invoice.hash}` : undefined;
+
     return {
+      id: `perfex_inv_${invoice.id}`, // Backend expects 'id' for the original_id field during migration
       description: `Fatura Perfex #${invoice.number} - ${clientName}`,
       amount: parseFloat(invoice.total),
       type: 'income',
@@ -59,7 +95,8 @@ export const PerfexService = {
       completed: isPaid,
       totalInstallments: 1,
       installmentNumber: 1,
-      original_id: `perfex_inv_${invoice.id}` // Unique ID to prevent duplicates
+      client_name: clientName,
+      external_url: externalUrl
     };
   },
 
@@ -76,7 +113,27 @@ export const PerfexService = {
       throw new Error('Formato de resposta inválido do Perfex CRM');
     }
 
-    if (progressCallback) progressCallback(`Baixado com sucesso! Processando...`);
+    if (progressCallback) progressCallback(`Baixado com sucesso! Buscando nomes de clientes...`);
+
+    // Fetch Clients to map names
+    let clientMap: Record<string, string> = {};
+    try {
+      const clientsData = await this.getClients(config);
+      const clients = Array.isArray(clientsData) ? clientsData : (clientsData.data || []);
+
+      if (Array.isArray(clients)) {
+        clients.forEach((c: any) => {
+          if (c.userid && c.company) {
+            clientMap[c.userid] = c.company;
+          }
+        });
+        if (progressCallback) progressCallback(`Mapeamento de clientes concluído (${clients.length} encontrados).`);
+      }
+    } catch (e) {
+      console.warn('Não foi possível buscar a lista de clientes para mapeamento de nomes.');
+    }
+
+    if (progressCallback) progressCallback(`Processando faturas...`);
 
     // Filter: Current Month onwards (including future)
     // User requested "Current Month" but also "Next Month" sync naturally.
@@ -98,31 +155,14 @@ export const PerfexService = {
     if (progressCallback) progressCallback(`Filtrado: ${filteredInvoices.length} faturas (Mês Atual + Futuro).`);
 
     const transactions = filteredInvoices.map((inv: any) => {
-      // Recurrence logic: usually 'recurring' > 0 in Perfex
-      const clientName = inv.client?.company || inv.company || (inv.clientid ? `#${inv.clientid}` : 'Cliente');
-      let desc = `Fatura Perfex #${inv.number} - ${clientName}`;
+      const mapped = this.mapInvoiceToTransaction(inv, config, clientMap);
 
-      // If recurring > 0, append info
+      // If recurring > 0, append info to description
       if (inv.recurring && inv.recurring != '0') {
-        desc += ' (Recorrente)';
+        mapped.description += ' (Recorrente)';
       }
 
-      return {
-        description: desc,
-        amount: parseFloat(inv.total),
-        type: 'income',
-        category: 'Perfex CRM',
-        date: inv.date, // YYYY-MM-DD
-        year: new Date(inv.date).getFullYear(),
-        month: new Date(inv.date).getMonth(),
-        day: new Date(inv.date).getDate(),
-        completed: inv.status === '2', // Strictly Paid
-        totalInstallments: 1,
-        installmentNumber: 1,
-        original_id: `perfex_inv_${inv.id}`,
-        client_name: inv.client?.company || inv.company || (inv.clientid ? `Cliente #${inv.clientid}` : 'Cliente Perfex'),
-        external_url: `${config.url.replace('/api', '')}/invoice/${inv.id}/${inv.hash}` // Construct public link
-      };
+      return mapped;
     });
 
     if (progressCallback) progressCallback('Enviando para o Banco de Dados (em lotes)...');

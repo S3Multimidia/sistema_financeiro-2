@@ -200,6 +200,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <RefreshCw size={14} className={isSaving ? "animate-spin" : ""} />
                 {isSaving ? "Enviando para o Banco..." : "Sincronizar (Enviar Dados Locais)"}
               </button>
+
+              <button
+                onClick={async () => {
+                  if (!confirm('ATENÇÃO: Isso apagará TODAS as transações do servidor. Tem certeza?')) return;
+
+                  setIsSaving(true);
+                  try {
+                    await ApiService.clearAllTransactions();
+                    // Também limpar local storage para garantir estado limpo
+                    localStorage.removeItem('finan_agenda_data_2026_v2');
+                    alert('✅ Todos os dados foram apagados do servidor.');
+                    window.location.reload();
+                  } catch (e: any) {
+                    alert('❌ Erro ao limpar dados: ' + e.message);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                disabled={isSaving}
+                className="w-full py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-2"
+              >
+                <ShieldAlert size={14} />
+                {isSaving ? "Apagando..." : "Limpar Dados da Nuvem (Zerar)"}
+              </button>
             </div>
 
             {/* Legacy Supabase (Collapsed or Optional) */}

@@ -265,6 +265,16 @@ app.delete('/api/transactions/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// Delete ALL Transactions (Reset)
+app.delete('/api/transactions/reset', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM transactions WHERE user_id = $1', [req.user.id]);
+        res.json({ success: true, message: 'Todas as transações foram excluídas.' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Update Transaction
 app.put('/api/transactions/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;

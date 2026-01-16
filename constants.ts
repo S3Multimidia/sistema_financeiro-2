@@ -2,7 +2,7 @@
 import { Transaction, INITIAL_CATEGORIES_MAP } from './types';
 
 export const INITIAL_PREVIOUS_BALANCE = 0.00;
-export const APP_VERSION = '2.0';
+export const APP_VERSION = '2.2';
 
 /**
  * CONFIGURAÇÃO DA API PERFEX
