@@ -158,6 +158,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <RefreshCw size={14} className={isSaving ? "animate-spin" : ""} />
                 {isSaving ? "Sincronizando..." : "Sincronizar Faturas"}
               </button>
+
+              <button
+                onClick={async () => {
+                  if (!confirm('ATENÇÃO: Isso apagará TODOS os dados atuais e sincronizará novamente do Perfex. Recomendado para corrigir nomes duplicados ou antigos. Continuar?')) return;
+
+                  setIsSaving(true);
+                  try {
+                    if (!perfexUrl || !perfexToken) {
+                      alert('Configure URL e Token primeiro.');
+                      setIsSaving(false);
+                      return;
+                    }
+
+                    // 1. Limpar Banco
+                    await ApiService.clearAllTransactions();
+
+                    // 2. Limpar Cache Local
+                    localStorage.removeItem('finan_agenda_data_2026_v2');
+
+                    // 3. Sincronizar
+                    await PerfexService.syncInvoicesToSystem({ url: perfexUrl, token: perfexToken });
+
+                    alert('✅ Banco limpo e nova sincronização concluída com sucesso!');
+                    window.location.reload();
+                  } catch (e: any) {
+                    alert('❌ Erro: ' + e.message);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                disabled={isSaving}
+                className="w-full py-3 bg-white border border-red-100 hover:bg-red-50 text-red-600 rounded-xl font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-2"
+                title="Limpa tudo e baixa novamente"
+              >
+                <ShieldAlert size={14} />
+                {isSaving ? "Processando..." : "Limpar Banco e Ressincronizar (Correção Limpa)"}
+              </button>
             </div>
             <p className="text-[9px] text-slate-500 font-bold leading-relaxed">
               Importa faturas "A vencer", "Vencida" e "Paga" como receitas.
