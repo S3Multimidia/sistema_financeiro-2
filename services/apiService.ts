@@ -22,7 +22,8 @@ const mapToApp = (t: any): Transaction => ({
     installmentNumber: t.installment_number,
     totalInstallments: t.total_installments,
     client_name: t.client_name,
-    external_url: t.external_url
+    external_url: t.external_url,
+    perfex_status: t.perfex_status
 });
 
 // Helper to map App camelCase to DB snake_case
@@ -37,6 +38,7 @@ const mapToDB = (t: Partial<Transaction>) => {
     // but good to map explicitly if we want to support camelCase input for snake_case db
     if (t.client_name !== undefined) mapped.client_name = t.client_name;
     if (t.external_url !== undefined) mapped.external_url = t.external_url;
+    if (t.perfex_status !== undefined) mapped.perfex_status = t.perfex_status;
 
     return mapped;
 };

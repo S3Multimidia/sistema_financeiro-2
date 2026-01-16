@@ -70,6 +70,7 @@ const initDb = async () => {
         user_id INTEGER REFERENCES users(id),
         external_url TEXT,
         client_name VARCHAR(255),
+        perfex_status VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -78,6 +79,7 @@ const initDb = async () => {
         try {
             await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS external_url TEXT');
             await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS client_name VARCHAR(255)');
+            await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS perfex_status VARCHAR(50)');
         } catch (e) {
             console.log('Columns already exist or error adding them:', e.message);
         }
@@ -138,6 +140,7 @@ const initDb = async () => {
         try {
             await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS external_url TEXT');
             await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS client_name VARCHAR(255)');
+            await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS perfex_status VARCHAR(50)');
         } catch (e) { console.log('Columns sync error:', e.message); }
 
         // Check if admin exists, if not create
@@ -214,15 +217,16 @@ app.post('/api/transactions/migrate', authenticateToken, async (req, res) => {
             // Relies on the unique_original_id constraint added in initDb
             await client.query(
                 `INSERT INTO transactions 
-                (description, amount, type, category, date, year, month, day, completed, installments_total, installment_number, user_id, original_id, external_url, client_name) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                (description, amount, type, category, date, year, month, day, completed, installments_total, installment_number, user_id, original_id, external_url, client_name, perfex_status) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                 ON CONFLICT (original_id) 
                 DO UPDATE SET 
                     completed = EXCLUDED.completed,
                     amount = EXCLUDED.amount,
                     external_url = EXCLUDED.external_url, 
-                    client_name = EXCLUDED.client_name`,
-                [t.description, t.amount, t.type, t.category, t.date || `${t.year}-${t.month + 1}-${t.day}`, t.year, t.month, t.day, t.completed, t.totalInstallments, t.installmentNumber, req.user.id, t.id, t.external_url, t.client_name]
+                    client_name = EXCLUDED.client_name,
+                    perfex_status = EXCLUDED.perfex_status`,
+                [t.description, t.amount, t.type, t.category, t.date || `${t.year}-${t.month + 1}-${t.day}`, t.year, t.month, t.day, t.completed, t.totalInstallments, t.installmentNumber, req.user.id, t.id, t.external_url, t.client_name, t.perfex_status]
             );
         }
 

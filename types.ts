@@ -21,6 +21,7 @@ export interface Transaction {
 
   external_url?: string;
   client_name?: string;
+  perfex_status?: string;
 }
 
 export interface MonthSummary {

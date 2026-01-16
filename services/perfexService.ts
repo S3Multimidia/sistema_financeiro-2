@@ -80,6 +80,15 @@ export const PerfexService = {
     // 3: Partial
     // 4: Overdue
     // 6: Draft
+    const STATUS_MAP: Record<string, string> = {
+      '1': 'Em Aberto',
+      '2': 'Paga',
+      '3': 'Parcial',
+      '4': 'Atrasada',
+      '5': 'Cancelada',
+      '6': 'Rascunho'
+    };
+    const perfexStatus = STATUS_MAP[String(invoice.status)] || 'Desconhecido';
 
     const isPaid = invoice.status === '2'; // Strictly Paid
 
@@ -118,7 +127,8 @@ export const PerfexService = {
       totalInstallments: 1,
       installmentNumber: 1,
       client_name: clientName,
-      external_url: externalUrl
+      external_url: externalUrl,
+      perfex_status: perfexStatus
     };
   },
 

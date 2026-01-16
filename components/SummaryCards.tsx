@@ -20,9 +20,12 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ summary, onUpdateSta
   const [tempBalance, setTempBalance] = useState(summary.previousBalance.toString());
 
   const handleSaveBalance = () => {
-    const val = parseFloat(tempBalance.replace(',', '.'));
+    // Replace commas and handle possible multiple decimals if user pastes mess
+    const clean = tempBalance.replace(/\./g, '').replace(',', '.');
+    const val = parseFloat(clean);
+
     if (!isNaN(val)) {
-      onUpdateStartingBalance(val);
+      onUpdateStartingBalance(Number(val.toFixed(2)));
     }
     setIsEditingBalance(false);
   };
@@ -35,24 +38,29 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ summary, onUpdateSta
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
             Saldo Anterior
             {!isEditingBalance && (
-              <button 
-                onClick={() => { setIsEditingBalance(true); setTempBalance(summary.previousBalance.toString()); }}
+              <button
+                onClick={() => {
+                  setIsEditingBalance(true);
+                  // Format for editing: 2 decimal places, Brazilian format
+                  setTempBalance(summary.previousBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                }}
                 className="opacity-0 group-hover:opacity-100 text-indigo-400 hover:text-indigo-600 transition-all"
               >
                 <Pencil size={10} />
               </button>
             )}
           </p>
-          
+
           {isEditingBalance ? (
             <div className="flex items-center gap-2 mt-1">
-              <input 
+              <input
                 type="text"
                 autoFocus
                 className="w-full bg-slate-50 border border-indigo-200 rounded px-2 py-0.5 text-sm font-bold text-slate-800 outline-none focus:ring-1 focus:ring-indigo-400"
                 value={tempBalance}
                 onChange={(e) => setTempBalance(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveBalance()}
+                placeholder="0,00"
               />
               <button onClick={handleSaveBalance} className="text-emerald-500 hover:bg-emerald-50 p-1 rounded transition-colors"><Check size={14} /></button>
               <button onClick={() => setIsEditingBalance(false)} className="text-rose-400 hover:bg-rose-50 p-1 rounded transition-colors"><X size={14} /></button>
@@ -99,7 +107,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ summary, onUpdateSta
         <div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Previsão Fechamento</p>
           <h3 className={`text-xl font-bold ${summary.endOfMonthBalance >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>
-             {formatCurrency(summary.endOfMonthBalance)}
+            {formatCurrency(summary.endOfMonthBalance)}
           </h3>
         </div>
         <div className="p-3 bg-indigo-50 rounded-xl text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">

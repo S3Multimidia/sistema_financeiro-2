@@ -214,6 +214,22 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                                 </span>
                               </>
                             )}
+
+                            {/* Status Badge */}
+                            {t.perfex_status && (
+                              <>
+                                <ChevronRight size={10} className="text-slate-300" />
+                                <span className={`text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded border ${t.perfex_status === 'Paga' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                  t.perfex_status === 'Atrasada' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                    t.perfex_status === 'Em Aberto' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                      t.perfex_status === 'Parcial' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                                        'bg-slate-50 text-slate-500 border-slate-200'
+                                  }`}>
+                                  {t.perfex_status}
+                                </span>
+                              </>
+                            )}
+
                             {t.external_url && (
                               <a
                                 href={t.external_url}
