@@ -11,10 +11,23 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'chave_super_secreta_padrao_s3m_2026';
 
+// Global Error Handlers to prevent crash
+process.on('uncaughtException', (err) => {
+    console.error('CRITICAL ERROR (Uncaught Exception):', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('CRITICAL ERROR (Unhandled Rejection):', reason);
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Health Check
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
 
 // Database Connection
 const pool = new Pool({
@@ -363,6 +376,8 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'dist/index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`⚡ Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log('================================================');
+    console.log(`⚡ SERVER STARTED on PORT: ${PORT}`);
+    console.log('================================================');
 });
