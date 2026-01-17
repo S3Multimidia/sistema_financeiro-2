@@ -95,6 +95,10 @@ export const ApiService = {
         const response = await api.post('/auth/login', { email, password: pass });
         if (response.data.token) {
             localStorage.setItem('s3m_auth_token', response.data.token);
+            // Cache user data including balance
+            if (response.data.user) {
+                localStorage.setItem('s3m_user_data', JSON.stringify(response.data.user));
+            }
             return response.data;
         }
         throw new Error('Falha no login');
@@ -102,14 +106,29 @@ export const ApiService = {
 
     async logout() {
         localStorage.removeItem('s3m_auth_token');
+        localStorage.removeItem('s3m_user_data');
     },
 
     async getUser() {
         const token = localStorage.getItem('s3m_auth_token');
         if (!token) return null;
-        // Idealmente teríamos uma rota /me, mas por enquanto vamos confiar no token ou decodificar (se jwt-decode)
-        // Vamos retornar um objeto mockado baseado no token guardado ou null se expirado
-        // Para MVP, assumimos logado se tem token. Melhorar depois.
+
+        // Return cached user if available for fast load
+        const cached = localStorage.getItem('s3m_user_data');
+        if (cached) return JSON.parse(cached);
+
         return { email: 'financeiro@s3m.com.br' };
+    },
+
+    async updateUserSettings(settings: { starting_balance?: number }) {
+        const response = await api.put('/users/me', settings);
+        // Update local cache
+        const cached = localStorage.getItem('s3m_user_data');
+        if (cached) {
+            const user = JSON.parse(cached);
+            if (settings.starting_balance !== undefined) user.starting_balance = settings.starting_balance;
+            localStorage.setItem('s3m_user_data', JSON.stringify(user));
+        }
+        return response.data;
     }
 };

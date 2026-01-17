@@ -47,9 +47,14 @@ const initDb = async () => {
         password_hash VARCHAR(255) NOT NULL,
         name VARCHAR(255),
         role VARCHAR(50) DEFAULT 'user',
+        starting_balance NUMERIC(15, 2) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+        try {
+            await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS starting_balance NUMERIC(15, 2) DEFAULT 0');
+        } catch (e) { console.log('Column starting_balance already exists or error:', e.message); }
 
         // Transactions Table
         await pool.query(`
@@ -173,7 +178,25 @@ app.post('/api/auth/login', async (req, res) => {
         if (!validPass) return res.status(401).json({ error: 'Senha incorreta' });
 
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                starting_balance: parseFloat(user.starting_balance || 0)
+            }
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.put('/api/users/me', authenticateToken, async (req, res) => {
+    const { starting_balance } = req.body;
+    try {
+        await pool.query('UPDATE users SET starting_balance = $1 WHERE id = $2', [starting_balance, req.user.id]);
+        res.json({ success: true, starting_balance });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

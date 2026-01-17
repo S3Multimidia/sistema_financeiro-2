@@ -78,6 +78,10 @@ const App: React.FC = () => {
     const u = await ApiService.getUser();
     setUser(u);
     if (u) {
+      // Load starting balance from server profile if available
+      if (u.starting_balance !== undefined) {
+        setAppConfig(prev => ({ ...prev, startingBalance: u.starting_balance }));
+      }
       loadFromCloud();
       handlePerfexAutoSync(); // Auto-sync on login
     }
@@ -100,18 +104,15 @@ const App: React.FC = () => {
       localStorage.setItem('perfex_token', token);
     }
 
-    try {
-      console.log('🔄 Iniciando Sincronização Automática com Perfex...');
-      // We import PerfexService dynamically to avoid circular deps if any, or just assumes it's available.
-      // Actually, importing at top level is fine in App.tsx. I need to add the import.
-      const { PerfexService } = await import('./services/perfexService'); // Dynamic import to be safe
-      await PerfexService.syncInvoicesToSystem({ url, token }, (msg) => console.log('Perfex Auto-Sync:', msg));
-
-      // Refresh transactions after sync
-      loadFromCloud();
-      console.log('✅ Sincronização Automática Perfex Concluída!');
-    } catch (e) {
-      console.error('❌ Erro na Sincronização Automática Perfex:', e);
+    if (url && token) {
+      try {
+        // We import PerfexService dynamically to avoid circular deps if any, or just assumes it's available.
+        // Actually, importing at top level is fine in App.tsx. I need to add the import.
+        const { PerfexService } = await import('./services/perfexService'); // Dynamic import to be safe
+        await PerfexService.syncInvoicesToSystem({ url, token });
+      } catch (e) {
+        console.warn('Auto-sync failed:', e);
+      }
     }
   };
 
