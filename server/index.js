@@ -53,8 +53,12 @@ const initDb = async () => {
     `);
 
         try {
-            await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS starting_balance NUMERIC(15, 2) DEFAULT 0');
-        } catch (e) { console.log('Column starting_balance already exists or error:', e.message); }
+            // Attempt standard add column (Postgres <9.6 compatible)
+            await pool.query('ALTER TABLE users ADD COLUMN starting_balance NUMERIC(15, 2) DEFAULT 0');
+        } catch (e) {
+            // Ignore error if column exists
+            // console.log('Migration note:', e.message); 
+        }
 
         // Transactions Table
         await pool.query(`
@@ -82,12 +86,14 @@ const initDb = async () => {
 
         // Add columns if not exist (Migration for existing DB)
         try {
-            await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS external_url TEXT');
-            await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS client_name VARCHAR(255)');
-            await pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS perfex_status VARCHAR(50)');
-        } catch (e) {
-            console.log('Columns already exist or error adding them:', e.message);
-        }
+            await pool.query('ALTER TABLE transactions ADD COLUMN external_url TEXT');
+        } catch (e) { }
+        try {
+            await pool.query('ALTER TABLE transactions ADD COLUMN client_name VARCHAR(255)');
+        } catch (e) { }
+        try {
+            await pool.query('ALTER TABLE transactions ADD COLUMN perfex_status VARCHAR(50)');
+        } catch (e) { }
 
         // 1. Robust Deduplication (CTE to keep only the latest entry for each original_id)
         // This removes ALL duplicates leaving only one (the one with highest ID)
