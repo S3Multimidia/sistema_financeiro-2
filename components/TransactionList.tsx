@@ -175,19 +175,23 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                   {dayTrans.map(t => (
                     <div key={t.id} className={`group flex items-center justify-between p-3 rounded-xl border transition-all bg-white ${t.type === 'appointment' ? (t.completed ? 'border-slate-100 bg-slate-50 opacity-60' : 'border-indigo-100 bg-indigo-50/30 shadow-sm shadow-indigo-500/5') : 'border-slate-100 hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200 hover:-translate-y-0.5'}`}>
                       <div className="flex items-start gap-3 overflow-hidden">
-                        {t.type === 'appointment' ? (
+                        <div className="flex items-center gap-3 shrink-0">
                           <button
                             onClick={() => onToggleComplete?.(t.id)}
-                            className={`mt-1 transition-colors shrink-0 ${t.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-indigo-500'}`}
+                            className={`transition-colors shrink-0 ${t.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-500'}`}
+                            title={t.completed ? "Marcar como não pago" : "Marcar como pago"}
                           >
-                            {t.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                            {t.completed ? <CheckCircle2 size={22} className="fill-emerald-50" /> : <Circle size={22} />}
                           </button>
-                        ) : (
-                          <div className={`mt-1 p-2 rounded-xl shrink-0 shadow-sm ${t.type === 'income' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
-                            }`}>
-                            {t.type === 'income' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                          </div>
-                        )}
+
+                          {/* Icon Type (Visual only now) */}
+                          {t.type !== 'appointment' && (
+                            <div className={`p-2 rounded-xl shrink-0 shadow-sm ${t.type === 'income' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
+                              }`}>
+                              {t.type === 'income' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                            </div>
+                          )}
+                        </div>
 
                         <div className="min-w-0">
                           <p className={`font-bold text-sm truncate leading-tight ${t.type === 'appointment' ? (t.completed ? 'text-slate-400 line-through' : 'text-indigo-900 italic font-black') : 'text-slate-800'}`}>
