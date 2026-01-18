@@ -30,7 +30,7 @@ const mapToDB = (t: Partial<Transaction>) => {
     if (t.isFixed !== undefined) mapped.is_fixed = t.isFixed;
     if (t.installmentId !== undefined) mapped.installment_id = t.installmentId;
     if (t.installmentNumber !== undefined) mapped.installment_number = t.installmentNumber;
-    if (t.totalInstallments !== undefined) mapped.total_installments = t.totalInstallments;
+    if (t.totalInstallments !== undefined) mapped.installments_total = t.totalInstallments;
     // client_name/external_url/perfex_status match DB columns
 
     // Clean up frontend-only props
