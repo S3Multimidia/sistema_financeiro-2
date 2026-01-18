@@ -37,11 +37,14 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ summary, onUpdateSta
       {/* Income */}
       <div className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300">
         <div>
-          <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Receitas (Mês)</p>
+          <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Receitas Realizadas</p>
           <div className="flex items-baseline gap-1">
-            <h3 className="text-xl font-bold text-emerald-600">{formatCurrency(summary.totalIncome)}</h3>
+            <h3 className="text-xl font-bold text-emerald-600">{formatCurrency(summary.realizedIncome)}</h3>
             <TrendingUp size={12} className="text-emerald-400" />
           </div>
+          <p className="text-[9px] text-slate-400 mt-1">
+            Previsto: {formatCurrency(summary.totalIncome)}
+          </p>
         </div>
         <div className="p-3 bg-emerald-50 rounded-xl text-emerald-500 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
           <ArrowUpRight size={20} strokeWidth={2.5} />
@@ -51,11 +54,14 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ summary, onUpdateSta
       {/* Expense */}
       <div className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300">
         <div>
-          <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Despesas (Mês)</p>
+          <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Despesas Realizadas</p>
           <div className="flex items-baseline gap-1">
-            <h3 className="text-xl font-bold text-rose-600">{formatCurrency(summary.totalExpense)}</h3>
+            <h3 className="text-xl font-bold text-rose-600">{formatCurrency(summary.realizedExpense)}</h3>
             <TrendingDown size={12} className="text-rose-400" />
           </div>
+          <p className="text-[9px] text-slate-400 mt-1">
+            Previsto: {formatCurrency(summary.totalExpense)}
+          </p>
         </div>
         <div className="p-3 bg-rose-50 rounded-xl text-rose-500 group-hover:bg-rose-600 group-hover:text-white transition-colors duration-300">
           <ArrowDownRight size={20} strokeWidth={2.5} />

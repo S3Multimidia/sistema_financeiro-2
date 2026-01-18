@@ -188,18 +188,23 @@ const App: React.FC = () => {
 
   const summary = useMemo(() => {
     const currentMonthTrans = transactions.filter(t => t.month === currentMonth && t.year === currentYear);
+
+    // Projected (All)
     const totalIncome = currentMonthTrans.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
     const totalExpense = currentMonthTrans.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
-    const prevTrans = transactions.filter(t => t.year < currentYear || (t.year === currentYear && t.month < currentMonth));
-    const prevIncome = prevTrans.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-    const prevExpense = prevTrans.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-    const accumulatedPrevBalance = prevIncome - prevExpense;
+
+    // Realized (Completed only)
+    const realizedIncome = currentMonthTrans.filter(t => t.type === 'income' && t.completed).reduce((acc, curr) => acc + curr.amount, 0);
+    const realizedExpense = currentMonthTrans.filter(t => t.type === 'expense' && t.completed).reduce((acc, curr) => acc + curr.amount, 0);
+
     return {
-      previousBalance: accumulatedPrevBalance,
+      previousBalance: 0, // Disabled as requested (Manual 'Saldo Inicial' transaction used instead)
       totalIncome,
       totalExpense,
-      currentBalance: accumulatedPrevBalance + totalIncome - totalExpense,
-      endOfMonthBalance: accumulatedPrevBalance + totalIncome - totalExpense,
+      realizedIncome,
+      realizedExpense,
+      currentBalance: realizedIncome - realizedExpense,
+      endOfMonthBalance: totalIncome - totalExpense,
     };
   }, [transactions, currentMonth, currentYear]);
 

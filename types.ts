@@ -28,6 +28,8 @@ export interface MonthSummary {
   previousBalance: number;
   totalIncome: number;
   totalExpense: number;
+  realizedIncome: number;
+  realizedExpense: number;
   currentBalance: number;
   endOfMonthBalance: number;
 }
