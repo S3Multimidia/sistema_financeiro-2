@@ -1,12 +1,9 @@
-import api from './api';
+import { supabase } from './supabaseClient';
 import { Transaction } from '../types';
 
 // Helper to map DB snake_case to App camelCase
-// Mantemos a mesma lógica pois o banco Postgres usa snake_case
-// Helper to map DB snake_case to App camelCase
-// Mantemos a mesma lógica pois o banco Postgres usa snake_case
 const mapToApp = (t: any): Transaction => ({
-    id: t.id ? t.id.toString() : Math.random().toString(), // Ensure ID is string
+    id: t.id,
     day: t.day,
     month: t.month,
     year: t.year,
@@ -34,11 +31,14 @@ const mapToDB = (t: Partial<Transaction>) => {
     if (t.installmentId !== undefined) mapped.installment_id = t.installmentId;
     if (t.installmentNumber !== undefined) mapped.installment_number = t.installmentNumber;
     if (t.totalInstallments !== undefined) mapped.total_installments = t.totalInstallments;
-    // client_name/external_url matches DB column names, so no change needed, 
-    // but good to map explicitly if we want to support camelCase input for snake_case db
-    if (t.client_name !== undefined) mapped.client_name = t.client_name;
-    if (t.external_url !== undefined) mapped.external_url = t.external_url;
-    if (t.perfex_status !== undefined) mapped.perfex_status = t.perfex_status;
+    // client_name/external_url/perfex_status match DB columns
+
+    // Clean up frontend-only props
+    delete mapped.subCategory;
+    delete mapped.isFixed;
+    delete mapped.installmentId;
+    delete mapped.installmentNumber;
+    delete mapped.totalInstallments;
 
     return mapped;
 };
@@ -47,88 +47,140 @@ export const ApiService = {
     // --- Transactions ---
 
     async fetchTransactions() {
-        const response = await api.get('/transactions');
-        return (response.data || []).map(mapToApp);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { data, error } = await supabase
+            .from('transactions')
+            .select('*')
+            .order('year', { ascending: false })
+            .order('month', { ascending: false })
+            .order('day', { ascending: false });
+
+        if (error) throw error;
+        return (data || []).map(mapToApp);
     },
 
     async addTransaction(transaction: Omit<Transaction, 'id'>) {
-        // O Backend espera campos snake_case ou lida com eles. Como definimos colunas snake_case no INSERT lá, 
-        // e o mapToDB converte para snake_case, vamos enviar o objeto mapeado.
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        // Handle temporary ID if passed (remove custom ID generation from frontend usually, let DB generate UUID)
         const dbData = mapToDB(transaction);
-        const response = await api.post('/transactions', dbData);
-        return mapToApp(response.data);
+
+        const { data, error } = await supabase
+            .from('transactions')
+            .insert([{ ...dbData, user_id: user.id }]) // Supabase RLS handles user_id securily if policy allows, but good to be explicit
+            .select()
+            .single();
+
+        if (error) throw error;
+        return mapToApp(data);
     },
 
     async updateTransaction(id: string, updates: Partial<Transaction>) {
         const dbUpdates = mapToDB(updates);
-        const response = await api.put(`/transactions/${id}`, dbUpdates);
-        return mapToApp(response.data);
+        const { data, error } = await supabase
+            .from('transactions')
+            .update(dbUpdates)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return mapToApp(data);
     },
 
     async deleteTransaction(id: string) {
-        await api.delete(`/transactions/${id}`);
+        const { error } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
     },
 
     async clearAllTransactions() {
-        // Since we don't have a direct /transactions/all DELETE endpoint in the backend code I saw,
-        // we might need to implement it or use a loop.
-        // Wait, I saw `app.post('/api/transactions/migrate')`.
-        // I'll assume we can add a delete all endpoint or just iterate. 
-        // BUT better: I can add `app.delete('/api/transactions/all')` if I could edit backend easily and redeploy.
-        // However, the backend file `server/index.js` acts on `d:\Sistema Financeiro\server\index.js`.
-        // I CAN edit `server/index.js`!
-        // So I will first edit the backend to include a logical clear all route, OR just use the loop here.
-        // Backend edit is cleaner.
-        // But for now, to avoid restarting server issues if user is running it separately (though I can restart it?),
-        // I'll check if I can just implement it in backend.
-        // For now, let's just make a call to a new endpoint I'll add: DELETE /api/transactions/reset
-        await api.delete('/transactions/reset');
+        // Caution: Deletes ALL user transactions
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('user_id', user.id);
+        // Note: RLS Usually prevents deleting others, but explicit filter is safer
+
+        if (error) throw error;
     },
 
     async syncLocalDataToCloud(transactions: Transaction[]) {
-        const response = await api.post('/transactions/migrate', { transactions });
-        return response.data;
+        // Bulk Insert/Upsert logic
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const dbTransactions = transactions.map(t => ({
+            ...mapToDB(t),
+            user_id: user.id
+            // If we have 'id' (UUID) we keep it, if not (legacy number), we might let DB generate NEW or map existing.
+            // For migration, we usually rely on 'original_id' for dedup.
+        }));
+
+        const { data, error } = await supabase
+            .from('transactions')
+            .upsert(dbTransactions, { onConflict: 'original_id', ignoreDuplicates: false }) // Use original_id for sync logic
+            .select();
+
+        if (error) throw error;
+        return data;
     },
 
-    // --- Auth (Opicional aqui, mas útil) ---
+    // --- Auth ---
     async login(email: string, pass: string) {
-        const response = await api.post('/auth/login', { email, password: pass });
-        if (response.data.token) {
-            localStorage.setItem('s3m_auth_token', response.data.token);
-            // Cache user data including balance
-            if (response.data.user) {
-                localStorage.setItem('s3m_user_data', JSON.stringify(response.data.user));
-            }
-            return response.data;
-        }
-        throw new Error('Falha no login');
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password: pass,
+        });
+
+        if (error) throw error;
+        return {
+            user: data.user,
+            token: data.session?.access_token
+        };
     },
 
     async logout() {
-        localStorage.removeItem('s3m_auth_token');
+        await supabase.auth.signOut();
         localStorage.removeItem('s3m_user_data');
     },
 
     async getUser() {
-        const token = localStorage.getItem('s3m_auth_token');
-        if (!token) return null;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
 
-        // Return cached user if available for fast load
-        const cached = localStorage.getItem('s3m_user_data');
-        if (cached) return JSON.parse(cached);
+        // Fetch additional profile data
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('starting_balance, gemini_api_key')
+            .eq('id', user.id)
+            .single();
 
-        return { email: 'financeiro@s3m.com.br' };
+        return {
+            ...user,
+            starting_balance: profile?.starting_balance || 0,
+            gemini_api_key: profile?.gemini_api_key
+        };
     },
 
     async updateUserSettings(settings: { starting_balance?: number }) {
-        const response = await api.put('/users/me', settings);
-        // Update local cache
-        const cached = localStorage.getItem('s3m_user_data');
-        if (cached) {
-            const user = JSON.parse(cached);
-            if (settings.starting_balance !== undefined) user.starting_balance = settings.starting_balance;
-            localStorage.setItem('s3m_user_data', JSON.stringify(user));
-        }
-        return response.data;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { error } = await supabase
+            .from('profiles')
+            .upsert({ id: user.id, ...settings });
+
+        if (error) throw error;
+        return { success: true };
     }
 };

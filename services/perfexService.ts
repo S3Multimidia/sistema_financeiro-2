@@ -1,4 +1,5 @@
 import api from './api';
+import { ApiService } from './apiService';
 
 export interface PerfexConfig {
   url: string;
@@ -213,7 +214,9 @@ export const PerfexService = {
       const batch = transactions.slice(i, i + BATCH_SIZE);
       if (progressCallback) progressCallback(`Sincronizando lote ${Math.ceil((i + 1) / BATCH_SIZE)} de ${Math.ceil(transactions.length / BATCH_SIZE)}...`);
 
-      await api.post('/transactions/migrate', { transactions: batch });
+      // await api.post('/transactions/migrate', { transactions: batch });
+      // Now using Supabase direct sync via ApiService
+      await ApiService.syncLocalDataToCloud(batch);
       processed += batch.length;
     }
 
