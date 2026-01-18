@@ -156,7 +156,9 @@ const App: React.FC = () => {
       } else if (action === 'delete') {
         await ApiService.deleteTransaction(payload);
       }
-      setCloudStatus('ok');
+
+      // Force reload to ensure we have real IDs and consistent state
+      await loadFromCloud();
     } catch (e) {
       console.error("API Sync Error:", e);
       setCloudStatus('error');
