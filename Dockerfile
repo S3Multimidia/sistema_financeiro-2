@@ -20,6 +20,9 @@ RUN npm run build
 # ========== STAGE 2: Setup Backend ==========
 FROM node:20-alpine
 
+# Install wget for healthcheck if needed (usually in alpine, but ensuring)
+# RUN apk add --no-cache wget
+
 WORKDIR /app
 
 # Copia o package.json do Backend
