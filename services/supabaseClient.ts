@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 const DEFAULT_URL = 'https://ujhdduyljjdkdblhtqic.supabase.co';
 const DEFAULT_KEY = 'sb_publishable_H3WXUMpY4aHZiAXaxOf1dA_XQZl4-Qu';
 
-// Get from localStorage or use default
-const supabaseUrl = localStorage.getItem('supabase_url') || DEFAULT_URL;
-const supabaseKey = localStorage.getItem('supabase_key') || DEFAULT_KEY;
+// Get from env (Vite/Vercel), localStorage or use default
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || localStorage.getItem('supabase_url') || DEFAULT_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || localStorage.getItem('supabase_key') || DEFAULT_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
