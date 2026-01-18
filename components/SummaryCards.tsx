@@ -37,18 +37,6 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ summary, onUpdateSta
         <div className="flex-1">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
             Saldo Anterior
-            {!isEditingBalance && (
-              <button
-                onClick={() => {
-                  setIsEditingBalance(true);
-                  // Format for editing: 2 decimal places, Brazilian format
-                  setTempBalance(summary.previousBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                }}
-                className="opacity-0 group-hover:opacity-100 text-indigo-400 hover:text-indigo-600 transition-all"
-              >
-                <Pencil size={10} />
-              </button>
-            )}
           </p>
 
           {isEditingBalance ? (

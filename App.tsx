@@ -175,30 +175,8 @@ const App: React.FC = () => {
   }, [transactions, categoriesMap, appConfig]);
 
   const handleUpdateStartingBalance = async (value: number) => {
-    // New Logic: Create a transaction on Day 1 of current month
-    const newVal = isNaN(value) ? 0 : value;
-
-    // Optimistic Update: Add/Update in local state
-    const transactionData = {
-      description: 'Saldo Inicial',
-      category: 'Ajuste',
-      type: 'income' as const,
-      amount: newVal,
-      day: 1,
-      month: currentMonth,
-      year: currentYear,
-      subCategory: 'Sistema',
-      completed: true,
-      acknowledged: true
-    };
-
-    try {
-      const saved = await ApiService.upsertInitialTransaction(transactionData);
-      // Refresh all transactions to ensure consistency
-      loadFromCloud();
-    } catch (e) {
-      console.error("Failed to save starting balance transaction:", e);
-    }
+    // Manual mode only now. No auto-transaction.
+    console.log("Starting balance manual update disabled.");
   };
 
   const totalOverallBalance = useMemo(() => {

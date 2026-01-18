@@ -115,7 +115,8 @@ export const PerfexService = {
     const externalUrl = (invoice.id && invoice.hash) ? `${baseUrl}/invoice/${invoice.id}/${invoice.hash}` : undefined;
 
     return {
-      id: `perfex_inv_${invoice.id}`, // Backend expects 'id' for the original_id field during migration
+      id: `perfex_inv_${invoice.id}`, // Frontend uses this temporarily
+      original_id: `perfex_inv_${invoice.id}`, // CRITICAL for SQL Upsert (on conflict constraint)
       description: `Fatura Perfex #${invoice.number} - ${clientName}`,
       amount: parseFloat(invoice.total),
       type: 'income',

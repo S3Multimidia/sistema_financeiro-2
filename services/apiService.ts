@@ -32,6 +32,8 @@ const mapToDB = (t: Partial<Transaction>) => {
     if (t.installmentNumber !== undefined) mapped.installment_number = t.installmentNumber;
     if (t.totalInstallments !== undefined) mapped.installments_total = t.totalInstallments;
     // client_name/external_url/perfex_status match DB columns
+    // Ensure original_id is passed if present (critical for duplicate prevention)
+    if ((t as any).original_id) mapped.original_id = (t as any).original_id;
 
     // Clean up frontend-only props
     delete mapped.subCategory;
