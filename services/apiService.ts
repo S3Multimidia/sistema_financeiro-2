@@ -114,6 +114,44 @@ export const ApiService = {
         if (error) throw error;
     },
 
+    async upsertInitialTransaction(transaction: Omit<Transaction, 'id'>) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        // Check for existing "Saldo Inicial" in this month/year for this user
+        const { data: existing } = await supabase
+            .from('transactions')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('description', 'Saldo Inicial')
+            .eq('month', transaction.month)
+            .eq('year', transaction.year)
+            .single();
+
+        const dbData = mapToDB(transaction);
+
+        if (existing) {
+            // Update
+            const { data, error } = await supabase
+                .from('transactions')
+                .update(dbData)
+                .eq('id', existing.id)
+                .select()
+                .single();
+            if (error) throw error;
+            return mapToApp(data);
+        } else {
+            // Insert
+            const { data, error } = await supabase
+                .from('transactions')
+                .insert([{ ...dbData, user_id: user.id }])
+                .select()
+                .single();
+            if (error) throw error;
+            return mapToApp(data);
+        }
+    },
+
     async syncLocalDataToCloud(transactions: Transaction[]) {
         // Bulk Insert/Upsert logic
         const { data: { user } } = await supabase.auth.getUser();

@@ -54,7 +54,7 @@ const App: React.FC = () => {
 
   const [appConfig, setAppConfig] = useState(() => {
     const saved = localStorage.getItem(CONFIG_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : { appName: 'FINANCEIRO PRO 2026', startingBalance: INITIAL_PREVIOUS_BALANCE };
+    return saved ? JSON.parse(saved) : { appName: 'FINANCEIRO PRO 2026' };
   });
 
   const [currentView, setCurrentView] = useState<'dashboard' | 'yearly'>('dashboard');
@@ -175,23 +175,38 @@ const App: React.FC = () => {
   }, [transactions, categoriesMap, appConfig]);
 
   const handleUpdateStartingBalance = async (value: number) => {
+    // New Logic: Create a transaction on Day 1 of current month
     const newVal = isNaN(value) ? 0 : value;
-    setAppConfig(prev => ({ ...prev, startingBalance: newVal }));
 
-    // Persist to Supabase
+    // Optimistic Update: Add/Update in local state
+    const transactionData = {
+      description: 'Saldo Inicial',
+      category: 'Ajuste',
+      type: 'income' as const,
+      amount: newVal,
+      day: 1,
+      month: currentMonth,
+      year: currentYear,
+      subCategory: 'Sistema',
+      completed: true,
+      acknowledged: true
+    };
+
     try {
-      await ApiService.updateUserSettings({ starting_balance: newVal });
+      const saved = await ApiService.upsertInitialTransaction(transactionData);
+      // Refresh all transactions to ensure consistency
+      loadFromCloud();
     } catch (e) {
-      console.error("Failed to save starting balance:", e);
-      // Optional: revert state or show notification 
+      console.error("Failed to save starting balance transaction:", e);
     }
   };
 
   const totalOverallBalance = useMemo(() => {
     const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
     const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-    return (Number(appConfig.startingBalance) || 0) + income - expense;
-  }, [transactions, appConfig.startingBalance]);
+    // Explicitly removed startingBalance from appConfig usage here as it's now a transaction
+    return income - expense;
+  }, [transactions]);
 
   const summary = useMemo(() => {
     const currentMonthTrans = transactions.filter(t => t.month === currentMonth && t.year === currentYear);
@@ -200,7 +215,7 @@ const App: React.FC = () => {
     const prevTrans = transactions.filter(t => t.year < currentYear || (t.year === currentYear && t.month < currentMonth));
     const prevIncome = prevTrans.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
     const prevExpense = prevTrans.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-    const accumulatedPrevBalance = (Number(appConfig.startingBalance) || 0) + prevIncome - prevExpense;
+    const accumulatedPrevBalance = prevIncome - prevExpense;
     return {
       previousBalance: accumulatedPrevBalance,
       totalIncome,
@@ -208,7 +223,7 @@ const App: React.FC = () => {
       currentBalance: accumulatedPrevBalance + totalIncome - totalExpense,
       endOfMonthBalance: accumulatedPrevBalance + totalIncome - totalExpense,
     };
-  }, [transactions, currentMonth, currentYear, appConfig.startingBalance]);
+  }, [transactions, currentMonth, currentYear]);
 
   const handleAddTransaction = (tData: Omit<Transaction, 'id'>, options: { installments: number, isFixed: boolean }) => {
     // Logic for new transactions
