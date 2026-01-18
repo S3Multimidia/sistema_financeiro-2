@@ -31,7 +31,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ summary, onUpdateSta
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       {/* Saldo Anterior Removed as requested */}
 
       {/* Income */}
@@ -68,6 +68,22 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ summary, onUpdateSta
         </div>
       </div>
 
+      {/* Current Balance (Realized) - NEW CARD */}
+      <div className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+        <div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo do Dia (Realizado)</p>
+          <h3 className={`text-xl font-bold ${summary.currentBalance >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+            {formatCurrency(summary.currentBalance)}
+          </h3>
+          <p className="text-[9px] text-slate-400 mt-1">
+            Em Caixa
+          </p>
+        </div>
+        <div className="p-3 bg-indigo-50 rounded-xl text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
+          <Wallet size={20} strokeWidth={2.5} />
+        </div>
+      </div>
+
       {/* End of Month Balance */}
       <div className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300">
         <div>
@@ -75,8 +91,11 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ summary, onUpdateSta
           <h3 className={`text-xl font-bold ${summary.endOfMonthBalance >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>
             {formatCurrency(summary.endOfMonthBalance)}
           </h3>
+          <p className="text-[9px] text-slate-400 mt-1">
+            Projetado (Mês)
+          </p>
         </div>
-        <div className="p-3 bg-indigo-50 rounded-xl text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
+        <div className="p-3 bg-slate-100 rounded-xl text-slate-500 group-hover:bg-slate-800 group-hover:text-white transition-colors duration-300">
           <CalendarCheck size={20} strokeWidth={2.5} />
         </div>
       </div>
