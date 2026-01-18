@@ -174,8 +174,17 @@ const App: React.FC = () => {
     localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(appConfig));
   }, [transactions, categoriesMap, appConfig]);
 
-  const handleUpdateStartingBalance = (value: number) => {
-    setAppConfig(prev => ({ ...prev, startingBalance: isNaN(value) ? 0 : value }));
+  const handleUpdateStartingBalance = async (value: number) => {
+    const newVal = isNaN(value) ? 0 : value;
+    setAppConfig(prev => ({ ...prev, startingBalance: newVal }));
+
+    // Persist to Supabase
+    try {
+      await ApiService.updateUserSettings({ starting_balance: newVal });
+    } catch (e) {
+      console.error("Failed to save starting balance:", e);
+      // Optional: revert state or show notification 
+    }
   };
 
   const totalOverallBalance = useMemo(() => {
