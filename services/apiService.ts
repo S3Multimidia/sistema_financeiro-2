@@ -119,12 +119,20 @@ export const ApiService = {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
-        const dbTransactions = transactions.map(t => ({
-            ...mapToDB(t),
-            user_id: user.id
-            // If we have 'id' (UUID) we keep it, if not (legacy number), we might let DB generate NEW or map existing.
-            // For migration, we usually rely on 'original_id' for dedup.
-        }));
+        const dbTransactions = transactions.map(t => {
+            const mapped = {
+                ...mapToDB(t),
+                user_id: user.id
+            };
+
+            // Remove 'id' if it's not a valid UUID (e.g. Perfex string IDs)
+            // Postgres uuid type is strict.
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (mapped.id && !uuidRegex.test(mapped.id)) {
+                delete mapped.id;
+            }
+            return mapped;
+        });
 
         const { data, error } = await supabase
             .from('transactions')
