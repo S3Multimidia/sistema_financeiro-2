@@ -173,7 +173,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
                 <div className="space-y-2">
                   {dayTrans.map(t => (
-                    <div key={t.id} className={`group flex items-center justify-between p-3 rounded-xl border transition-all bg-white ${t.type === 'appointment' ? (t.completed ? 'border-slate-100 bg-slate-50 opacity-60' : 'border-indigo-100 bg-indigo-50/30 shadow-sm shadow-indigo-500/5') : 'border-slate-100 hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200 hover:-translate-y-0.5'}`}>
+                    <div key={t.id} className={`group flex items-center justify-between p-3 rounded-xl border transition-all ${t.type === 'appointment' ? (t.completed ? 'border-slate-100 bg-slate-50 opacity-60' : 'border-indigo-100 bg-indigo-50/30 shadow-sm shadow-indigo-500/5') : (t.type === 'income' && t.completed ? 'bg-blue-50 border-blue-100 hover:shadow-lg hover:shadow-blue-200/50 hover:border-blue-200 hover:-translate-y-0.5' : 'bg-white border-slate-100 hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200 hover:-translate-y-0.5')}`}>
                       <div className="flex items-start gap-3 overflow-hidden">
                         <div className="flex items-center gap-3 shrink-0">
                           <button

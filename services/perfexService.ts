@@ -189,7 +189,8 @@ export const PerfexService = {
       const invoiceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
 
       // Return if invoice date is equal or greater than start of current month
-      return invoiceDate >= startOfCurrentMonth;
+      // AND exclude Cancelled invoices (Status 5)
+      return invoiceDate >= startOfCurrentMonth && inv.status !== '5';
     });
 
     if (progressCallback) progressCallback(`Filtrado: ${filteredInvoices.length} faturas (Mês Atual + Futuro).`);
