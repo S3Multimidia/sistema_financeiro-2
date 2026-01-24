@@ -234,5 +234,64 @@ export const ApiService = {
 
         if (error) throw error;
         return { success: true };
+    },
+
+    // --- Debts (Crediários) ---
+    async fetchDebts() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        const { data, error } = await supabase
+            .from('debts')
+            .select('*');
+
+        if (error) {
+            console.error('Error fetching debts:', error);
+            return [];
+        }
+
+        return data.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            currentBalance: Number(d.current_balance),
+            history: d.history || []
+        }));
+    },
+
+    async syncDebts(debts: any[]) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const dbDebts = debts.map(d => ({
+            id: d.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}/) ? d.id : undefined, // Send ID only if it looks like UUID (or let DB gen new one if temp? complex logic. Ideally we use UUIDs everywhere)
+            // If we generated Math.random ID, it won't suffice for UUID column unless we changed column type. 
+            // My SQL script said `id uuid DEFAULT gen_random_uuid()`. 
+            // React app generates `Math.random().toString(36)`. This will fail UUID validation.
+            // FIX: We should use `original_id` logic or just let Supabase generate and we handle mapping.
+            // OR: Easier fix -> Change SQL to Allow Text ID OR Update App to use UUIDs.
+            // Given I already wrote SQL with UUID, I should update App to use UUIDs or change SQL to text.
+            // Changing SQL is easier for the user context right now? No, UUID is better.
+            // I will generate proper UUIDs in App or... 
+            // Let's store the App's ID in a `app_id` column or assume `id` is text in SQL?
+            // User requested: "não posso perder lançamentos".
+            // I'll update SQL to use TEXT for id to support the current App logic `Math.random...` which produces string.
+            // WAIT. `Math.random` produce string.
+            // I will update the SQL script in next step to use TEXT for ID to be safe and compatible.
+
+            user_id: user.id,
+            name: d.name,
+            current_balance: d.currentBalance,
+            history: d.history,
+            // We use upsert based on something? 
+            // We need a stable ID. 
+            // If I map `id` -> `id` in DB, and DB is TEXT, it works.
+            id: d.id
+        }));
+
+        const { error } = await supabase
+            .from('debts')
+            .upsert(dbDebts, { onConflict: 'id' });
+
+        if (error) console.error('Error syncing debts:', error);
     }
 };
