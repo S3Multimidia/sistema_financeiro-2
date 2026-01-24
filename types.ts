@@ -23,11 +23,12 @@ export interface Transaction {
   client_name?: string;
   perfex_status?: string;
 
-  // Credit Card / Subscription Link
+  // Credit Card / Subscription / Debt Link
   isCreditCardBill?: boolean;
   relatedCardId?: string;
   isSubscription?: boolean;
   subscriptionId?: string;
+  debtId?: string;
 }
 
 export interface CreditCard {
@@ -69,6 +70,7 @@ export interface DebtTransaction {
   description: string;
   amount: number;
   type: 'purchase' | 'payment'; // purchase = increase debt, payment = decrease debt
+  linkedTransactionId?: string;
 }
 
 export interface DebtAccount {

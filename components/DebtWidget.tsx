@@ -5,13 +5,13 @@ import { DebtAccount, DebtTransaction } from '../types';
 interface DebtWidgetProps {
     debts: DebtAccount[];
     setDebts: React.Dispatch<React.SetStateAction<DebtAccount[]>>;
-    onPay: (debtId: string, amount: number, accountName: string) => void;
+    onSchedulePay: (debtId: string, amount: number, accountName: string, date: Date) => void;
 }
 
 export const DebtWidget: React.FC<DebtWidgetProps> = ({
     debts,
     setDebts,
-    onPay
+    onSchedulePay
 }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -22,6 +22,7 @@ export const DebtWidget: React.FC<DebtWidgetProps> = ({
     const [actionType, setActionType] = useState<'purchase' | 'payment' | null>(null);
     const [actionAmount, setActionAmount] = useState('');
     const [actionDesc, setActionDesc] = useState('');
+    const [actionDate, setActionDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
     const handleAddDebt = () => {
         if (!newDebtName) return;
@@ -51,26 +52,35 @@ export const DebtWidget: React.FC<DebtWidgetProps> = ({
         const debt = debts.find(d => d.id === actionDebtId);
         if (!debt) return;
 
+        if (actionType === 'payment') {
+            // Schedule payment (creates pending expense in main app)
+            // Does NOT decrease debt yet.
+            const [y, m, d] = actionDate.split('-').map(Number);
+            onSchedulePay(debt.id, amount, debt.name, new Date(y, m - 1, d)); // Pass selected date
+
+            // Reset and close
+            setActionDebtId(null);
+            setActionType(null);
+            setActionAmount('');
+            setActionDesc('');
+            setActionDate(new Date().toISOString().slice(0, 10)); // Reset date
+            return;
+        }
+
+        // Purchase Logic (Immediate Increase)
         const newTrans: DebtTransaction = {
             id: Math.random().toString(36).substr(2, 9),
-            date: new Date().toISOString(),
-            description: actionDesc || (actionType === 'purchase' ? 'Nova Compra' : 'Pagamento'),
+            date: actionDate, // Use selected date for purchase too
+            description: actionDesc || 'Nova Compra',
             amount: amount,
-            type: actionType
+            type: 'purchase'
         };
-
-        if (actionType === 'payment') {
-            // Trigger external payment (creates expense in main app)
-            onPay(debt.id, amount, debt.name);
-        }
 
         setDebts(prev => prev.map(d => {
             if (d.id === actionDebtId) {
                 return {
                     ...d,
-                    currentBalance: actionType === 'purchase'
-                        ? d.currentBalance + amount
-                        : d.currentBalance - amount,
+                    currentBalance: d.currentBalance + amount,
                     history: [newTrans, ...d.history]
                 };
             }
@@ -82,6 +92,7 @@ export const DebtWidget: React.FC<DebtWidgetProps> = ({
         setActionType(null);
         setActionAmount('');
         setActionDesc('');
+        setActionDate(new Date().toISOString().slice(0, 10)); // Reset date
     };
 
     return (
