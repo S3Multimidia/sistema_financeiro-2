@@ -63,6 +63,22 @@ export interface Subscription {
   lastGeneratedYear?: number;
 }
 
+export interface DebtTransaction {
+  id: string;
+  date: string; // ISO string
+  description: string;
+  amount: number;
+  type: 'purchase' | 'payment'; // purchase = increase debt, payment = decrease debt
+}
+
+export interface DebtAccount {
+  id: string;
+  name: string;
+  totalLimit?: number; // Optional target/limit
+  currentBalance: number; // Amount owed
+  history: DebtTransaction[];
+}
+
 export interface MonthSummary {
   previousBalance: number;
   totalIncome: number;
