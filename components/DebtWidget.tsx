@@ -211,6 +211,13 @@ export const DebtWidget: React.FC<DebtWidgetProps> = ({
                         </h4>
 
                         <input
+                            type="date"
+                            className="w-full text-xs font-bold bg-slate-900/50 border border-white/10 rounded p-3 text-white mb-2"
+                            value={actionDate}
+                            onChange={e => setActionDate(e.target.value)}
+                        />
+
+                        <input
                             className="w-full text-xs bg-slate-900/50 border border-white/10 rounded p-3 text-white mb-2"
                             placeholder="Descrição (ex: Cimento / Pagamento Maio)"
                             value={actionDesc}

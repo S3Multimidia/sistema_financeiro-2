@@ -551,7 +551,41 @@ const App: React.FC = () => {
                         onMove={(id, d) => updateTransactions('update', { id, updates: { day: d } }, prev => prev.map(t => t.id === id ? { ...t, day: d } : t))}
                         onToggleComplete={id => {
                           const t = transactions.find(tx => tx.id === id);
-                          if (t) updateTransactions('update', { id, updates: { completed: !t.completed } }, prev => prev.map(tx => tx.id === id ? { ...tx, completed: !tx.completed } : tx));
+                          if (t) {
+                            const newCompletedStatus = !t.completed;
+
+                            // Debt Logic Integration
+                            if (t.debtId) {
+                              const debt = debts.find(d => d.id === t.debtId);
+                              if (debt) {
+                                if (newCompletedStatus) {
+                                  // Paying off -> Decrease Debt
+                                  const paymentTrans: DebtTransaction = {
+                                    id: Math.random().toString(36).substr(2, 9),
+                                    date: new Date().toISOString(),
+                                    description: 'Pagamento via Extrato',
+                                    amount: t.amount,
+                                    type: 'payment',
+                                    linkedTransactionId: t.id
+                                  };
+                                  setDebts(prev => prev.map(d => d.id === t.debtId ? {
+                                    ...d,
+                                    currentBalance: d.currentBalance - t.amount,
+                                    history: [paymentTrans, ...d.history]
+                                  } : d));
+                                } else {
+                                  // Reverting payment -> Increase Debt back
+                                  setDebts(prev => prev.map(d => d.id === t.debtId ? {
+                                    ...d,
+                                    currentBalance: d.currentBalance + t.amount,
+                                    history: d.history.filter(h => h.linkedTransactionId !== t.id)
+                                  } : d));
+                                }
+                              }
+                            }
+
+                            updateTransactions('update', { id, updates: { completed: newCompletedStatus } }, prev => prev.map(tx => tx.id === id ? { ...tx, completed: newCompletedStatus } : tx));
+                          }
                         }}
                         selectedDay={selectedDayFilter}
                         onSelectedDayChange={setSelectedDayFilter}
@@ -621,22 +655,19 @@ const App: React.FC = () => {
                       <DebtWidget
                         debts={debts}
                         setDebts={setDebts}
-                        onPay={(debtId, amount, name) => {
+                        onSchedulePay={(debtId, amount, name, date) => {
                           handleAddTransaction({
                             description: `Pagamento Crediário - ${name}`,
                             amount: amount,
-                            day: new Date().getDate(),
-                            month: currentMonth,
-                            year: currentYear,
+                            day: date.getDate(),
+                            month: date.getMonth(),
+                            year: date.getFullYear(),
                             type: 'expense',
-                            category: 'OUTROS', // Or create a generic 'DÍVIDAS/EMPRÉSTIMOS' category map entry? Using Assinaturas/Geral for now or user can change.
-                            // Actually, let's use 'OUTROS' or let user decide? 'SERVIÇOS'?
-                            // Let's use 'OUTROS' as default or 'Assinaturas' if user prefers recurring. 
-                            // Request didn't specify category. I'll use 'OUTROS' for now.
-                            // Wait, the debt itself acts like a sub-account. 
-                            completed: true // Paid immediately
+                            category: 'OUTROS',
+                            completed: false, // Pending!
+                            debtId: debtId // Link to debt
                           }, { installments: 1, isFixed: false });
-                          alert(`Pagamento de R$ ${amount} registrado no extrato!`);
+                          alert(`Pagamento agendado para ${date.toLocaleDateString()}! Confirme o pagamento no extrato para abater a dívida.`);
                         }}
                       />
                     </div>
