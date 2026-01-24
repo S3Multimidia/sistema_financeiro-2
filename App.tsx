@@ -98,7 +98,7 @@ const App: React.FC = () => {
       setTransactions(syncedTransactions);
     }
 
-  }, [cards, cardTransactions, subscriptions]);
+  }, [cards, cardTransactions, subscriptions, transactions]);
 
   const [currentView, setCurrentView] = useState<'dashboard' | 'yearly'>('dashboard');
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
