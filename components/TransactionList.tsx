@@ -71,7 +71,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     return groups;
   }, [transactions, filterType, filterCategory, searchTerm, selectedDay]);
 
-  const days = Object.keys(groupedTransactions).map(Number).sort((a, b) => a - b);
+  const days = Object.keys(groupedTransactions).map(Number).sort((a, b) => {
+    const today = new Date().getDate();
+    if (a === today) return -1;
+    if (b === today) return 1;
+    return a - b;
+  });
 
   return (
     <div className="flex flex-col h-full bg-slate-50/50">
@@ -264,8 +269,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       <div className="flex items-center gap-6 shrink-0 ml-4">
                         {t.type !== 'appointment' ? (
                           <span className={`font-bold text-lg whitespace-nowrap tabular-nums tracking-tight ${t.completed
-                              ? (t.type === 'income' ? 'text-emerald-600' : 'text-rose-600')
-                              : 'text-slate-900'
+                            ? (t.type === 'income' ? 'text-emerald-600' : 'text-rose-600')
+                            : 'text-slate-900'
                             }`}>
                             {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
                           </span>
