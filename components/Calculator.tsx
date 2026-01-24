@@ -17,7 +17,13 @@ export const Calculator: React.FC = () => {
   };
 
   const handleOp = (op: string) => {
-    setEquation(display + ' ' + op + ' ');
+    setEquation(prev => {
+      // If we are chaining operations (e.g. 2 + 3 +), evaluate intermediate or append
+      // For simplicity and flexibility, we simply append.
+      // If display is 0 and we just started, we might replace? 
+      // But standard generic behavior:
+      return prev + display + ' ' + op + ' ';
+    });
     setDisplay('0');
   };
 
@@ -74,15 +80,14 @@ export const Calculator: React.FC = () => {
   };
 
   return (
-    <div 
+    <div
       ref={containerRef}
       tabIndex={0}
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
       onKeyDown={handleKeyDown}
-      className={`bg-slate-900 rounded-xl p-4 shadow-xl border transition-all duration-300 outline-none select-none ${
-        isFocused ? 'border-indigo-500 ring-4 ring-indigo-500/20 scale-[1.02]' : 'border-slate-800'
-      }`}
+      className={`bg-slate-900 rounded-xl p-4 shadow-xl border transition-all duration-300 outline-none select-none ${isFocused ? 'border-indigo-500 ring-4 ring-indigo-500/20 scale-[1.02]' : 'border-slate-800'
+        }`}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 text-slate-400">
@@ -98,7 +103,7 @@ export const Calculator: React.FC = () => {
           <span className="text-[8px] font-black text-slate-600 uppercase">Clique p/ Ativar</span>
         )}
       </div>
-      
+
       <div className={`bg-slate-800 rounded-lg p-3 mb-4 text-right transition-colors ${isFocused ? 'bg-slate-800/80 ring-1 ring-slate-700' : ''}`}>
         <div className="text-[10px] text-slate-500 h-4 font-mono">{equation}</div>
         <div className="text-xl font-mono font-bold text-white truncate flex items-center justify-end gap-1">
@@ -114,22 +119,22 @@ export const Calculator: React.FC = () => {
         </button>
         <button onClick={handlePercent} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 p-2 rounded-lg text-sm font-bold transition-colors">%</button>
         <button onClick={() => handleOp('/')} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 p-2 rounded-lg text-sm font-bold transition-colors">/</button>
-        
+
         {['7', '8', '9'].map(n => (
           <button key={n} onClick={() => handleNumber(n)} className="bg-slate-800/40 hover:bg-slate-700 text-white p-2 rounded-lg text-sm font-bold transition-colors">{n}</button>
         ))}
         <button onClick={() => handleOp('*')} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 p-2 rounded-lg text-sm font-bold transition-colors">*</button>
-        
+
         {['4', '5', '6'].map(n => (
           <button key={n} onClick={() => handleNumber(n)} className="bg-slate-800/40 hover:bg-slate-700 text-white p-2 rounded-lg text-sm font-bold transition-colors">{n}</button>
         ))}
         <button onClick={() => handleOp('-')} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 p-2 rounded-lg text-sm font-bold transition-colors">-</button>
-        
+
         {['1', '2', '3'].map(n => (
           <button key={n} onClick={() => handleNumber(n)} className="bg-slate-800/40 hover:bg-slate-700 text-white p-2 rounded-lg text-sm font-bold transition-colors">{n}</button>
         ))}
         <button onClick={() => handleOp('+')} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 p-2 rounded-lg text-sm font-bold transition-colors">+</button>
-        
+
         <button onClick={() => handleNumber('0')} className="bg-slate-800/40 hover:bg-slate-700 text-white p-2 rounded-lg text-sm font-bold">0</button>
         <button onClick={() => handleNumber('.')} className="bg-slate-800/40 hover:bg-slate-700 text-white p-2 rounded-lg text-sm font-bold">.</button>
         <button onClick={calculate} className="bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-lg text-sm font-bold transition-all shadow-lg shadow-indigo-900/20 col-span-2">=</button>

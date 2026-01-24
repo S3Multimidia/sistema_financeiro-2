@@ -263,7 +263,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
                       <div className="flex items-center gap-6 shrink-0 ml-4">
                         {t.type !== 'appointment' ? (
-                          <span className={`font-bold text-lg whitespace-nowrap tabular-nums tracking-tight ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          <span className={`font-bold text-lg whitespace-nowrap tabular-nums tracking-tight ${t.completed
+                              ? (t.type === 'income' ? 'text-emerald-600' : 'text-rose-600')
+                              : 'text-slate-900'
+                            }`}>
                             {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
                           </span>
                         ) : (
