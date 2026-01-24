@@ -570,6 +570,24 @@ const App: React.FC = () => {
                       <SubscriptionsWidget
                         subscriptions={subscriptions}
                         setSubscriptions={setSubscriptions}
+                        onDelete={(id) => {
+                          // 1. Remove associated transactions from view/DB
+                          const linkedTransactions = transactions.filter(t => t.subscriptionId === id);
+                          if (linkedTransactions.length > 0) {
+                            // Loop delete for safety with API
+                            linkedTransactions.forEach(t => {
+                              // Optimistic delete from current view handled by next setTransactions? 
+                              // No, we should update state.
+                              // Ideally we call a batch delete or loop updateTransactions('delete').
+                              // But purely for UI responsiveness:
+                              ApiService.deleteTransaction(t.id).catch(e => console.warn('Could not delete from cloud (might be local only)', e));
+                            });
+                            setTransactions(prev => prev.filter(t => t.subscriptionId !== id));
+                          }
+
+                          // 2. Remove Subscription itself
+                          setSubscriptions(prev => prev.filter(s => s.id !== id));
+                        }}
                         onSync={(sub) => {
                           // Force add transaction for this month
                           handleAddTransaction({
@@ -582,7 +600,10 @@ const App: React.FC = () => {
                             category: sub.category,
                             completed: false,
                             isSubscription: true,
-                            subscriptionId: sub.id
+                            subscriptionId: sub.id,
+                            isFixed: true, // Auto-mark as fixed
+                            installmentNumber: 1,
+                            totalInstallments: 1
                           }, { installments: 1, isFixed: true });
                           alert('Assinatura lançada para este mês!');
                         }}

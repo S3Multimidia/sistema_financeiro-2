@@ -6,12 +6,14 @@ interface SubscriptionsWidgetProps {
     subscriptions: Subscription[];
     setSubscriptions: React.Dispatch<React.SetStateAction<Subscription[]>>;
     onSync: (sub: Subscription) => void;
+    onDelete: (id: string) => void;
 }
 
 export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
     subscriptions,
     setSubscriptions,
-    onSync
+    onSync,
+    onDelete
 }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newSub, setNewSub] = useState<Partial<Subscription>>({
@@ -46,7 +48,10 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
     };
 
     const handleDelete = (id: string) => {
-        setSubscriptions(prev => prev.filter(s => s.id !== id));
+        if (confirm('Tem certeza? Isso removerá a assinatura e todos os lançamentos associados.')) {
+            // Call parent to handle full cleanup (transactions + subscription state)
+            onDelete(id);
+        }
     };
 
     return (
