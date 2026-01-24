@@ -257,11 +257,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                             {/* Status Badge */}
                             {t.perfex_status && (
                               <span className={`text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded border ${t.perfex_status === 'Atrasada' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                                  t.perfex_status === 'Em Aberto' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                    (t.perfex_status === 'Paga' || t.perfex_status === 'Pago') ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                      'bg-blue-50 text-blue-600 border-blue-100'
+                                t.perfex_status === 'Em Aberto' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                  (t.perfex_status === 'Paga' || t.perfex_status === 'Pago') ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                    'bg-blue-50 text-blue-600 border-blue-100'
                                 }`}>
-                                {t.perfex_status === 'Paga' ? 'PAGO' : t.perfex_status}
+                                {t.perfex_status}
                               </span>
                             )}
 
