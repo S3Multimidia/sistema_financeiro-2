@@ -28,6 +28,9 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
     const [purchase, setPurchase] = useState({ description: '', amount: '', installments: '1', date: new Date().toISOString().split('T')[0], cardId: '' });
     const [editingTransaction, setEditingTransaction] = useState<CardTransaction | null>(null);
 
+    // NEW STATE: Track the month/year being viewed in details
+    const [viewDate, setViewDate] = useState(new Date());
+
     // HANDLERS
     const handleAddCard = () => {
         if (!newCard.name) return;
@@ -48,12 +51,16 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
         const card = cards.find(c => c.id === purchase.cardId);
         if (!card) return;
 
+        // FIX: Create date using local components to avoid UTC timezone shift
+        const [y, m, d] = purchase.date.split('-').map(Number);
+        const localDate = new Date(y, m - 1, d); // Month is 0-indexed
+
         const installments = CreditCardService.generateInstallments(
             card,
             purchase.description,
             Number(purchase.amount),
             Number(purchase.installments) || 1,
-            new Date(purchase.date),
+            localDate,
             'OUTROS'
         );
 
@@ -66,7 +73,21 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
 
     const handleViewDetails = (cardId: string) => {
         setSelectedCardId(cardId);
+        setViewDate(new Date()); // Reset to today when opening
         setView('details');
+    };
+
+    // Navigation Handlers
+    const prevMonth = () => {
+        const newDate = new Date(viewDate);
+        newDate.setMonth(viewDate.getMonth() - 1);
+        setViewDate(newDate);
+    };
+
+    const nextMonth = () => {
+        const newDate = new Date(viewDate);
+        newDate.setMonth(viewDate.getMonth() + 1);
+        setViewDate(newDate);
     };
 
     const handleEditStart = (t: CardTransaction) => {
@@ -112,16 +133,23 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
     };
 
     const getCardTransactions = (cardId: string) => {
-        const today = new Date();
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
+        const currentMonth = viewDate.getMonth();
+        const currentYear = viewDate.getFullYear();
 
-        // Filter transactions for this card and CURRENT invoice month
+        // Filter transactions for this card and VIEWED invoice month
         return cardTransactions.filter(t =>
             t.cardId === cardId &&
             t.month === currentMonth &&
             t.year === currentYear
         );
+    };
+
+    const getFormattedMonth = () => {
+        return viewDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    };
+
+    const getCurrentInvoiceTotal = (cardId: string) => {
+        return CreditCardService.calculateInvoiceTotal(cardTransactions, cardId, viewDate.getMonth(), viewDate.getFullYear());
     };
 
     return (
@@ -187,38 +215,55 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
 
             {/* DETAILS VIEW */}
             {view === 'details' && selectedCardId && (
-                <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1 animate-fade-in">
-                    {getCardTransactions(selectedCardId).length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-8">
-                            <p className="text-center text-[10px] text-white/30 uppercase font-bold tracking-widest">Fatura Zerada</p>
-                            <p className="text-[9px] text-white/20 mt-1">Nenhum lançamento neste mês</p>
+                <div className="flex flex-col h-full animate-fade-in">
+
+                    {/* Month Navigator */}
+                    <div className="flex items-center justify-between bg-white/5 rounded-xl p-2 mb-3">
+                        <button onClick={prevMonth} className="p-1 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-colors">
+                            <ChevronRight size={16} className="rotate-180" />
+                        </button>
+                        <div className="text-center">
+                            <span className="block text-xs font-bold text-white uppercase tracking-wider">{getFormattedMonth()}</span>
+                            <span className="text-[10px] text-emerald-400 font-bold">Total: R$ {getCurrentInvoiceTotal(selectedCardId).toFixed(2)}</span>
                         </div>
-                    ) : (
-                        getCardTransactions(selectedCardId).map(t => (
-                            <div key={t.id} className="flex justify-between items-center p-3 bg-white/5 border border-white/5 rounded-xl">
-                                <div>
-                                    <p className="text-xs font-bold text-white mb-0.5">{t.description}</p>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-bold bg-indigo-500/20 text-indigo-300 px-1.5 rounded uppercase border border-indigo-500/10">
-                                            {t.installmentNumber}/{t.totalInstallments}
-                                        </span>
-                                        <span className="text-[9px] text-white/30">{new Date(t.originalDate).toLocaleDateString()}</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="font-bold text-xs text-white">R$ {t.amount.toFixed(2)}</span>
-                                    <div className="flex items-center gap-1">
-                                        <button onClick={(e) => { e.stopPropagation(); handleEditStart(t); }} className="p-1.5 text-white/30 hover:text-indigo-400 hover:bg-white/5 rounded-lg transition-colors">
-                                            <Pencil size={12} />
-                                        </button>
-                                        <button onClick={(e) => { e.stopPropagation(); if (confirm('Tem certeza? Isso apagará apenas esta parcela.')) onDeleteTransaction(t.id); }} className="p-1.5 text-white/30 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors">
-                                            <Trash2 size={12} />
-                                        </button>
-                                    </div>
-                                </div>
+                        <button onClick={nextMonth} className="p-1 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-colors">
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+
+                    <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1">
+                        {getCardTransactions(selectedCardId).length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8">
+                                <p className="text-center text-[10px] text-white/30 uppercase font-bold tracking-widest">Fatura Zerada</p>
+                                <p className="text-[9px] text-white/20 mt-1">Nenhum lançamento neste mês</p>
                             </div>
-                        ))
-                    )}
+                        ) : (
+                            getCardTransactions(selectedCardId).map(t => (
+                                <div key={t.id} className="flex justify-between items-center p-3 bg-white/5 border border-white/5 rounded-xl">
+                                    <div>
+                                        <p className="text-xs font-bold text-white mb-0.5">{t.description}</p>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-bold bg-indigo-500/20 text-indigo-300 px-1.5 rounded uppercase border border-indigo-500/10">
+                                                {t.installmentNumber}/{t.totalInstallments}
+                                            </span>
+                                            <span className="text-[9px] text-white/30">{new Date(t.originalDate).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-bold text-xs text-white">R$ {t.amount.toFixed(2)}</span>
+                                        <div className="flex items-center gap-1">
+                                            <button onClick={(e) => { e.stopPropagation(); handleEditStart(t); }} className="p-1.5 text-white/30 hover:text-indigo-400 hover:bg-white/5 rounded-lg transition-colors">
+                                                <Pencil size={12} />
+                                            </button>
+                                            <button onClick={(e) => { e.stopPropagation(); if (confirm('Tem certeza? Isso apagará apenas esta parcela.')) onDeleteTransaction(t.id); }} className="p-1.5 text-white/30 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors">
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             )}
             {/* ADD CARD VIEW */}
