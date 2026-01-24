@@ -663,7 +663,7 @@ const App: React.FC = () => {
                             month: date.getMonth(),
                             year: date.getFullYear(),
                             type: 'expense',
-                            category: 'OUTROS',
+                            category: 'Crediário/Dividas',
                             completed: false, // Pending!
                             debtId: debtId // Link to debt
                           }, { installments: 1, isFixed: false });
