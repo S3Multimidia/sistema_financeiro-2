@@ -190,28 +190,24 @@ const App: React.FC = () => {
         setDebts(cloudDebts);
       }
 
-      // Merge Logic for Transactions (Simple Replace or intelligent merge?)
-      // For now, simpler is replace or union by ID.
-      // Assuming previous logic was robust enough or I shouldn't break it.
-      // The snippet showed `const cloudTransactions = await ApiService.fetchTransactions();`.
-      // I will keep the transaction logic and just add debts.
-
-      const localIds = new Set(transactions.map(t => t.id));
-      const merged = [...transactions];
-      cloudTransactions.forEach(t => {
-        if (!localIds.has(t.id)) {
-          merged.push(t);
+      // Replace Strategy: Cloud is Source of Truth
+      if (cloudTransactions && cloudTransactions.length > 0) {
+        setTransactions(cloudTransactions);
+        setCloudStatus('ok');
+        console.log("✅ Dados carregados e sincronizados.");
+      } else {
+        // If cloud is empty, keep local? Or clear? 
+        // If cloud is empty, it means user has no data or deleted everything.
+        // Safer to respect cloud empty state if we assume full sync.
+        // But for safety against accidental wipe:
+        if (cloudTransactions && cloudTransactions.length === 0 && transactions.length > 0) {
+          console.warn("Cloud returned empty, but local has data. Potential issue?");
+          // setTransactions([]); // Uncomment to enforce empty
+        } else if (cloudTransactions) {
+          setTransactions([]);
         }
-      });
-      // Sort
-      merged.sort((a, b) => {
-        if (a.year !== b.year) return b.year - a.year;
-        if (a.month !== b.month) return b.month - a.month;
-        return b.day - a.day;
-      });
-
-      setTransactions(merged);
-      setCloudStatus('ok');
+        setCloudStatus('ok');
+      }
     } catch (error) {
       console.error("Erro ao carregar da nuvem:", error);
       setCloudStatus('error');
