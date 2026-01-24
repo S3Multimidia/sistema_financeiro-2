@@ -19,6 +19,7 @@ import { CreditCardWidget } from './components/CreditCardWidget';
 import { SubscriptionsWidget } from './components/SubscriptionsWidget';
 import { ApiService } from './services/apiService';
 import { CreditCardService } from './services/creditCardService';
+import { SubscriptionService } from './services/subscriptionService';
 import {
   LayoutDashboard,
   ChevronLeft,
@@ -87,17 +88,14 @@ const App: React.FC = () => {
     localStorage.setItem('finan_subscriptions_2026', JSON.stringify(subscriptions));
 
     // 1. Sync Credit Card Invoices to Main Transactions
-    const syncedTransactions = CreditCardService.syncInvoiceToTransactions(transactions, cardTransactions, cards);
+    let syncedTransactions = CreditCardService.syncInvoiceToTransactions(transactions, cardTransactions, cards);
+
+    // 2. Sync Subscriptions (Forecast next 12 months)
+    syncedTransactions = SubscriptionService.syncSubscriptions(syncedTransactions, subscriptions);
+
     if (JSON.stringify(syncedTransactions) !== JSON.stringify(transactions)) {
       // Only update if changed to avoid loop
       setTransactions(syncedTransactions);
-    }
-
-    // 2. Sync Subscriptions (Simple Monthly Check)
-    // Runs only if we are in 'dashboard' view to avoid spamming
-    if (currentView === 'dashboard') {
-      // Logic: Check if subscription exists for current month. If not, add it.
-      // This is a simplified "Run on Edit" logic. For huge lists, use a separate trigger.
     }
 
   }, [cards, cardTransactions, subscriptions]);
@@ -196,7 +194,56 @@ const App: React.FC = () => {
     payload: any,
     optimisticUpdate: (prev: Transaction[]) => Transaction[]
   ) => {
-    // 1. Optimistic Update
+
+    // CUSTOM LOGIC: Cascade Delete for Subscriptions
+    if (action === 'delete') {
+      const transactionToDelete = transactions.find(t => t.id === payload);
+
+      if (transactionToDelete && transactionToDelete.isSubscription && transactionToDelete.subscriptionId) {
+        // Cascade Delete Logic
+        if (confirm('Esta é uma assinatura recorrente. Deseja cancelar as cobranças futuras também?')) {
+
+          // Find future transactions for this subscription
+          const futureTransactions = transactions.filter(t =>
+            t.isSubscription &&
+            t.subscriptionId === transactionToDelete.subscriptionId &&
+            // Logic: Is same or future date
+            (t.year > transactionToDelete.year || (t.year === transactionToDelete.year && t.month >= transactionToDelete.month))
+          );
+
+          // Update Optimistic State: Remove all future occurrences
+          setTransactions(prev => prev.filter(t => !futureTransactions.map(ft => ft.id).includes(t.id)));
+          setCloudStatus('syncing');
+
+          // Delete from Backend
+          try {
+            // We need to delete multiple items. The API might verify one by one or we loop.
+            // Ideally delete the subscription itself or just the transactions.
+            // The loop below deletes them one by one.
+            for (const ft of futureTransactions) {
+              await ApiService.deleteTransaction(ft.id);
+            }
+
+            // Also mark subscription as inactive to prevent re-sync
+            const subId = transactionToDelete.subscriptionId;
+            const sub = subscriptions.find(s => s.id === subId);
+            if (sub) {
+              setSubscriptions(prev => prev.map(s => s.id === subId ? { ...s, active: false } : s));
+            }
+
+            await loadFromCloud();
+            return; // Exit here as we handled everything
+          } catch (e) {
+            console.error("Cascade Delete Error:", e);
+            setCloudStatus('error');
+            return;
+          }
+        }
+      }
+    }
+
+
+    // 1. Optimistic Update (Normal Flow)
     setTransactions(optimisticUpdate);
     setCloudStatus('syncing');
 
