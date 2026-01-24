@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { INITIAL_TRANSACTIONS, INITIAL_PREVIOUS_BALANCE, APP_VERSION } from './constants';
-import { Transaction, INITIAL_CATEGORIES_MAP } from './types';
+import { Transaction, INITIAL_CATEGORIES_MAP, CreditCard, CardTransaction, Subscription } from './types';
 import { SummaryCards } from './components/SummaryCards';
 import { TransactionList } from './components/TransactionList';
 import { DailyFlowChart } from './components/FinancialCharts';
@@ -15,7 +15,10 @@ import { SettingsModal } from './components/SettingsModal';
 import { ChatAgent } from './components/ChatAgent';
 import { AdvancedDashboard } from './components/AdvancedDashboard';
 import { AppointmentsSidebarList } from './components/AppointmentsSidebarList';
+import { CreditCardWidget } from './components/CreditCardWidget';
+import { SubscriptionsWidget } from './components/SubscriptionsWidget';
 import { ApiService } from './services/apiService';
+import { CreditCardService } from './services/creditCardService';
 import {
   LayoutDashboard,
   ChevronLeft,
@@ -60,6 +63,44 @@ const App: React.FC = () => {
     const saved = localStorage.getItem(CONFIG_STORAGE_KEY);
     return saved ? JSON.parse(saved) : { appName: 'FINANCEIRO PRO 2026' };
   });
+
+  // --- New Modules State ---
+  const [cards, setCards] = useState<CreditCard[]>(() => {
+    const saved = localStorage.getItem('finan_cards_2026');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [cardTransactions, setCardTransactions] = useState<CardTransaction[]>(() => {
+    const saved = localStorage.getItem('finan_card_transactions_2026');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>(() => {
+    const saved = localStorage.getItem('finan_subscriptions_2026');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Persistence & Auto-Sync
+  useEffect(() => {
+    localStorage.setItem('finan_cards_2026', JSON.stringify(cards));
+    localStorage.setItem('finan_card_transactions_2026', JSON.stringify(cardTransactions));
+    localStorage.setItem('finan_subscriptions_2026', JSON.stringify(subscriptions));
+
+    // 1. Sync Credit Card Invoices to Main Transactions
+    const syncedTransactions = CreditCardService.syncInvoiceToTransactions(transactions, cardTransactions, cards);
+    if (JSON.stringify(syncedTransactions) !== JSON.stringify(transactions)) {
+      // Only update if changed to avoid loop
+      setTransactions(syncedTransactions);
+    }
+
+    // 2. Sync Subscriptions (Simple Monthly Check)
+    // Runs only if we are in 'dashboard' view to avoid spamming
+    if (currentView === 'dashboard') {
+      // Logic: Check if subscription exists for current month. If not, add it.
+      // This is a simplified "Run on Edit" logic. For huge lists, use a separate trigger.
+    }
+
+  }, [cards, cardTransactions, subscriptions]);
 
   const [currentView, setCurrentView] = useState<'dashboard' | 'yearly'>('dashboard');
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
