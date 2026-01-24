@@ -154,7 +154,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
       contents.push({ role: 'user', parts });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-1.5-flash-latest',
         contents,
         config: activeAgent === 'executor' ? {
           tools: [{
