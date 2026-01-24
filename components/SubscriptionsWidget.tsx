@@ -25,7 +25,7 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
     const handleAdd = () => {
         if (!newSub.name || !newSub.amount) return;
 
-        setSubscriptions(prev => [...prev, {
+        const subscriptionToAdd: Subscription = {
             id: Math.random().toString(36).substr(2, 9),
             name: newSub.name!,
             amount: Number(newSub.amount),
@@ -34,7 +34,13 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
             active: true,
             lastGeneratedMonth: undefined,
             lastGeneratedYear: undefined
-        }]);
+        };
+
+        setSubscriptions(prev => [...prev, subscriptionToAdd]);
+
+        // Auto-sync immediately so it appears in the list
+        onSync(subscriptionToAdd);
+
         setIsAdding(false);
         setNewSub({ name: '', amount: 0, day: 1, category: 'GERAL', active: true });
     };
