@@ -43,12 +43,17 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
             card,
             purchase.description,
             Number(purchase.amount),
-            Number(purchase.installments),
+            Number(purchase.installments) || 1, // Default to 1 if empty/0
             new Date(purchase.date),
-            'OUTROS' // Default category for now
+            'OUTROS'
         );
 
+        // Debug log to trace flow
+        console.log("Generating installments:", installments);
+
         onAddTransaction(installments);
+
+        // Small UX improvement: Show success feedback or transition
         setView('list');
         setPurchase({ description: '', amount: '', installments: '1', date: new Date().toISOString().split('T')[0], cardId: '' });
     };
