@@ -29,6 +29,10 @@ import {
   RefreshCw,
   Timer,
   LogOut,
+  X,
+  Sparkles,
+  MessageSquare,
+  Calculator as CalculatorIcon
 } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 
@@ -67,6 +71,8 @@ const App: React.FC = () => {
   const [acknowledgedIds, setAcknowledgedIds] = useState<Set<string>>(new Set());
   const [cloudStatus, setCloudStatus] = useState<'idle' | 'syncing' | 'error' | 'ok'>('idle');
   const [user, setUser] = useState<any>(null);
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   // Monitor Auth State
   useEffect(() => {
@@ -355,6 +361,24 @@ const App: React.FC = () => {
 
                 <div className="flex items-center gap-3">
                   <button
+                    onClick={() => setShowCalculator(!showCalculator)}
+                    className={`p-3 rounded-xl transition-all border shadow-sm group ${showCalculator ? 'bg-primary-50 text-primary-600 border-primary-200' : 'bg-white hover:bg-primary-50 text-slate-400 hover:text-primary-600 border-slate-100'}`}
+                    title="Calculadora"
+                  >
+                    <CalculatorIcon size={18} />
+                  </button>
+
+                  <button
+                    onClick={() => setShowChat(!showChat)}
+                    className={`p-3 rounded-xl transition-all border shadow-sm group ${showChat ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 border-slate-100'}`}
+                    title="IA Financeira"
+                  >
+                    <Sparkles size={18} />
+                  </button>
+
+                  <div className="h-4 w-px bg-slate-200 mx-1"></div>
+
+                  <button
                     onClick={() => loadFromCloud()}
                     className="p-3 bg-white hover:bg-primary-50 text-slate-400 hover:text-primary-600 rounded-xl transition-all border border-slate-100 shadow-sm group"
                     title="Recarregar"
@@ -408,7 +432,7 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  <div className="lg:col-span-9">
+                  <div className="lg:col-span-12">
                     {/* Wrapped Transaction List in a Glass Card if not internally styled */}
                     <div className="glass-card rounded-3xl overflow-hidden p-1 shadow-sm border-white/40">
                       <div className="bg-slate-50/50 p-6 border-b border-slate-100 flex items-center justify-between">
@@ -433,17 +457,6 @@ const App: React.FC = () => {
                       />
                     </div>
                   </div>
-
-                  <div className="lg:col-span-3 space-y-8">
-                    <Calculator />
-                    <ChatAgent
-                      transactions={transactions}
-                      currentBalance={totalOverallBalance}
-                      categoriesMap={categoriesMap}
-                      setTransactions={setTransactions}
-                      setCategoriesMap={setCategoriesMap}
-                    />
-                  </div>
                 </div>
 
                 <AdvancedDashboard transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} allTransactions={transactions} currentMonth={currentMonth} year={currentYear} />
@@ -455,12 +468,44 @@ const App: React.FC = () => {
             )}
           </main>
 
+          {/* Floating Widgets Layer */}
+          {showCalculator && (
+            <div className="fixed top-28 right-8 z-[60] animate-fade-in shadow-2xl rounded-xl overflow-hidden ring-1 ring-white/20">
+              <div className="bg-slate-900 flex justify-between items-center px-4 py-2 border-b border-slate-800 handle cursor-move">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculadora</span>
+                <button onClick={() => setShowCalculator(false)} className="text-slate-500 hover:text-white transition-colors"><X size={14} /></button>
+              </div>
+              <Calculator />
+            </div>
+          )}
+
+          {showChat && (
+            <div className="fixed bottom-8 right-8 z-[60] w-[350px] animate-slide-up shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/20">
+              <div className="bg-indigo-600 flex justify-between items-center px-4 py-3 border-b border-indigo-500 handle cursor-move">
+                <span className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                  <Sparkles size={14} /> IA Financeira
+                </span>
+                <button onClick={() => setShowChat(false)} className="text-indigo-200 hover:text-white transition-colors"><X size={16} /></button>
+              </div>
+              <div className="bg-white h-[500px] overflow-hidden flex flex-col">
+                <ChatAgent
+                  transactions={transactions}
+                  currentBalance={totalOverallBalance}
+                  categoriesMap={categoriesMap}
+                  setTransactions={setTransactions}
+                  setCategoriesMap={setCategoriesMap}
+                />
+              </div>
+            </div>
+          )}
+
+
           <footer className="max-w-[1920px] mx-auto px-6 py-8 text-center">
             <p className="text-xs text-slate-400 font-medium uppercase tracking-widest opacity-60">
               {appConfig.appName} • v{APP_VERSION} • © 2026 S3 Multimídia (VPS Edition)
             </p>
           </footer>
-        </div>
+        </div >
       )}
     </>
   );
