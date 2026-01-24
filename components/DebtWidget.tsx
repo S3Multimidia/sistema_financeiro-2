@@ -39,9 +39,8 @@ export const DebtWidget: React.FC<DebtWidgetProps> = ({
 
     const handleDeleteDebt = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (confirm('Tem certeza? Isso apagará todo o histórico deste crediário.')) {
-            setDebts(prev => prev.filter(d => d.id !== id));
-        }
+        // Removed confirmation as requested
+        setDebts(prev => prev.filter(d => d.id !== id));
     };
 
     const handleTransaction = () => {
