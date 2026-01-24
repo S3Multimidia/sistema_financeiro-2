@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { INITIAL_TRANSACTIONS, INITIAL_PREVIOUS_BALANCE, APP_VERSION } from './constants';
-import { Transaction, INITIAL_CATEGORIES_MAP, CreditCard, CardTransaction, Subscription, DebtAccount } from './types';
+import { Transaction, INITIAL_CATEGORIES_MAP, CreditCard, CardTransaction, Subscription, DebtAccount, DebtTransaction } from './types';
 import { SummaryCards } from './components/SummaryCards';
 import { TransactionList } from './components/TransactionList';
 import { DailyFlowChart } from './components/FinancialCharts';
