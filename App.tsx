@@ -245,37 +245,30 @@ const App: React.FC = () => {
   };
 
   // --- Auto-Sync Effects for New Entities ---
+  // Note: We sync even if empty to ensure deletions are propagated to server
 
   // Sync Debts
   useEffect(() => {
-    if (debts.length > 0) {
-      const timer = setTimeout(() => ApiService.syncDebts(debts), 2000);
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => ApiService.syncDebts(debts), 2000);
+    return () => clearTimeout(timer);
   }, [debts]);
 
   // Sync Cards
   useEffect(() => {
-    if (cards.length > 0) {
-      const timer = setTimeout(() => ApiService.syncCards(cards), 2000);
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => ApiService.syncCards(cards), 2000);
+    return () => clearTimeout(timer);
   }, [cards]);
 
   // Sync Subscriptions
   useEffect(() => {
-    if (subscriptions.length > 0) {
-      const timer = setTimeout(() => ApiService.syncSubscriptionsData(subscriptions), 2000);
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => ApiService.syncSubscriptionsData(subscriptions), 2000);
+    return () => clearTimeout(timer);
   }, [subscriptions]);
 
   // Sync Card Transactions
   useEffect(() => {
-    if (cardTransactions.length > 0) {
-      const timer = setTimeout(() => ApiService.syncCardTransactions(cardTransactions), 3000); // Slower debounce for large lists
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => ApiService.syncCardTransactions(cardTransactions), 3000);
+    return () => clearTimeout(timer);
   }, [cardTransactions]);
 
   // Wrapper for modifying transactions to ensure DB sync
