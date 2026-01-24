@@ -16,11 +16,57 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
     cardTransactions,
     onAddTransaction
 }) => {
+    // STATE DEFINITIONS
+    const [view, setView] = useState<'list' | 'add_card' | 'add_purchase' | 'details'>('list');
     const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+    const [newCard, setNewCard] = useState<Partial<ICreditCard>>({ name: '', closingDay: 1, dueDay: 10, limit: 0, color: 'bg-indigo-600' });
+    const [purchase, setPurchase] = useState({ description: '', amount: '', installments: '1', date: new Date().toISOString().split('T')[0], cardId: '' });
+
+    // HANDLERS
+    const handleAddCard = () => {
+        if (!newCard.name) return;
+        setCards([...cards, {
+            id: Math.random().toString(36).substr(2, 9),
+            name: newCard.name,
+            closingDay: Number(newCard.closingDay),
+            dueDay: Number(newCard.dueDay),
+            limit: Number(newCard.limit),
+            color: newCard.color || 'bg-slate-800'
+        } as ICreditCard]);
+        setView('list');
+    };
+
+    const handleAddPurchase = () => {
+        if (!purchase.cardId || !purchase.amount || !purchase.description) return;
+
+        const card = cards.find(c => c.id === purchase.cardId);
+        if (!card) return;
+
+        const installments = CreditCardService.generateInstallments(
+            card,
+            purchase.description,
+            Number(purchase.amount),
+            Number(purchase.installments) || 1,
+            new Date(purchase.date),
+            'OUTROS'
+        );
+
+        console.log("Generating installments:", installments);
+        onAddTransaction(installments);
+
+        setView('list');
+        setPurchase({ description: '', amount: '', installments: '1', date: new Date().toISOString().split('T')[0], cardId: '' });
+    };
 
     const handleViewDetails = (cardId: string) => {
         setSelectedCardId(cardId);
         setView('details');
+    };
+
+    const getNextInvoice = (card: ICreditCard) => {
+        const today = new Date();
+        const total = CreditCardService.calculateInvoiceTotal(cardTransactions, card.id, today.getMonth(), today.getFullYear());
+        return total;
     };
 
     const getCardTransactions = (cardId: string) => {
@@ -28,6 +74,7 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
 
+        // Filter transactions for this card and CURRENT invoice month
         return cardTransactions.filter(t =>
             t.cardId === cardId &&
             t.month === currentMonth &&
@@ -42,7 +89,7 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
             <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
                 <h3 className="text-xs font-bold flex items-center gap-2 text-indigo-400 uppercase tracking-widest">
                     <CardIcon size={14} />
-                    {view === 'details' ? 'Fatura Atual' : 'Cartões'}
+                    {view === 'details' ? 'Extrato Fatura' : 'Cartões'}
                 </h3>
                 {view === 'list' && (
                     <div className="flex gap-1">
@@ -97,14 +144,17 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
             {view === 'details' && selectedCardId && (
                 <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1 animate-fade-in">
                     {getCardTransactions(selectedCardId).length === 0 ? (
-                        <p className="text-center text-[10px] text-white/30 py-6 uppercase font-bold tracking-widest">Fatura Zerada</p>
+                        <div className="flex flex-col items-center justify-center py-8">
+                            <p className="text-center text-[10px] text-white/30 uppercase font-bold tracking-widest">Fatura Zerada</p>
+                            <p className="text-[9px] text-white/20 mt-1">Nenhum lançamento neste mês</p>
+                        </div>
                     ) : (
                         getCardTransactions(selectedCardId).map(t => (
                             <div key={t.id} className="flex justify-between items-center p-3 bg-white/5 border border-white/5 rounded-xl">
                                 <div>
                                     <p className="text-xs font-bold text-white mb-0.5">{t.description}</p>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-bold bg-white/10 text-white/50 px-1.5 rounded uppercase">
+                                        <span className="text-[9px] font-bold bg-indigo-500/20 text-indigo-300 px-1.5 rounded uppercase border border-indigo-500/10">
                                             {t.installmentNumber}/{t.totalInstallments}
                                         </span>
                                         <span className="text-[9px] text-white/30">{new Date(t.originalDate).toLocaleDateString()}</span>
@@ -167,5 +217,4 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
 
         </div>
     );
-};
 };
