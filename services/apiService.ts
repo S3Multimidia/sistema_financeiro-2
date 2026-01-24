@@ -263,29 +263,11 @@ export const ApiService = {
         if (!user) return;
 
         const dbDebts = debts.map(d => ({
-            id: d.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}/) ? d.id : undefined, // Send ID only if it looks like UUID (or let DB gen new one if temp? complex logic. Ideally we use UUIDs everywhere)
-            // If we generated Math.random ID, it won't suffice for UUID column unless we changed column type. 
-            // My SQL script said `id uuid DEFAULT gen_random_uuid()`. 
-            // React app generates `Math.random().toString(36)`. This will fail UUID validation.
-            // FIX: We should use `original_id` logic or just let Supabase generate and we handle mapping.
-            // OR: Easier fix -> Change SQL to Allow Text ID OR Update App to use UUIDs.
-            // Given I already wrote SQL with UUID, I should update App to use UUIDs or change SQL to text.
-            // Changing SQL is easier for the user context right now? No, UUID is better.
-            // I will generate proper UUIDs in App or... 
-            // Let's store the App's ID in a `app_id` column or assume `id` is text in SQL?
-            // User requested: "não posso perder lançamentos".
-            // I'll update SQL to use TEXT for id to support the current App logic `Math.random...` which produces string.
-            // WAIT. `Math.random` produce string.
-            // I will update the SQL script in next step to use TEXT for ID to be safe and compatible.
-
+            id: d.id,
             user_id: user.id,
             name: d.name,
             current_balance: d.currentBalance,
-            history: d.history,
-            // We use upsert based on something? 
-            // We need a stable ID. 
-            // If I map `id` -> `id` in DB, and DB is TEXT, it works.
-            id: d.id
+            history: d.history
         }));
 
         const { error } = await supabase
@@ -293,5 +275,112 @@ export const ApiService = {
             .upsert(dbDebts, { onConflict: 'id' });
 
         if (error) console.error('Error syncing debts:', error);
+    },
+
+    // --- Cards ---
+    async fetchCards() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+        const { data, error } = await supabase.from('credit_cards').select('*');
+        if (error) { console.error('Error fetching cards', error); return []; }
+        return data.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            closingDay: c.closing_day,
+            dueDay: c.due_day,
+            limit: Number(c.limit),
+            color: c.color
+        }));
+    },
+    async syncCards(cards: any[]) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const dbCards = cards.map(c => ({
+            id: c.id,
+            user_id: user.id,
+            name: c.name,
+            closing_day: c.closingDay,
+            due_day: c.dueDay,
+            limit: c.limit, // "limit" column
+            color: c.color
+        }));
+        const { error } = await supabase.from('credit_cards').upsert(dbCards, { onConflict: 'id' });
+        if (error) console.error('Error syncing cards', error);
+    },
+
+    // --- Subscriptions ---
+    async fetchSubscriptions() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+        const { data, error } = await supabase.from('subscriptions').select('*');
+        if (error) { console.error('Error fetching subscriptions', error); return []; }
+        return data.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            amount: Number(s.amount),
+            day: s.day,
+            category: s.category,
+            active: s.active,
+            lastGeneratedMonth: s.last_generated_month,
+            lastGeneratedYear: s.last_generated_year
+        }));
+    },
+    async syncSubscriptionsData(subs: any[]) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const dbSubs = subs.map(s => ({
+            id: s.id,
+            user_id: user.id,
+            name: s.name,
+            amount: s.amount,
+            day: s.day,
+            category: s.category,
+            active: s.active,
+            last_generated_month: s.lastGeneratedMonth,
+            last_generated_year: s.lastGeneratedYear
+        }));
+        const { error } = await supabase.from('subscriptions').upsert(dbSubs, { onConflict: 'id' });
+        if (error) console.error('Error syncing subscriptions', error);
+    },
+
+    // --- Card Transactions (Items inside invoice) ---
+    async fetchCardTransactions() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+        const { data, error } = await supabase.from('card_transactions').select('*');
+        if (error) { console.error('Error fetching card transactions', error); return []; }
+        return data.map((t: any) => ({
+            id: t.id,
+            cardId: t.card_id,
+            description: t.description,
+            amount: Number(t.amount),
+            month: t.month,
+            year: t.year,
+            installmentNumber: t.installment_number,
+            totalInstallments: t.total_installments,
+            category: t.category,
+            originalDate: t.original_date
+        }));
+    },
+    async syncCardTransactions(trans: any[]) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        // Upserting thousands of rows can be heavy. Ideally we only sync changes.
+        // But for now, full sync ensures safety.
+        const dbTrans = trans.map(t => ({
+            id: t.id,
+            user_id: user.id,
+            card_id: t.cardId,
+            description: t.description,
+            amount: t.amount,
+            month: t.month,
+            year: t.year,
+            installment_number: t.installmentNumber,
+            total_installments: t.totalInstallments,
+            category: t.category,
+            original_date: t.originalDate
+        }));
+        const { error } = await supabase.from('card_transactions').upsert(dbTrans, { onConflict: 'id' });
+        if (error) console.error('Error syncing card transactions', error);
     }
 };

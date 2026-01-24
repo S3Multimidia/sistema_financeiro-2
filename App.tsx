@@ -181,49 +181,102 @@ const App: React.FC = () => {
   const loadFromCloud = async () => {
     try {
       setCloudStatus('syncing');
-      const [cloudTransactions, cloudDebts] = await Promise.all([
+      const [
+        cloudTransactions,
+        cloudDebts,
+        cloudCards,
+        cloudSubs,
+        cloudCardTrans
+      ] = await Promise.all([
         ApiService.fetchTransactions(),
-        ApiService.fetchDebts()
+        ApiService.fetchDebts(),
+        ApiService.fetchCards(),
+        ApiService.fetchSubscriptions(),
+        ApiService.fetchCardTransactions()
       ]);
 
-      if (cloudDebts && cloudDebts.length > 0) {
-        setDebts(cloudDebts);
+      console.log('☁️ Cloud Data Loaded:', {
+        trans: cloudTransactions.length,
+        debts: cloudDebts.length,
+        cards: cloudCards.length,
+        subs: cloudSubs.length,
+        cardTrans: cloudCardTrans.length
+      });
+
+      // 1. Debts
+      if (cloudDebts && cloudDebts.length > 0) setDebts(cloudDebts);
+
+      // 2. Cards
+      if (cloudCards && cloudCards.length > 0) setCards(cloudCards);
+
+      // 3. Subscriptions
+      if (cloudSubs && cloudSubs.length > 0) setSubscriptions(cloudSubs);
+
+      // 4. Card Transactions
+      if (cloudCardTrans && cloudCardTrans.length > 0) setCardTransactions(cloudCardTrans);
+
+      // 5. Main Transactions (Replace Strategy)
+      if (cloudTransactions && cloudTransactions.length > 0) {
+        // Sort
+        const sorted = [...cloudTransactions].sort((a, b) => {
+          if (a.year !== b.year) return b.year - a.year;
+          if (a.month !== b.month) return b.month - a.month;
+          return b.day - a.day;
+        });
+        setTransactions(sorted);
+      } else if (cloudTransactions) {
+        // Empty cloud -> potentially clear local if we trust cloud fully?
+        // User said "don't make data disappear". 
+        // If User has local data and cloud is 0, we should probably UPLOAD local to cloud (first sync), not clear local.
+        // Check if user has local data but cloud is empty (First run on this device after SQL setup?)
+        // If so, we should keep local and let the Sync Effects upload it.
+        if (transactions.length === 0) {
+          setTransactions([]);
+        } else {
+          console.log("⚠️ Local has data but cloud is empty. Keeping local and will sync UP.");
+        }
       }
 
-      // Replace Strategy: Cloud is Source of Truth
-      if (cloudTransactions && cloudTransactions.length > 0) {
-        setTransactions(cloudTransactions);
-        setCloudStatus('ok');
-        console.log("✅ Dados carregados e sincronizados.");
-      } else {
-        // If cloud is empty, keep local? Or clear? 
-        // If cloud is empty, it means user has no data or deleted everything.
-        // Safer to respect cloud empty state if we assume full sync.
-        // But for safety against accidental wipe:
-        if (cloudTransactions && cloudTransactions.length === 0 && transactions.length > 0) {
-          console.warn("Cloud returned empty, but local has data. Potential issue?");
-          // setTransactions([]); // Uncomment to enforce empty
-        } else if (cloudTransactions) {
-          setTransactions([]);
-        }
-        setCloudStatus('ok');
-      }
+      setCloudStatus('ok');
     } catch (error) {
       console.error("Erro ao carregar da nuvem:", error);
       setCloudStatus('error');
     }
   };
 
-  // Sync Debts to Cloud whenever they change
+  // --- Auto-Sync Effects for New Entities ---
+
+  // Sync Debts
   useEffect(() => {
     if (debts.length > 0) {
-      // Debounce or just fire? Fire for safety given user anxiety.
-      const timer = setTimeout(() => {
-        ApiService.syncDebts(debts);
-      }, 2000); // 2s delay
+      const timer = setTimeout(() => ApiService.syncDebts(debts), 2000);
       return () => clearTimeout(timer);
     }
   }, [debts]);
+
+  // Sync Cards
+  useEffect(() => {
+    if (cards.length > 0) {
+      const timer = setTimeout(() => ApiService.syncCards(cards), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [cards]);
+
+  // Sync Subscriptions
+  useEffect(() => {
+    if (subscriptions.length > 0) {
+      const timer = setTimeout(() => ApiService.syncSubscriptionsData(subscriptions), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [subscriptions]);
+
+  // Sync Card Transactions
+  useEffect(() => {
+    if (cardTransactions.length > 0) {
+      const timer = setTimeout(() => ApiService.syncCardTransactions(cardTransactions), 3000); // Slower debounce for large lists
+      return () => clearTimeout(timer);
+    }
+  }, [cardTransactions]);
 
   // Wrapper for modifying transactions to ensure DB sync
   const updateTransactions = async (
