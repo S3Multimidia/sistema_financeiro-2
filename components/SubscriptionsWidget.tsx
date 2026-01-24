@@ -44,9 +44,9 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
     };
 
     return (
-        <div className="glass-card p-5 rounded-3xl h-full flex flex-col">
+        <div className="glass-card p-5 rounded-3xl h-full flex flex-col bg-white/50 border border-white/60 shadow-xl shadow-indigo-500/5">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-indigo-600 flex items-center gap-2">
                     <RefreshCcw size={16} className="text-indigo-500" />
                     Assinaturas Fixas
                 </h3>
