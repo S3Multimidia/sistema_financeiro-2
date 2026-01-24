@@ -123,12 +123,21 @@ export const CreditCardService = {
                 } else {
                     // If total is 0 but transaction exists, delete it (invoice cleared or empty)
                     if (invoiceIndex >= 0 && !updatedTransactions[invoiceIndex].completed) {
-                        // Only delete if not paid/completed, or user preference? 
-                        // Let's keep it safe: if 0, remove.
                         updatedTransactions.splice(invoiceIndex, 1);
                     }
                 }
             }
+        });
+
+        // CLEANUP GHOST INVOICES (Deleted Cards)
+        // Remove active card IDs
+        const activeCardIds = new Set(cards.map(c => c.id));
+        updatedTransactions = updatedTransactions.filter(t => {
+            if (t.isCreditCardBill && t.relatedCardId) {
+                // Keep only if card still exists
+                return activeCardIds.has(t.relatedCardId);
+            }
+            return true;
         });
 
         return updatedTransactions;
