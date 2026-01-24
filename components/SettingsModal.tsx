@@ -18,26 +18,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onOpenCategoryManager
 }) => {
   const [geminiKey, setGeminiKey] = useState('');
-  const [supabaseUrl, setSupabaseUrl] = useState('');
-  const [supabaseKey, setSupabaseKey] = useState('');
   const [perfexUrl, setPerfexUrl] = useState('');
   const [perfexToken, setPerfexToken] = useState('');
-  const [startingBalance, setStartingBalance] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     // Load initial data
     const loadSettings = async () => {
-      const user = await ApiService.getUser();
-      if (user?.starting_balance) setStartingBalance(Number(user.starting_balance));
-
-      const key = SupabaseService.getGeminiKey();
+      const key = await SupabaseService.getGeminiKey();
       if (key) setGeminiKey(key);
-
-      const sUrl = localStorage.getItem('supabase_url') || '';
-      const sKey = localStorage.getItem('supabase_key') || '';
-      setSupabaseUrl(sUrl);
-      setSupabaseKey(sKey);
 
       const pUrl = localStorage.getItem('perfex_url') || '';
       const pToken = localStorage.getItem('perfex_token') || '';
@@ -50,27 +39,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
 
-    // Save Gemini Key
-    await SupabaseService.saveGeminiKey(geminiKey);
-
-    // Save Starting Balance
-    await ApiService.updateUserSettings({ starting_balance: startingBalance });
-
-    // Save Supabase Config
-    localStorage.setItem('supabase_url', supabaseUrl);
-    localStorage.setItem('supabase_key', supabaseKey);
-
-    // Save Perfex Config
-    localStorage.setItem('perfex_url', perfexUrl);
-    localStorage.setItem('perfex_token', perfexToken);
-
-    setTimeout(() => {
-      setIsSaving(false);
-      // Reload page to apply Supabase changes (since client is initialized at top level)
-      if (supabaseUrl || supabaseKey || perfexUrl || perfexToken) {
-        window.location.reload();
+    try {
+      // Save Gemini Key
+      if (geminiKey) {
+        await SupabaseService.saveGeminiKey(geminiKey);
       }
-    }, 1000);
+
+      // Save Perfex Config
+      localStorage.setItem('perfex_url', perfexUrl);
+      localStorage.setItem('perfex_token', perfexToken);
+
+      // Force reload to apply changes if needed (API tokens usually require it or context update)
+      // For simple UX, we simulate delay and notify.
+      await new Promise(r => setTimeout(r, 800));
+      alert('Configurações salvas com sucesso!');
+      onClose();
+      window.location.reload();
+    } catch (e: any) {
+      alert('Erro ao salvar: ' + e.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -92,7 +81,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
 
           {/* Gemini AI Section */}
-          <section className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-[2rem] border border-indigo-100 space-y-4 shadow-sm">
+          <section className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-[2rem] border border-indigo-100 space-y-4 shadow-sm group hover:shadow-md transition-all">
             <div className="flex justify-between items-start">
               <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
                 <Key size={16} /> Gemini AI (Inteligência)
@@ -107,41 +96,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   placeholder="Cole sua chave API aqui..."
                   value={geminiKey}
                   onChange={(e) => setGeminiKey(e.target.value)}
-                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
+                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700 placeholder:text-slate-300"
                 />
               </div>
             </div>
-            <p className="text-[9px] text-indigo-600/70 font-medium mt-2">
-              O Gemini analisa seus gastos para dar dicas inteligentes. A chave fica salva no seu navegador e no Supabase.
+            <p className="text-[9px] text-indigo-600/70 font-medium mt-2 leading-relaxed">
+              Necessário para o funcionamento do Chat "Executor" e "Consultor".
             </p>
           </section>
 
-          {/* Finance Settings (Starting Balance) */}
-          <section className="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-[2rem] border border-emerald-100 space-y-4 shadow-sm">
-            <div className="flex justify-between items-start">
-              <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-                <Wallet size={16} /> Financeiro
-              </h4>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-inner">
-              <label className="text-[9px] font-black text-slate-400 uppercase block mb-2">Saldo Inicial do Sistema (R$)</label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Ex: 1000.00"
-                value={startingBalance}
-                onChange={(e) => setStartingBalance(Number(e.target.value))}
-                className="w-full text-base font-bold outline-none bg-transparent text-slate-900 placeholder:text-slate-300"
-              />
-              <p className="text-[9px] text-emerald-600/70 font-medium mt-2">
-                Este valor será somado ao seu caixa desde o primeiro dia de uso.
-              </p>
-            </div>
-          </section>
-
           {/* Perfex CRM Integration */}
-          <section className="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-[2rem] border border-red-100 space-y-4 shadow-sm">
+          <section className="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-[2rem] border border-red-100 space-y-4 shadow-sm group hover:shadow-md transition-all">
             <div className="flex justify-between items-start">
               <h4 className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-2">
                 <FileText size={16} /> Integração Perfex CRM
@@ -156,7 +121,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   placeholder="https://admin.s3m.com.br/api"
                   value={perfexUrl}
                   onChange={(e) => setPerfexUrl(e.target.value)}
-                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
+                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700 placeholder:text-slate-300"
                 />
               </div>
               <div>
@@ -166,181 +131,90 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   placeholder="Cole o token aqui..."
                   value={perfexToken}
                   onChange={(e) => setPerfexToken(e.target.value)}
-                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
+                  className="w-full text-xs font-mono outline-none bg-transparent text-slate-700 placeholder:text-slate-300"
                 />
               </div>
 
-              <button
-                onClick={async () => {
-                  setIsSaving(true);
-                  try {
-                    if (!perfexUrl || !perfexToken) {
-                      alert('Configure URL e Token primeiro.');
+              <div className="grid grid-cols-1 gap-2 pt-2">
+                <button
+                  onClick={async () => {
+                    setIsSaving(true);
+                    try {
+                      if (!perfexUrl || !perfexToken) {
+                        alert('Configure URL e Token primeiro.');
+                        setIsSaving(false);
+                        return;
+                      }
+                      await PerfexService.syncInvoicesToSystem({ url: perfexUrl, token: perfexToken });
+                      alert('✅ Sincronização com Perfex concluída!');
+                      window.location.reload();
+                    } catch (e: any) {
+                      alert('❌ Erro: ' + e.message);
+                    } finally {
                       setIsSaving(false);
-                      return;
                     }
-                    await PerfexService.syncInvoicesToSystem({ url: perfexUrl, token: perfexToken });
-                    alert('✅ Sincronização com Perfex concluída!');
-                    window.location.reload();
-                  } catch (e: any) {
-                    alert('❌ Erro: ' + e.message);
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }}
-                disabled={isSaving}
-                className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-4"
-              >
-                <RefreshCw size={14} className={isSaving ? "animate-spin" : ""} />
-                {isSaving ? "Sincronizando..." : "Sincronizar Faturas"}
-              </button>
+                  }}
+                  disabled={isSaving}
+                  className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold text-[10px] uppercase transition-colors flex items-center justify-center gap-2"
+                >
+                  <RefreshCw size={14} className={isSaving ? "animate-spin" : ""} />
+                  {isSaving ? "Processando..." : "Sincronizar Faturas"}
+                </button>
 
-              <button
-                onClick={async () => {
-                  if (!confirm('ATENÇÃO: Isso apagará TODOS os dados atuais e sincronizará novamente do Perfex. Recomendado para corrigir nomes duplicados ou antigos. Continuar?')) return;
-
-                  setIsSaving(true);
-                  try {
-                    if (!perfexUrl || !perfexToken) {
-                      alert('Configure URL e Token primeiro.');
+                <button
+                  onClick={async () => {
+                    if (!confirm('ATENÇÃO: Isso apagará TODOS os dados atuais e sincronizará novamente do Perfex. Continuar?')) return;
+                    setIsSaving(true);
+                    try {
+                      await ApiService.clearAllTransactions();
+                      localStorage.removeItem('finan_agenda_data_2026_v2');
+                      await PerfexService.syncInvoicesToSystem({ url: perfexUrl, token: perfexToken });
+                      alert('✅ Banco limpo e nova sincronização concluída!');
+                      window.location.reload();
+                    } catch (e: any) {
+                      alert('❌ Erro: ' + e.message);
+                    } finally {
                       setIsSaving(false);
-                      return;
                     }
-
-                    // 1. Limpar Banco
-                    await ApiService.clearAllTransactions();
-
-                    // 2. Limpar Cache Local
-                    localStorage.removeItem('finan_agenda_data_2026_v2');
-
-                    // 3. Sincronizar
-                    await PerfexService.syncInvoicesToSystem({ url: perfexUrl, token: perfexToken });
-
-                    alert('✅ Banco limpo e nova sincronização concluída com sucesso!');
-                    window.location.reload();
-                  } catch (e: any) {
-                    alert('❌ Erro: ' + e.message);
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }}
-                disabled={isSaving}
-                className="w-full py-3 bg-white border border-red-100 hover:bg-red-50 text-red-600 rounded-xl font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-2"
-                title="Limpa tudo e baixa novamente"
-              >
-                <ShieldAlert size={14} />
-                {isSaving ? "Processando..." : "Limpar Banco e Ressincronizar (Correção Limpa)"}
-              </button>
+                  }}
+                  disabled={isSaving}
+                  className="w-full py-3 bg-white border border-red-100 hover:bg-red-50 text-red-600 rounded-xl font-bold text-[9px] uppercase transition-colors flex items-center justify-center gap-2"
+                >
+                  <ShieldAlert size={14} />
+                  Limpar e Ressincronizar (Reset Completo)
+                </button>
+              </div>
             </div>
-            <p className="text-[9px] text-slate-500 font-bold leading-relaxed">
-              Importa faturas "A vencer", "Vencida" e "Paga" como receitas.
-            </p>
           </section>
 
-          {/* Database Section */}
-          <section className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 space-y-4">
-            <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
-              <Database size={16} /> Servidor Próprio (aaPanel)
-            </h4>
-
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-              <p className="text-[10px] text-slate-500 font-medium">
-                Seus dados estão na memória do navegador. Envie para o novo servidor para salvar com segurança.
-              </p>
-              <button
-                onClick={async () => {
-                  setIsSaving(true);
-                  try {
-                    const saved = localStorage.getItem('finan_agenda_data_2026_v2');
-                    if (saved) {
-                      const transactions = JSON.parse(saved);
-                      await ApiService.syncLocalDataToCloud(transactions);
-                      alert('✅ Sucesso! Seus dados locais foram enviados para o Banco de Dados.');
-                      window.location.reload(); // Reload to fetch fresh from DB
-                    } else {
-                      alert('Nenhum dado local encontrado para enviar.');
-                    }
-                  } catch (e: any) {
-                    alert('❌ Erro ao enviar dados: ' + e.message);
-                    console.error(e);
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }}
-                disabled={isSaving}
-                className="w-full py-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2"
-              >
-                <RefreshCw size={14} className={isSaving ? "animate-spin" : ""} />
-                {isSaving ? "Enviando para o Banco..." : "Sincronizar (Enviar Dados Locais)"}
-              </button>
-
-              <button
-                onClick={async () => {
-                  if (!confirm('ATENÇÃO: Isso apagará TODAS as transações do servidor. Tem certeza?')) return;
-
-                  setIsSaving(true);
-                  try {
-                    await ApiService.clearAllTransactions();
-                    // Também limpar local storage para garantir estado limpo
-                    localStorage.removeItem('finan_agenda_data_2026_v2');
-                    alert('✅ Todos os dados foram apagados do servidor.');
-                    window.location.reload();
-                  } catch (e: any) {
-                    alert('❌ Erro ao limpar dados: ' + e.message);
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }}
-                disabled={isSaving}
-                className="w-full py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-xs uppercase transition-colors flex items-center justify-center gap-2 mt-2"
-              >
-                <ShieldAlert size={14} />
-                {isSaving ? "Apagando..." : "Limpar Dados da Nuvem (Zerar)"}
-              </button>
-            </div>
-
-            {/* Legacy Supabase (Collapsed or Optional) */}
-            <details className="group">
-              <summary className="cursor-pointer text-[9px] font-black text-slate-400 uppercase flex items-center gap-2 list-none">
-                <Settings size={12} /> Configurações Avançadas (Legado)
-              </summary>
-              <div className="mt-4 space-y-3 pl-4 border-l-2 border-slate-100">
-                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                  <label className="text-[9px] font-black text-slate-400 uppercase block mb-2 flex items-center gap-2">
-                    <Globe size={12} /> Supabase URL
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="https://xxx.supabase.co"
-                    value={supabaseUrl}
-                    onChange={(e) => setSupabaseUrl(e.target.value)}
-                    className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
-                  />
+          {/* Categories Management Section - Added as requested */}
+          <section className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 shadow-sm hover:bg-slate-100 transition-colors cursor-pointer group" onClick={() => {
+            onClose(); // Close settings
+            onOpenCategoryManager(); // Open Manager
+          }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                  <Database size={20} className="text-slate-700" />
                 </div>
-
-                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                  <label className="text-[9px] font-black text-slate-400 uppercase block mb-2 flex items-center gap-2">
-                    <Lock size={12} /> Supabase Anon Key
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="sua-chave-anon-aqui"
-                    value={supabaseKey}
-                    onChange={(e) => setSupabaseKey(e.target.value)}
-                    className="w-full text-xs font-mono outline-none bg-transparent text-slate-700"
-                  />
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Categorias e Subcategorias</h4>
+                  <p className="text-[10px] text-slate-400 font-medium mt-1">Gerencie suas classificações de receitas e despesas</p>
                 </div>
               </div>
-            </details>
+              <div className="bg-slate-200 p-2 rounded-full text-slate-500 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                <Settings size={16} />
+              </div>
+            </div>
           </section>
 
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className={`w-full py-5 rounded-[1.5rem] font-black text-xs uppercase transition-all flex items-center justify-center gap-3 shadow-xl ${isSaving ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
+            className={`w-full py-5 rounded-[1.5rem] font-black text-xs uppercase transition-all flex items-center justify-center gap-3 shadow-xl mt-4 ${isSaving ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
           >
             {isSaving ? <CheckCircle2 size={18} /> : <Save size={18} />}
-            {isSaving ? 'Configuração Salva!' : 'Salvar Configurações'}
+            {isSaving ? 'Salvando...' : 'Salvar Tudo'}
           </button>
 
         </div>

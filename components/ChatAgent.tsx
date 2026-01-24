@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 import { Transaction } from '../types';
-import { 
+import {
   Send, Bot, Trash2, Loader2, Mic, MicOff, Check, Zap, Briefcase, Paperclip, X, Image as ImageIcon
 } from 'lucide-react';
 
@@ -31,9 +31,9 @@ interface Message {
   actions?: ChatAction[];
 }
 
-export const ChatAgent: React.FC<ChatAgentProps> = ({ 
-  transactions, 
-  currentBalance, 
+export const ChatAgent: React.FC<ChatAgentProps> = ({
+  transactions,
+  currentBalance,
   categoriesMap,
   setTransactions,
   setCategoriesMap
@@ -46,7 +46,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,77 +88,94 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
 
   const handleSend = async () => {
     if ((!input.trim() && !selectedImage) || isLoading) return;
-    
+
+    // Check for API Key (LocalStorage > Env)
+    const apiKey = localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GOOGLE_API_KEY;
+
+    if (!apiKey || apiKey === 'SUA_CHAVE_API_AQUI') {
+      setMessages(prev => [...prev, {
+        role: 'model',
+        text: "⚠️ Erro de Configuração: Chave de API não encontrada.\n\nCrie um arquivo '.env' na raiz do projeto com:\nVITE_GOOGLE_API_KEY=sua_chave_do_google_aistudio"
+      }]);
+      return;
+    }
+
     const userText = input.trim();
     const currentImg = selectedImage;
-    
-    setMessages(prev => [...prev, { 
-      role: 'user', 
-      agent: activeAgent, 
+
+    setMessages(prev => [...prev, {
+      role: 'user',
+      agent: activeAgent,
       text: userText || (currentImg ? "Enviou uma imagem para análise." : ""),
       image: currentImg || undefined
     }]);
-    
+
     setInput('');
     setSelectedImage(null);
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       const today = new Date();
-      
-      const sysIns = activeAgent === 'executor' 
+
+      const sysIns = activeAgent === 'executor'
         ? `Você é o AGENTE EXECUTOR do sistema FINANCEIRO PRO 2026. 
-           Sua missão é ENTENDER mensagens de texto e IMAGENS (extratos, recibos, anotações).
-           DATA ATUAL: ${today.toLocaleDateString()}.
+           Sua missão é ENTENDER mensagens de texto e IMAGENS (extratos, recibos, anotações) para registrar transações.
+           DATA ATUAL: ${today.toLocaleDateString()} (Dia/Mês/Ano).
            
-           REGRAS:
-           1. Se o usuário enviar uma imagem, extraia valores, datas, descrições e categorias.
-           2. Sempre use a ferramenta 'add_transaction' para sugerir lançamentos.
-           3. Se faltar informação na imagem (como categoria), tente inferir ou pergunte.
-           4. Seja profissional e direto.`
-        : `Você é o CONSULTOR ESTRATEGISTA. Saldo atual: ${currentBalance}. 
-           Analise os dados financeiros e imagens de planejamento que o usuário enviar.`;
+           INSTRUÇÕES:
+           1. Analise o input do usuário (texto ou imagem).
+           2. Se for uma despesa ou receita clara, CHAME a função 'add_transaction'.
+           3. Se a data não for especificada, assuma hoje (${today.getDate()}).
+           4. Se a categoria não for clara, inferir a mais provável (ex: Alimentação, Transporte, Serviços).
+           5. Responda de forma breve confirmando a ação.`
+        : `Você é o CONSULTOR ESTRATEGISTA do sistema.
+           CONTEXTO ATUAL:
+           - Saldo Atual: R$ ${currentBalance.toFixed(2)}
+           - Data: ${today.toLocaleDateString()}
+           
+           Analise as dúvidas do usuário sobre finanças, estratégias de investimento ou análise de gastos. 
+           Seja perspicaz, profissional e direto. Dê dicas de economia se o saldo estiver baixo.`;
 
       const contents: any[] = [];
       const parts: any[] = [{ text: sysIns }];
-      
+
       if (currentImg) {
         parts.push({
           inlineData: {
-            mimeType: "image/jpeg",
+            mimeType: "image/jpeg", // Assuming JPEG/PNG heavily, standard base64 from FileReader supports this usually if prefix matches
             data: currentImg.split(',')[1]
           }
         });
       }
-      
-      parts.push({ text: userText || "Analise esta imagem e identifique lançamentos financeiros nela." });
-      
+
+      parts.push({ text: userText || "Analise esta imagem/texto e execute conforme suas instruções." });
+
       contents.push({ role: 'user', parts });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-1.5-flash',
         contents,
-        config: activeAgent === 'executor' ? { 
-          tools: [{ 
+        config: activeAgent === 'executor' ? {
+          tools: [{
             functionDeclarations: [{
               name: 'add_transaction',
-              description: 'Adiciona um novo registro financeiro baseado na análise.',
+              description: 'Adiciona um novo registro financeiro no sistema.',
               parameters: {
                 type: Type.OBJECT,
                 properties: {
-                  day: { type: Type.NUMBER, description: 'Dia do mês' },
-                  month: { type: Type.NUMBER, description: 'Mês (0-11)' },
-                  year: { type: Type.NUMBER, description: 'Ano' },
-                  description: { type: Type.STRING, description: 'Descrição curta' },
-                  amount: { type: Type.NUMBER, description: 'Valor numérico' },
-                  type: { type: Type.STRING, description: 'income, expense ou appointment' },
-                  category: { type: Type.STRING, description: 'Categoria principal' }
+                  day: { type: Type.NUMBER, description: 'Dia do mês (1-31)' },
+                  month: { type: Type.NUMBER, description: 'Mês (0 para Janeiro, 11 para Dezembro)' },
+                  year: { type: Type.NUMBER, description: 'Ano (ex: 2026)' },
+                  description: { type: Type.STRING, description: 'Descrição da transação' },
+                  amount: { type: Type.NUMBER, description: 'Valor da transação (positivo)' },
+                  type: { type: Type.STRING, description: 'income (receita), expense (despesa) ou appointment (agenda)' },
+                  category: { type: Type.STRING, description: 'Categoria da transação' }
                 },
                 required: ['day', 'month', 'year', 'description', 'amount', 'type', 'category']
               }
             }]
-          }] 
+          }]
         } : {}
       });
 
@@ -172,15 +189,17 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
         }));
       }
 
-      setMessages(prev => [...prev, { 
-        role: 'model', 
-        agent: activeAgent, 
-        text: response.text || (actions.length > 0 ? "Identifiquei o seguinte lançamento na imagem:" : "Entendido."), 
-        actions 
+      setMessages(prev => [...prev, {
+        role: 'model',
+        agent: activeAgent,
+        text: response.text || (actions.length > 0 ? "Preparei os lançamentos abaixo para sua confirmação:" : "Processado."),
+        actions
       }]);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      setMessages(prev => [...prev, { role: 'model', text: "Erro ao processar a imagem ou texto. Verifique sua conexão." }]);
+      let errorMsg = "Erro ao processar solicitação.";
+      if (e.message?.includes('API key')) errorMsg = "Erro de API Key inválida ou expirada.";
+      setMessages(prev => [...prev, { role: 'model', text: errorMsg }]);
     } finally {
       setIsLoading(false);
     }
@@ -193,7 +212,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
           <Bot size={14} className="text-indigo-400" />
           <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">IA Online</span>
         </div>
-        <button onClick={() => setMessages([{role:'model', text:'Histórico limpo.'}])} className="text-white/20 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
+        <button onClick={() => setMessages([{ role: 'model', text: 'Histórico limpo.' }])} className="text-white/20 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
       </div>
 
       <div className="p-1.5 flex gap-1 bg-slate-900/40">
@@ -222,7 +241,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
                   {action.status === 'pending' && (
                     <button onClick={() => handleConfirmAction(idx, action.id)} className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase transition-all shadow-lg">Lançar Agora</button>
                   )}
-                  {action.status === 'confirmed' && <div className="text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1 justify-center py-1"><Check size={12}/> Confirmado no Sistema</div>}
+                  {action.status === 'confirmed' && <div className="text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1 justify-center py-1"><Check size={12} /> Confirmado no Sistema</div>}
                 </div>
               ))}
             </div>
@@ -236,7 +255,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
         <div className="px-4 py-2 bg-slate-800/80 border-t border-white/5 flex items-center gap-3">
           <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-indigo-500 shadow-lg">
             <img src={selectedImage} className="w-full h-full object-cover" />
-            <button 
+            <button
               onClick={() => setSelectedImage(null)}
               className="absolute top-0 right-0 bg-rose-600 text-white p-0.5 rounded-bl-lg"
             >
@@ -249,30 +268,30 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
 
       <div className="p-4 bg-slate-900/60 border-t border-white/5">
         <div className="bg-slate-800/50 rounded-2xl flex items-center p-1.5 border border-white/5">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleImageSelect} 
-            accept="image/*" 
-            className="hidden" 
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageSelect}
+            accept="image/*"
+            className="hidden"
           />
-          <button 
+          <button
             onClick={() => fileInputRef.current?.click()}
             className="p-2 text-white/30 hover:text-indigo-400 transition-colors"
             title="Anexar Foto/Extrato"
           >
             <Paperclip size={18} />
           </button>
-          
-          <input 
-            type="text" 
-            value={input} 
-            onChange={e => setInput(e.target.value)} 
-            onKeyDown={e => e.key === 'Enter' && handleSend()} 
-            placeholder={selectedImage ? "O que deseja fazer com a foto?" : "O que lançamos hoje?"} 
-            className="flex-1 bg-transparent px-3 py-2 text-xs text-white outline-none placeholder:text-white/20" 
+
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSend()}
+            placeholder={selectedImage ? "O que deseja fazer com a foto?" : "O que lançamos hoje?"}
+            className="flex-1 bg-transparent px-3 py-2 text-xs text-white outline-none placeholder:text-white/20"
           />
-          
+
           <button className="p-2 text-white/20 hover:text-white transition-colors"><Mic size={18} /></button>
           <button onClick={handleSend} className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg transition-all ml-1"><Send size={16} /></button>
         </div>
