@@ -198,7 +198,11 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
     } catch (e: any) {
       console.error(e);
       let errorMsg = "Erro ao processar solicitação.";
-      if (e.message?.includes('API key')) errorMsg = "Erro de API Key inválida ou expirada.";
+
+      // Detailed error for debugging
+      if (e.message) errorMsg += `\nDetalhes: ${e.message}`;
+
+      if (e.message?.includes('API key')) errorMsg = "Erro de API Key inválida ou expirada. Verifique nas Configurações.";
       setMessages(prev => [...prev, { role: 'model', text: errorMsg }]);
     } finally {
       setIsLoading(false);
