@@ -71,16 +71,29 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     return groups;
   }, [transactions, filterType, filterCategory, searchTerm, selectedDay]);
 
-  const days = Object.keys(groupedTransactions).map(Number).sort((a, b) => {
+  // Scroll to current day on mount
+  useEffect(() => {
     const today = new Date().getDate();
-    if (a === today) return -1;
-    if (b === today) return 1;
-    return a - b;
-  });
+    const element = document.getElementById(`day-${today}`);
+    if (element) {
+      setTimeout(() => {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 500); // Delay to ensure render
+    }
+  }, [groupedTransactions]);
+
+  const days = Object.keys(groupedTransactions).map(Number).sort((a, b) => a - b);
 
   return (
     <div className="flex flex-col h-full bg-slate-50/50">
       <div className="p-6 border-b border-slate-200/60 flex flex-col gap-5">
+        {/* ... (header content remains safely outside of this replacement if scoped correctly, but line 79 is inside header. Wait.
+           StartLine 41 (useRef) -> 74 (sort).
+           Let's look at the context.
+           I need to modify `days` sorting AND add the effect.
+           I will modify from the end of `useMemo` to the return statement.
+        */}
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {/* Title removed, as parent container or context makes it clear, or keep small */}
@@ -177,7 +190,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             }, 0);
 
             return (
-              <div key={day} className="mb-8 last:mb-0">
+              <div key={day} id={`day-${day}`} className="mb-8 last:mb-0">
                 <div className="flex items-center justify-between mb-4 sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10 py-3 border-b border-slate-200/50">
                   <div className="flex items-center gap-3">
                     <span className="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-md shadow-slate-900/10">DIA {day}</span>

@@ -22,6 +22,45 @@ export interface Transaction {
   external_url?: string;
   client_name?: string;
   perfex_status?: string;
+
+  // Credit Card / Subscription Link
+  isCreditCardBill?: boolean;
+  relatedCardId?: string;
+  isSubscription?: boolean;
+  subscriptionId?: string;
+}
+
+export interface CreditCard {
+  id: string;
+  name: string;
+  closingDay: number;
+  dueDay: number;
+  limit: number;
+  color: string;
+}
+
+export interface CardTransaction {
+  id: string;
+  cardId: string;
+  description: string;
+  amount: number;
+  month: number; // Month of the invoice it belongs to (0-11)
+  year: number;
+  installmentNumber: number;
+  totalInstallments: number;
+  category: string;
+  originalDate: string; // ISO string
+}
+
+export interface Subscription {
+  id: string;
+  name: string;
+  amount: number;
+  day: number;
+  category: string;
+  active: boolean;
+  lastGeneratedMonth?: number;
+  lastGeneratedYear?: number;
 }
 
 export interface MonthSummary {
