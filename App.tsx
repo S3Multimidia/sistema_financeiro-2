@@ -597,7 +597,7 @@ const App: React.FC = () => {
                             month: currentMonth,
                             year: currentYear,
                             type: 'expense',
-                            category: sub.category,
+                            category: 'Assinaturas',
                             completed: false,
                             isSubscription: true,
                             subscriptionId: sub.id,

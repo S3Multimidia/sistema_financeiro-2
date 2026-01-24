@@ -20,7 +20,7 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
         name: '',
         amount: 0,
         day: 1,
-        category: 'GERAL',
+        category: 'Assinaturas',
         active: true
     });
 
@@ -32,7 +32,7 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
             name: newSub.name!,
             amount: Number(newSub.amount),
             day: Number(newSub.day) || 1,
-            category: newSub.category || 'GERAL',
+            category: newSub.category || 'Assinaturas',
             active: true,
             lastGeneratedMonth: undefined,
             lastGeneratedYear: undefined
@@ -44,7 +44,7 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
         onSync(subscriptionToAdd);
 
         setIsAdding(false);
-        setNewSub({ name: '', amount: 0, day: 1, category: 'GERAL', active: true });
+        setNewSub({ name: '', amount: 0, day: 1, category: 'Assinaturas', active: true });
     };
 
     const handleDelete = (id: string) => {
