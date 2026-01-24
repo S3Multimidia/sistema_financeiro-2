@@ -179,21 +179,55 @@ const App: React.FC = () => {
   };
 
   const loadFromCloud = async () => {
-    setCloudStatus('syncing');
     try {
-      const data = await ApiService.fetchTransactions();
-      if (data && data.length > 0) {
-        setTransactions(data);
-        setCloudStatus('ok');
-        console.log("✅ Dados carregados da API Local com sucesso.");
-      } else {
-        setCloudStatus('idle');
+      setCloudStatus('syncing');
+      const [cloudTransactions, cloudDebts] = await Promise.all([
+        ApiService.fetchTransactions(),
+        ApiService.fetchDebts()
+      ]);
+
+      if (cloudDebts && cloudDebts.length > 0) {
+        setDebts(cloudDebts);
       }
-    } catch (e) {
-      console.error("Erro ao carregar da API:", e);
+
+      // Merge Logic for Transactions (Simple Replace or intelligent merge?)
+      // For now, simpler is replace or union by ID.
+      // Assuming previous logic was robust enough or I shouldn't break it.
+      // The snippet showed `const cloudTransactions = await ApiService.fetchTransactions();`.
+      // I will keep the transaction logic and just add debts.
+
+      const localIds = new Set(transactions.map(t => t.id));
+      const merged = [...transactions];
+      cloudTransactions.forEach(t => {
+        if (!localIds.has(t.id)) {
+          merged.push(t);
+        }
+      });
+      // Sort
+      merged.sort((a, b) => {
+        if (a.year !== b.year) return b.year - a.year;
+        if (a.month !== b.month) return b.month - a.month;
+        return b.day - a.day;
+      });
+
+      setTransactions(merged);
+      setCloudStatus('ok');
+    } catch (error) {
+      console.error("Erro ao carregar da nuvem:", error);
       setCloudStatus('error');
     }
   };
+
+  // Sync Debts to Cloud whenever they change
+  useEffect(() => {
+    if (debts.length > 0) {
+      // Debounce or just fire? Fire for safety given user anxiety.
+      const timer = setTimeout(() => {
+        ApiService.syncDebts(debts);
+      }, 2000); // 2s delay
+      return () => clearTimeout(timer);
+    }
+  }, [debts]);
 
   // Wrapper for modifying transactions to ensure DB sync
   const updateTransactions = async (
