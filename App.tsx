@@ -499,34 +499,38 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="lg:col-span-4 space-y-6">
-                    <CreditCardWidget
-                      cards={cards}
-                      setCards={setCards}
-                      cardTransactions={cardTransactions}
-                      onAddTransaction={(newTrans) => setCardTransactions(prev => [...prev, ...newTrans])}
-                    />
+                  <div className="lg:col-span-4 flex flex-col h-[800px] gap-6">
+                    <div className="flex-1 overflow-hidden">
+                      <CreditCardWidget
+                        cards={cards}
+                        setCards={setCards}
+                        cardTransactions={cardTransactions}
+                        onAddTransaction={(newTrans) => setCardTransactions(prev => [...prev, ...newTrans])}
+                      />
+                    </div>
 
-                    <SubscriptionsWidget
-                      subscriptions={subscriptions}
-                      setSubscriptions={setSubscriptions}
-                      onSync={(sub) => {
-                        // Force add transaction for this month
-                        handleAddTransaction({
-                          description: sub.name,
-                          amount: sub.amount,
-                          day: sub.day,
-                          month: currentMonth,
-                          year: currentYear,
-                          type: 'expense',
-                          category: sub.category,
-                          completed: false,
-                          isSubscription: true,
-                          subscriptionId: sub.id
-                        }, { installments: 1, isFixed: true });
-                        alert('Assinatura lançada para este mês!');
-                      }}
-                    />
+                    <div className="flex-1 overflow-hidden">
+                      <SubscriptionsWidget
+                        subscriptions={subscriptions}
+                        setSubscriptions={setSubscriptions}
+                        onSync={(sub) => {
+                          // Force add transaction for this month
+                          handleAddTransaction({
+                            description: sub.name,
+                            amount: sub.amount,
+                            day: sub.day,
+                            month: currentMonth,
+                            year: currentYear,
+                            type: 'expense',
+                            category: sub.category,
+                            completed: false,
+                            isSubscription: true,
+                            subscriptionId: sub.id
+                          }, { installments: 1, isFixed: true });
+                          alert('Assinatura lançada para este mês!');
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
