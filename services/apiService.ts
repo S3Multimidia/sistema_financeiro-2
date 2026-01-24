@@ -20,7 +20,8 @@ const mapToApp = (t: any): Transaction => ({
     totalInstallments: t.total_installments,
     client_name: t.client_name,
     external_url: t.external_url,
-    perfex_status: t.perfex_status
+    perfex_status: t.perfex_status,
+    debtId: t.debt_id // Map DB snake_case to App camelCase
 });
 
 // Helper to map App camelCase to DB snake_case
@@ -31,6 +32,8 @@ const mapToDB = (t: Partial<Transaction>) => {
     if (t.installmentId !== undefined) mapped.installment_id = t.installmentId;
     if (t.installmentNumber !== undefined) mapped.installment_number = t.installmentNumber;
     if (t.totalInstallments !== undefined) mapped.installments_total = t.totalInstallments;
+    if (t.debtId !== undefined) mapped.debt_id = t.debtId;
+
     // client_name/external_url/perfex_status match DB columns
     // Ensure original_id is passed if present (critical for duplicate prevention)
     if ((t as any).original_id) mapped.original_id = (t as any).original_id;
@@ -41,6 +44,7 @@ const mapToDB = (t: Partial<Transaction>) => {
     delete mapped.installmentId;
     delete mapped.installmentNumber;
     delete mapped.totalInstallments;
+    delete mapped.debtId; // Remove camelCase version
 
     return mapped;
 };
