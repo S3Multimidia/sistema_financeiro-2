@@ -561,8 +561,8 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="lg:col-span-4 flex flex-col h-[800px] gap-6">
-                    <div className="flex-1 overflow-hidden">
+                  <div className="lg:col-span-4 flex flex-col gap-6" style={{ height: '1100px' }}>
+                    <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
                       <CreditCardWidget
                         cards={cards}
                         setCards={setCards}
@@ -573,7 +573,7 @@ const App: React.FC = () => {
                       />
                     </div>
 
-                    <div className="flex-1 overflow-hidden">
+                    <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
                       <SubscriptionsWidget
                         subscriptions={subscriptions}
                         setSubscriptions={setSubscriptions}
@@ -613,6 +613,30 @@ const App: React.FC = () => {
                             totalInstallments: 1
                           }, { installments: 1, isFixed: true });
                           alert('Assinatura lançada para este mês!');
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
+                      <DebtWidget
+                        debts={debts}
+                        setDebts={setDebts}
+                        onPay={(debtId, amount, name) => {
+                          handleAddTransaction({
+                            description: `Pagamento Crediário - ${name}`,
+                            amount: amount,
+                            day: new Date().getDate(),
+                            month: currentMonth,
+                            year: currentYear,
+                            type: 'expense',
+                            category: 'OUTROS', // Or create a generic 'DÍVIDAS/EMPRÉSTIMOS' category map entry? Using Assinaturas/Geral for now or user can change.
+                            // Actually, let's use 'OUTROS' or let user decide? 'SERVIÇOS'?
+                            // Let's use 'OUTROS' as default or 'Assinaturas' if user prefers recurring. 
+                            // Request didn't specify category. I'll use 'OUTROS' for now.
+                            // Wait, the debt itself acts like a sub-account. 
+                            completed: true // Paid immediately
+                          }, { installments: 1, isFixed: false });
+                          alert(`Pagamento de R$ ${amount} registrado no extrato!`);
                         }}
                       />
                     </div>
