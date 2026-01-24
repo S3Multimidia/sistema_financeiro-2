@@ -278,10 +278,37 @@ const App: React.FC = () => {
     optimisticUpdate: (prev: Transaction[]) => Transaction[]
   ) => {
 
-    // CUSTOM LOGIC: Cascade Delete for Subscriptions
+    // CUSTOM LOGIC: Debt Amount Update (Sync Back to Debt Balance)
+    if (action === 'update' && payload.updates.amount !== undefined) {
+      const t = transactions.find(tx => tx.id === payload.id);
+      if (t && t.debtId) {
+        // Diff = Old(Payment) - New(Payment)
+        // If I paid 100, now I pay 80. Diff = 20. Debt increases by 20 (I paid back 20 less).
+        const diff = t.amount - payload.updates.amount;
+        setDebts(prev => prev.map(d => d.id === t.debtId ? {
+          ...d,
+          currentBalance: d.currentBalance + diff
+        } : d));
+      }
+    }
+
+    // CUSTOM LOGIC: Reverse Sync for Debts (Delete Payment -> Increase Debt)
+
     if (action === 'delete') {
       const transactionToDelete = transactions.find(t => t.id === payload);
 
+      if (transactionToDelete && transactionToDelete.debtId) {
+        const debt = debts.find(d => d.id === transactionToDelete.debtId);
+        if (debt) {
+          setDebts(prev => prev.map(d => d.id === debt.id ? {
+            ...d,
+            currentBalance: d.currentBalance + transactionToDelete.amount, // Revert payment (Increase debt)
+            history: d.history ? d.history.filter(h => h.linkedTransactionId !== transactionToDelete.id) : []
+          } : d));
+        }
+      }
+
+      // CUSTOM LOGIC: Cascade Delete for Subscriptions
       if (transactionToDelete && transactionToDelete.isSubscription && transactionToDelete.subscriptionId) {
         // Cascade Delete Logic
         if (confirm('Esta é uma assinatura recorrente. Deseja cancelar as cobranças futuras também?')) {
@@ -352,6 +379,15 @@ const App: React.FC = () => {
       // Optionally revert optimistic update here
     }
   };
+
+  // Pre-Update Hook for Debts (Amount Change)
+  // We can't easily do it inside the main function because setTransactions is called early.
+  // Actually we can do it right at the start of updateTransactions.
+  // But wait, I'm already inside updateTransactions logic in previous step (delete).
+  // For update, I need to add it handled in a similar way.
+
+  // Let's add it near the top of the function, handling 'update'.
+
 
   // No automatic timer sync needed for Supabase as we save on write.
   // Keeping local storage sync for redundancy/offline support if needed, 
