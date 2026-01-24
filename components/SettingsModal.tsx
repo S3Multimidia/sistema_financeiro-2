@@ -39,12 +39,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
 
-    try {
-      // Save Gemini Key
-      if (geminiKey) {
+    // Save Gemini Key (Try Cloud first, fallback to Local Only)
+    if (geminiKey) {
+      try {
         await SupabaseService.saveGeminiKey(geminiKey);
+      } catch (e) {
+        console.warn("Could not save key to Cloud (RLS/Auth issue). Saving locally only.");
+        localStorage.setItem('gemini_api_key', geminiKey);
       }
+    }
 
+    try {
       // Save Perfex Config
       localStorage.setItem('perfex_url', perfexUrl);
       localStorage.setItem('perfex_token', perfexToken);
