@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { INITIAL_TRANSACTIONS, INITIAL_PREVIOUS_BALANCE, APP_VERSION } from './constants';
-import { Transaction, INITIAL_CATEGORIES_MAP, CreditCard, CardTransaction, Subscription } from './types';
+import { Transaction, INITIAL_CATEGORIES_MAP, CreditCard, CardTransaction, Subscription, DebtAccount } from './types';
 import { SummaryCards } from './components/SummaryCards';
 import { TransactionList } from './components/TransactionList';
 import { DailyFlowChart } from './components/FinancialCharts';
@@ -17,6 +17,7 @@ import { AdvancedDashboard } from './components/AdvancedDashboard';
 import { AppointmentsSidebarList } from './components/AppointmentsSidebarList';
 import { CreditCardWidget } from './components/CreditCardWidget';
 import { SubscriptionsWidget } from './components/SubscriptionsWidget';
+import { DebtWidget } from './components/DebtWidget';
 import { ApiService } from './services/apiService';
 import { CreditCardService } from './services/creditCardService';
 import { SubscriptionService } from './services/subscriptionService';
@@ -81,11 +82,17 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [debts, setDebts] = useState<DebtAccount[]>(() => {
+    const saved = localStorage.getItem('finan_debts_2026');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   // Persistence & Auto-Sync
   useEffect(() => {
     localStorage.setItem('finan_cards_2026', JSON.stringify(cards));
     localStorage.setItem('finan_card_transactions_2026', JSON.stringify(cardTransactions));
     localStorage.setItem('finan_subscriptions_2026', JSON.stringify(subscriptions));
+    localStorage.setItem('finan_debts_2026', JSON.stringify(debts));
 
     // 1. Sync Credit Card Invoices to Main Transactions
     let syncedTransactions = CreditCardService.syncInvoiceToTransactions(transactions, cardTransactions, cards);
