@@ -758,7 +758,7 @@ const App: React.FC = () => {
                             installmentNumber: 1,
                             totalInstallments: 1
                           }, { installments: 1, isFixed: true });
-                          alert('Assinatura lançada para este mês!');
+                          // alert('Assinatura lançada para este mês!'); // Removed as requested
                         }}
                       />
                     </div>
@@ -779,7 +779,7 @@ const App: React.FC = () => {
                             completed: false, // Pending!
                             debtId: debtId // Link to debt
                           }, { installments: 1, isFixed: false });
-                          alert(`Pagamento agendado para ${date.toLocaleDateString()}! Confirme o pagamento no extrato para abater a dívida.`);
+                          // alert suppressed
                         }}
                       />
                     </div>
