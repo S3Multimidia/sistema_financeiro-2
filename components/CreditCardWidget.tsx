@@ -195,95 +195,85 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
                             </div>
             ))
                     )}
-        </div>
-    )
-}
-
-{/* ADD CARD VIEW */ }
-{
-    view === 'add_card' && (
-        <div className="space-y-3 animate-fade-in bg-white/5 p-4 rounded-2xl border border-white/5">
-            <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Novo Cartão</h4>
-            <input className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500/50 placeholder:text-white/20" placeholder="Nome do Cartão" value={newCard.name} onChange={e => setNewCard({ ...newCard, name: e.target.value })} />
-            <div className="flex gap-2">
-                <div className="flex-1">
-                    <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Fechamento</label>
-                    <input type="number" className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Dia" value={newCard.closingDay} onChange={e => setNewCard({ ...newCard, closingDay: parseInt(e.target.value) })} />
-                </div>
-                <div className="flex-1">
-                    <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Vencimento</label>
-                    <input type="number" className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Dia" value={newCard.dueDay} onChange={e => setNewCard({ ...newCard, dueDay: parseInt(e.target.value) })} />
-                </div>
-            </div>
-            <div className="space-y-1">
-                <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Limite</label>
-                <input type="number" className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="R$ 0,00" value={newCard.limit || ''} onChange={e => setNewCard({ ...newCard, limit: parseFloat(e.target.value) })} />
-            </div>
-            <button onClick={handleAddCard} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-lg mt-2 transition-all">Salvar Cartão</button>
-        </div>
-    )
-}
-
-{/* ADD PURCHASE VIEW */ }
-{
-    view === 'add_purchase' && (
-        <div className="space-y-3 animate-fade-in bg-white/5 p-4 rounded-2xl border border-white/5">
-            <h4 className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2">Lançar Compra</h4>
-            {cards.length === 0 ? (
-                <p className="text-xs text-rose-400 text-center font-bold">Cadastre um cartão primeiro.</p>
-            ) : (
-                <>
-                    <select value={purchase.cardId} onChange={e => setPurchase({ ...purchase, cardId: e.target.value })} className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white outline-none">
-                        <option value="" className="text-slate-500">Selecione o Cartão</option>
-                        {cards.map(c => <option key={c.id} value={c.id} className="text-slate-300">{c.name}</option>)}
-                    </select>
-                    <input className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20" placeholder="Descrição (ex: iPhone)" value={purchase.description} onChange={e => setPurchase({ ...purchase, description: e.target.value })} />
+            {/* ADD CARD VIEW */}
+            {view === 'add_card' && (
+                <div className="space-y-3 animate-fade-in bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Novo Cartão</h4>
+                    <input className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500/50 placeholder:text-white/20" placeholder="Nome do Cartão" value={newCard.name} onChange={e => setNewCard({ ...newCard, name: e.target.value })} />
                     <div className="flex gap-2">
-                        <input type="number" className="w-1/2 bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20" placeholder="Valor" value={purchase.amount} onChange={e => setPurchase({ ...purchase, amount: e.target.value })} />
-                        <input type="number" className="w-1/2 bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20" placeholder="Parcelas" value={purchase.installments} onChange={e => setPurchase({ ...purchase, installments: e.target.value })} />
+                        <div className="flex-1">
+                            <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Fechamento</label>
+                            <input type="number" className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Dia" value={newCard.closingDay} onChange={e => setNewCard({ ...newCard, closingDay: parseInt(e.target.value) })} />
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Vencimento</label>
+                            <input type="number" className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="Dia" value={newCard.dueDay} onChange={e => setNewCard({ ...newCard, dueDay: parseInt(e.target.value) })} />
+                        </div>
                     </div>
-                    <input type="date" className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white" value={purchase.date} onChange={e => setPurchase({ ...purchase, date: e.target.value })} />
-
-                    <button onClick={handleAddPurchase} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-lg mt-2 transition-all">Confirmar Lançamento</button>
-                </>
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Limite</label>
+                        <input type="number" className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white" placeholder="R$ 0,00" value={newCard.limit || ''} onChange={e => setNewCard({ ...newCard, limit: parseFloat(e.target.value) })} />
+                    </div>
+                    <button onClick={handleAddCard} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-lg mt-2 transition-all">Salvar Cartão</button>
+                </div>
             )}
+
+            {/* ADD PURCHASE VIEW */}
+            {view === 'add_purchase' && (
+                <div className="space-y-3 animate-fade-in bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <h4 className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2">Lançar Compra</h4>
+                    {cards.length === 0 ? (
+                        <p className="text-xs text-rose-400 text-center font-bold">Cadastre um cartão primeiro.</p>
+                    ) : (
+                        <>
+                            <select value={purchase.cardId} onChange={e => setPurchase({ ...purchase, cardId: e.target.value })} className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white outline-none">
+                                <option value="" className="text-slate-500">Selecione o Cartão</option>
+                                {cards.map(c => <option key={c.id} value={c.id} className="text-slate-300">{c.name}</option>)}
+                            </select>
+                            <input className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20" placeholder="Descrição (ex: iPhone)" value={purchase.description} onChange={e => setPurchase({ ...purchase, description: e.target.value })} />
+                            <div className="flex gap-2">
+                                <input type="number" className="w-1/2 bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20" placeholder="Valor" value={purchase.amount} onChange={e => setPurchase({ ...purchase, amount: e.target.value })} />
+                                <input type="number" className="w-1/2 bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20" placeholder="Parcelas" value={purchase.installments} onChange={e => setPurchase({ ...purchase, installments: e.target.value })} />
+                            </div>
+                            <input type="date" className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white" value={purchase.date} onChange={e => setPurchase({ ...purchase, date: e.target.value })} />
+
+                            <button onClick={handleAddPurchase} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-lg mt-2 transition-all">Confirmar Lançamento</button>
+                        </>
+                    )}
+                </div>
+            )}
+
+            {/* EDIT PURCHASE VIEW */}
+            {view === 'edit_purchase' && editingTransaction && (
+                <div className="space-y-3 animate-fade-in bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Editar Lançamento</h4>
+
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Descrição</label>
+                        <input
+                            className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20"
+                            value={editingTransaction.description}
+                            onChange={e => setEditingTransaction({ ...editingTransaction, description: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Valor da Parcela</label>
+                        <input
+                            type="number"
+                            className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20"
+                            value={editingTransaction.amount}
+                            onChange={e => setEditingTransaction({ ...editingTransaction, amount: parseFloat(e.target.value) })}
+                        />
+                    </div>
+
+                    <div className="flex gap-2 mt-2">
+                        <button onClick={() => { setView('details'); setEditingTransaction(null); }} className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all">Cancelar</button>
+                        <button onClick={handleSaveEdit} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-lg transition-all">Salvar</button>
+                    </div>
+                </div>
+            )}
+
         </div>
-    )
-}
-
-{/* EDIT PURCHASE VIEW */ }
-{
-    view === 'edit_purchase' && editingTransaction && (
-        <div className="space-y-3 animate-fade-in bg-white/5 p-4 rounded-2xl border border-white/5">
-            <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Editar Lançamento</h4>
-
-            <div className="space-y-1">
-                <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Descrição</label>
-                <input
-                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20"
-                    value={editingTransaction.description}
-                    onChange={e => setEditingTransaction({ ...editingTransaction, description: e.target.value })}
-                />
-            </div>
-
-            <div className="space-y-1">
-                <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Valor da Parcela</label>
-                <input
-                    type="number"
-                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20"
-                    value={editingTransaction.amount}
-                    onChange={e => setEditingTransaction({ ...editingTransaction, amount: parseFloat(e.target.value) })}
-                />
-            </div>
-
-            <div className="flex gap-2 mt-2">
-                <button onClick={() => { setView('details'); setEditingTransaction(null); }} className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all">Cancelar</button>
-                <button onClick={handleSaveEdit} className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-lg transition-all">Salvar</button>
-            </div>
-        </div>
-    )
-}
-
-        </div >
     );
 };
