@@ -473,7 +473,7 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  <div className="lg:col-span-12">
+                  <div className="lg:col-span-8">
                     {/* Wrapped Transaction List in a Glass Card if not internally styled */}
                     <div className="glass-card rounded-3xl overflow-hidden p-1 shadow-sm border-white/40">
                       <div className="bg-slate-50/50 p-6 border-b border-slate-100 flex items-center justify-between">
@@ -497,6 +497,36 @@ const App: React.FC = () => {
                         onManageCategories={() => setShowCategoryManager(true)}
                       />
                     </div>
+                  </div>
+
+                  <div className="lg:col-span-4 space-y-6">
+                    <CreditCardWidget
+                      cards={cards}
+                      setCards={setCards}
+                      cardTransactions={cardTransactions}
+                      onAddTransaction={(newTrans) => setCardTransactions(prev => [...prev, ...newTrans])}
+                    />
+
+                    <SubscriptionsWidget
+                      subscriptions={subscriptions}
+                      setSubscriptions={setSubscriptions}
+                      onSync={(sub) => {
+                        // Force add transaction for this month
+                        handleAddTransaction({
+                          description: sub.name,
+                          amount: sub.amount,
+                          day: sub.day,
+                          month: currentMonth,
+                          year: currentYear,
+                          type: 'expense',
+                          category: sub.category,
+                          completed: false,
+                          isSubscription: true,
+                          subscriptionId: sub.id
+                        }, { installments: 1, isFixed: true });
+                        alert('Assinatura lançada para este mês!');
+                      }}
+                    />
                   </div>
                 </div>
 
