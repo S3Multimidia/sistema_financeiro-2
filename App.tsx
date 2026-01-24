@@ -297,6 +297,14 @@ const App: React.FC = () => {
     });
   };
 
+  const handleDeleteCardTransaction = (id: string) => {
+    setCardTransactions(prev => prev.filter(t => t.id !== id));
+  };
+
+  const handleEditCardTransaction = (id: string, updates: Partial<CardTransaction>) => {
+    setCardTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  };
+
   return (
     <>
 
@@ -506,6 +514,8 @@ const App: React.FC = () => {
                         setCards={setCards}
                         cardTransactions={cardTransactions}
                         onAddTransaction={(newTrans) => setCardTransactions(prev => [...prev, ...newTrans])}
+                        onDeleteTransaction={handleDeleteCardTransaction}
+                        onEditTransaction={handleEditCardTransaction}
                       />
                     </div>
 
