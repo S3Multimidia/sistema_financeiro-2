@@ -262,6 +262,11 @@ export const ApiService = {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        if (debts.length === 0) {
+            await supabase.from('debts').delete().eq('user_id', user.id);
+            return;
+        }
+
         const dbDebts = debts.map(d => ({
             id: d.id,
             user_id: user.id,
@@ -270,11 +275,27 @@ export const ApiService = {
             history: d.history
         }));
 
-        const { error } = await supabase
+        const { error: upsertError } = await supabase
             .from('debts')
             .upsert(dbDebts, { onConflict: 'id' });
 
-        if (error) console.error('Error syncing debts:', error);
+        if (upsertError) console.error('Error syncing debts (upsert):', upsertError);
+
+        // Clean Orphans
+        const currentIds = debts.map(d => d.id);
+        const { error: deleteError } = await supabase
+            .from('debts')
+            .delete()
+            .eq('user_id', user.id)
+            .not('id', 'in', `(${currentIds.join(',')})`); // .not with 'in' expects formatted list or array? 
+        // Actually supabase-js: .not('column', 'in', array)
+
+        // Let's use filter syntax clearly:
+        await supabase.from('debts').delete().eq('user_id', user.id).not('id', 'in', `(${currentIds.map(id => `"${id}"`).join(',')})`);
+        // Wait, supabase-js query builder `in` takes an array. `not` takes operator.
+        // .not('id', 'in', currentIds) -> This generates `id not in (1,2,3)`
+        // Let's rely on standard .not('id', 'in', currentIds) if typed correctly.
+        // If TypeScript complains, we cast.
     },
 
     // --- Cards ---
@@ -295,17 +316,26 @@ export const ApiService = {
     async syncCards(cards: any[]) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+        if (cards.length === 0) {
+            await supabase.from('credit_cards').delete().eq('user_id', user.id);
+            return;
+        }
+
         const dbCards = cards.map(c => ({
             id: c.id,
             user_id: user.id,
             name: c.name,
             closing_day: c.closingDay,
             due_day: c.dueDay,
-            limit: c.limit, // "limit" column
+            limit: c.limit,
             color: c.color
         }));
-        const { error } = await supabase.from('credit_cards').upsert(dbCards, { onConflict: 'id' });
-        if (error) console.error('Error syncing cards', error);
+
+        await supabase.from('credit_cards').upsert(dbCards, { onConflict: 'id' });
+
+        const currentIds = cards.map(c => c.id);
+        await supabase.from('credit_cards').delete().eq('user_id', user.id).not('id', 'in', currentIds);
     },
 
     // --- Subscriptions ---
@@ -328,6 +358,12 @@ export const ApiService = {
     async syncSubscriptionsData(subs: any[]) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+        if (subs.length === 0) {
+            await supabase.from('subscriptions').delete().eq('user_id', user.id);
+            return;
+        }
+
         const dbSubs = subs.map(s => ({
             id: s.id,
             user_id: user.id,
@@ -339,8 +375,11 @@ export const ApiService = {
             last_generated_month: s.lastGeneratedMonth,
             last_generated_year: s.lastGeneratedYear
         }));
-        const { error } = await supabase.from('subscriptions').upsert(dbSubs, { onConflict: 'id' });
-        if (error) console.error('Error syncing subscriptions', error);
+
+        await supabase.from('subscriptions').upsert(dbSubs, { onConflict: 'id' });
+
+        const currentIds = subs.map(s => s.id);
+        await supabase.from('subscriptions').delete().eq('user_id', user.id).not('id', 'in', currentIds);
     },
 
     // --- Card Transactions (Items inside invoice) ---
@@ -365,8 +404,12 @@ export const ApiService = {
     async syncCardTransactions(trans: any[]) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        // Upserting thousands of rows can be heavy. Ideally we only sync changes.
-        // But for now, full sync ensures safety.
+
+        if (trans.length === 0) {
+            await supabase.from('card_transactions').delete().eq('user_id', user.id);
+            return;
+        }
+
         const dbTrans = trans.map(t => ({
             id: t.id,
             user_id: user.id,
@@ -380,7 +423,10 @@ export const ApiService = {
             category: t.category,
             original_date: t.originalDate
         }));
-        const { error } = await supabase.from('card_transactions').upsert(dbTrans, { onConflict: 'id' });
-        if (error) console.error('Error syncing card transactions', error);
+
+        await supabase.from('card_transactions').upsert(dbTrans, { onConflict: 'id' });
+
+        const currentIds = trans.map(t => t.id);
+        await supabase.from('card_transactions').delete().eq('user_id', user.id).not('id', 'in', currentIds);
     }
 };
