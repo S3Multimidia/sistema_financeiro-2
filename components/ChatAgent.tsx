@@ -1,9 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
+import { Type } from "@google/genai";
 import { Transaction } from '../types';
 import {
-  Send, Bot, Trash2, Loader2, Mic, MicOff, Check, Zap, Briefcase, Paperclip, X, Image as ImageIcon
+  Send, Bot, Trash2, Loader2, Mic, Check, Zap, Briefcase, Paperclip, X
 } from 'lucide-react';
 
 type AgentMode = 'executor' | 'consultant';
@@ -27,16 +26,14 @@ interface Message {
   role: 'user' | 'model';
   agent?: AgentMode;
   text: string;
-  image?: string; // Base64 da imagem para exibição no histórico
+  image?: string;
   actions?: ChatAction[];
 }
 
 export const ChatAgent: React.FC<ChatAgentProps> = ({
   transactions,
   currentBalance,
-  categoriesMap,
-  setTransactions,
-  setCategoriesMap
+  setTransactions
 }) => {
   const [activeAgent, setActiveAgent] = useState<AgentMode>('executor');
   const [messages, setMessages] = useState<Message[]>([
@@ -44,7 +41,6 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -77,8 +73,8 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
         setTransactions(old => [...old, {
           id: Math.random().toString(36).substr(2, 9),
           ...action.args,
-          description: action.args.description.toUpperCase(),
-          category: action.args.category.toUpperCase()
+          description: action.args.description?.toUpperCase() || 'SEM DESCRIÇÃO',
+          category: action.args.category?.toUpperCase() || 'GERAL'
         }]);
       }
       action.status = 'confirmed';
@@ -115,7 +111,6 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey });
       const today = new Date();
 
       const sysIns = activeAgent === 'executor'
@@ -137,54 +132,63 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
            Analise as dúvidas do usuário sobre finanças, estratégias de investimento ou análise de gastos. 
            Seja perspicaz, profissional e direto. Dê dicas de economia se o saldo estiver baixo.`;
 
-      const contents: any[] = [];
-      const parts: any[] = [{ text: sysIns }];
+      // Construct Payload manually for REST API
+      const model = 'gemini-1.5-flash';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-      if (currentImg) {
-        parts.push({
-          inlineData: {
-            mimeType: "image/jpeg", // Assuming JPEG/PNG heavily, standard base64 from FileReader supports this usually if prefix matches
-            data: currentImg.split(',')[1]
+      const contents = [{
+        role: "user",
+        parts: [
+          { text: sysIns },
+          ...(currentImg ? [{ inline_data: { mime_type: "image/jpeg", data: currentImg.split(',')[1] } }] : []),
+          { text: userText || "Analise e execute." }
+        ]
+      }];
+
+      const tools = activeAgent === 'executor' ? [{
+        function_declarations: [{
+          name: 'add_transaction',
+          description: 'Adiciona um novo registro financeiro no sistema.',
+          parameters: {
+            type: 'OBJECT',
+            properties: {
+              day: { type: 'NUMBER', description: 'Dia do mês (1-31)' },
+              month: { type: 'NUMBER', description: 'Mês (0-11)' },
+              year: { type: 'NUMBER', description: 'Ano (ex: 2026)' },
+              description: { type: 'STRING', description: 'Descrição da transação' },
+              amount: { type: 'NUMBER', description: 'Valor da transação (positivo)' },
+              type: { type: 'STRING', description: 'income (receita), expense (despesa) ou appointment (agenda)' },
+              category: { type: 'STRING', description: 'Categoria da transação' }
+            },
+            required: ['day', 'month', 'year', 'description', 'amount', 'type', 'category']
           }
-        });
-      }
+        }]
+      }] : undefined;
 
-      parts.push({ text: userText || "Analise esta imagem/texto e execute conforme suas instruções." });
-
-      contents.push({ role: 'user', parts });
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
-        contents,
-        config: activeAgent === 'executor' ? {
-          tools: [{
-            functionDeclarations: [{
-              name: 'add_transaction',
-              description: 'Adiciona um novo registro financeiro no sistema.',
-              parameters: {
-                type: Type.OBJECT,
-                properties: {
-                  day: { type: Type.NUMBER, description: 'Dia do mês (1-31)' },
-                  month: { type: Type.NUMBER, description: 'Mês (0 para Janeiro, 11 para Dezembro)' },
-                  year: { type: Type.NUMBER, description: 'Ano (ex: 2026)' },
-                  description: { type: Type.STRING, description: 'Descrição da transação' },
-                  amount: { type: Type.NUMBER, description: 'Valor da transação (positivo)' },
-                  type: { type: Type.STRING, description: 'income (receita), expense (despesa) ou appointment (agenda)' },
-                  category: { type: Type.STRING, description: 'Categoria da transação' }
-                },
-                required: ['day', 'month', 'year', 'description', 'amount', 'type', 'category']
-              }
-            }]
-          }]
-        } : {}
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents, tools })
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(JSON.stringify(errorData));
+      }
+
+      const data = await response.json();
+      const candidate = data.candidates?.[0];
+      const modelResponse = candidate?.content?.parts?.[0]?.text;
+
+      // Handle Function Calls separately for REST
+      const functionCalls = candidate?.content?.parts?.filter((p: any) => p.functionCall).map((p: any) => p.functionCall);
+
       let actions: ChatAction[] = [];
-      if (response.functionCalls && activeAgent === 'executor') {
-        actions = response.functionCalls.map(c => ({
+      if (functionCalls && functionCalls.length > 0 && activeAgent === 'executor') {
+        actions = functionCalls.map((fc: any) => ({
           id: Math.random().toString(36).substr(2, 9),
-          name: c.name,
-          args: c.args,
+          name: fc.name,
+          args: fc.args, // REST API returns args as object directly usually, or struct
           status: 'pending'
         }));
       }
@@ -192,17 +196,14 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
       setMessages(prev => [...prev, {
         role: 'model',
         agent: activeAgent,
-        text: response.text || (actions.length > 0 ? "Preparei os lançamentos abaixo para sua confirmação:" : "Processado."),
+        text: modelResponse || (actions.length > 0 ? "Preparei os lançamentos abaixo para sua confirmação:" : "Processado."),
         actions
       }]);
+
     } catch (e: any) {
       console.error(e);
       let errorMsg = "Erro ao processar solicitação.";
-
-      // Detailed error for debugging
       if (e.message) errorMsg += `\nDetalhes: ${e.message}`;
-
-      if (e.message?.includes('API key')) errorMsg = "Erro de API Key inválida ou expirada. Verifique nas Configurações.";
       setMessages(prev => [...prev, { role: 'model', text: errorMsg }]);
     } finally {
       setIsLoading(false);
@@ -216,7 +217,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
           <Bot size={14} className="text-indigo-400" />
           <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">IA Online</span>
         </div>
-        <button onClick={() => setMessages([{ role: 'model', text: 'Histórico limpo.' }])} className="text-white/20 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
+        <button onClick={() => setMessages([{ role: 'model', agent: 'executor', text: 'Histórico limpo.' }])} className="text-white/20 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
       </div>
 
       <div className="p-1.5 flex gap-1 bg-slate-900/40">
