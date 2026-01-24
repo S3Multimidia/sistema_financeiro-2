@@ -31,72 +31,106 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ summary, onUpdateSta
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      {/* Saldo Anterior Removed as requested */}
-
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Income */}
-      <div className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300">
-        <div>
-          <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Receitas Realizadas</p>
-          <div className="flex items-baseline gap-1">
-            <h3 className="text-xl font-bold text-emerald-600">{formatCurrency(summary.realizedIncome)}</h3>
-            <TrendingUp size={12} className="text-emerald-400" />
-          </div>
-          <p className="text-[9px] text-slate-400 mt-1">
-            Previsto: {formatCurrency(summary.totalIncome)}
-          </p>
+      <div className="group glass-card p-6 rounded-3xl relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-indigo-500/10">
+        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <TrendingUp size={80} className="text-emerald-500 transform rotate-12" />
         </div>
-        <div className="p-3 bg-emerald-50 rounded-xl text-emerald-500 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
-          <ArrowUpRight size={20} strokeWidth={2.5} />
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl text-white shadow-lg shadow-emerald-500/30">
+              <ArrowUpRight size={20} strokeWidth={2.5} />
+            </div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Receitas</p>
+          </div>
+
+          <div className="flex items-baseline gap-1">
+            <h3 className="text-3xl font-bold text-slate-800 tracking-tight">{formatCurrency(summary.realizedIncome)}</h3>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-xs font-medium text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
+              Realizado
+            </span>
+            <span className="text-xs text-slate-400">
+              de {formatCurrency(summary.totalIncome)}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Expense */}
-      <div className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300">
-        <div>
-          <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Despesas Realizadas</p>
-          <div className="flex items-baseline gap-1">
-            <h3 className="text-xl font-bold text-rose-600">{formatCurrency(summary.realizedExpense)}</h3>
-            <TrendingDown size={12} className="text-rose-400" />
-          </div>
-          <p className="text-[9px] text-slate-400 mt-1">
-            Previsto: {formatCurrency(summary.totalExpense)}
-          </p>
+      <div className="group glass-card p-6 rounded-3xl relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-rose-500/10">
+        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <TrendingDown size={80} className="text-rose-500 transform -rotate-12" />
         </div>
-        <div className="p-3 bg-rose-50 rounded-xl text-rose-500 group-hover:bg-rose-600 group-hover:text-white transition-colors duration-300">
-          <ArrowDownRight size={20} strokeWidth={2.5} />
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 bg-gradient-to-br from-rose-400 to-rose-600 rounded-xl text-white shadow-lg shadow-rose-500/30">
+              <ArrowDownRight size={20} strokeWidth={2.5} />
+            </div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Despesas</p>
+          </div>
+
+          <div className="flex items-baseline gap-1">
+            <h3 className="text-3xl font-bold text-slate-800 tracking-tight">{formatCurrency(summary.realizedExpense)}</h3>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-xs font-medium text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full">
+              Realizado
+            </span>
+            <span className="text-xs text-slate-400">
+              de {formatCurrency(summary.totalExpense)}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Current Balance (Realized) - NEW CARD */}
-      <div className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300">
-        <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldo do Dia (Realizado)</p>
-          <h3 className={`text-xl font-bold ${summary.currentBalance >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+      {/* Current Balance */}
+      <div className="group glass-card p-6 rounded-3xl relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-primary-500/10 border-primary-100">
+        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <Wallet size={80} className="text-primary-500" />
+        </div>
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl text-white shadow-lg shadow-primary-500/30">
+              <Wallet size={20} strokeWidth={2.5} />
+            </div>
+            <p className="text-xs font-bold text-primary-600 uppercase tracking-wider">Saldo em Caixa</p>
+          </div>
+
+          <h3 className={`text-3xl font-bold tracking-tight ${summary.currentBalance >= 0 ? 'text-primary-900' : 'text-rose-600'}`}>
             {formatCurrency(summary.currentBalance)}
           </h3>
-          <p className="text-[9px] text-slate-400 mt-1">
-            Em Caixa
+          <p className="text-xs text-primary-400 mt-2 font-medium">
+            Disponível agora
           </p>
-        </div>
-        <div className="p-3 bg-indigo-50 rounded-xl text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
-          <Wallet size={20} strokeWidth={2.5} />
         </div>
       </div>
 
-      {/* End of Month Balance */}
-      <div className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300">
-        <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Previsão Fechamento</p>
-          <h3 className={`text-xl font-bold ${summary.endOfMonthBalance >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>
+      {/* End of Month Forecast */}
+      <div className="group glass-card p-6 rounded-3xl relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-purple-500/10">
+        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <CalendarCheck size={80} className="text-purple-500" />
+        </div>
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl text-white shadow-lg shadow-slate-500/30">
+              <CalendarCheck size={20} strokeWidth={2.5} />
+            </div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Previsão</p>
+          </div>
+
+          <h3 className={`text-3xl font-bold tracking-tight ${summary.endOfMonthBalance >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>
             {formatCurrency(summary.endOfMonthBalance)}
           </h3>
-          <p className="text-[9px] text-slate-400 mt-1">
-            Projetado (Mês)
+          <p className="text-xs text-slate-400 mt-2 font-medium">
+            Projetado para fim do mês
           </p>
-        </div>
-        <div className="p-3 bg-slate-100 rounded-xl text-slate-500 group-hover:bg-slate-800 group-hover:text-white transition-colors duration-300">
-          <CalendarCheck size={20} strokeWidth={2.5} />
         </div>
       </div>
     </div>

@@ -74,81 +74,92 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   const days = Object.keys(groupedTransactions).map(Number).sort((a, b) => a - b);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
-      <div className="p-5 border-b border-slate-100 flex flex-col gap-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-slate-800">Lançamentos e Agenda</h2>
-            <div className="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100 uppercase tracking-widest">
+    <div className="flex flex-col h-full bg-slate-50/50">
+      <div className="p-6 border-b border-slate-200/60 flex flex-col gap-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* Title removed, as parent container or context makes it clear, or keep small */}
+            <div className="flex items-center gap-2">
+              <ListFilter size={20} className="text-primary-600" />
+              <h2 className="text-base font-bold text-slate-700">Filtros & Busca</h2>
+            </div>
+
+            <div className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full border border-primary-100">
               {transactions.length} registros
             </div>
           </div>
 
           {/* Botões de Filtro de Tipo */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+          <div className="flex items-center bg-white p-1.5 rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
             <button
               onClick={() => setFilterType('ALL')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${filterType === 'ALL' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap ${filterType === 'ALL' ? 'bg-primary-600 text-white shadow-md shadow-primary-500/30' : 'text-slate-500 hover:text-primary-600 hover:bg-slate-50'}`}
             >
               Todos
             </button>
             <button
               onClick={() => setFilterType('income')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1.5 ${filterType === 'income' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-emerald-500'}`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 whitespace-nowrap ${filterType === 'income' ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30' : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'}`}
             >
-              <TrendingUp size={12} /> Receitas
+              <TrendingUp size={14} /> Receitas
             </button>
             <button
               onClick={() => setFilterType('expense')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1.5 ${filterType === 'expense' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-rose-500'}`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 whitespace-nowrap ${filterType === 'expense' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30' : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'}`}
             >
-              <TrendingDown size={12} /> Despesas
+              <TrendingDown size={14} /> Despesas
             </button>
             <button
               onClick={() => setFilterType('appointment')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1.5 ${filterType === 'appointment' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-indigo-500'}`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 whitespace-nowrap ${filterType === 'appointment' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
             >
-              <Clock size={12} /> Agenda
+              <Clock size={14} /> Agenda
             </button>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 group">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
             <input
               type="text"
-              placeholder="Buscar por descrição, categoria ou sub..."
+              placeholder="Buscar por descrição, categoria..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all"
+              className="w-full pl-10 pr-4 py-3 text-sm font-medium border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all shadow-sm group-hover:border-slate-300"
             />
           </div>
 
-          <div className="relative min-w-[140px]">
-            <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <div className="relative min-w-[160px] group">
+            <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
             <select
               value={selectedDay}
               onChange={(e) => onSelectedDayChange(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all"
+              className="w-full pl-10 pr-10 py-3 text-sm font-medium border border-slate-200 rounded-xl bg-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all shadow-sm group-hover:border-slate-300"
             >
-              <option value="">Todos Dias</option>
+              <option value="">Todo o Mês</option>
               {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>Dia {d}</option>)}
             </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <Filter size={14} />
+            </div>
           </div>
         </div>
       </div>
 
-      <div ref={listContainerRef} className="overflow-y-auto flex-1 p-4 min-h-[300px] max-h-[700px] scroll-smooth custom-scrollbar">
+      <div ref={listContainerRef} className="overflow-y-auto flex-1 p-6 min-h-[400px] max-h-[800px] scroll-smooth custom-scrollbar bg-slate-50/30">
         {days.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-400 bg-slate-50/30 rounded-xl border-2 border-dashed border-slate-100">
-            <Search size={40} className="mb-3 opacity-20" />
-            <p className="text-xs font-bold uppercase tracking-widest opacity-60">Nenhum registro encontrado com estes filtros.</p>
+          <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-slate-400">
+            <div className="bg-slate-100 p-6 rounded-full mb-4">
+              <Search size={48} className="text-slate-300" />
+            </div>
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Nada encontrado</p>
+            <p className="text-xs text-slate-400 mt-1">Tente ajustar seus filtros</p>
             <button
               onClick={() => { setFilterType('ALL'); setSearchTerm(''); onSelectedDayChange(''); }}
-              className="mt-4 text-[10px] font-black text-indigo-600 uppercase hover:underline"
+              className="mt-6 text-xs font-bold text-white bg-primary-500 px-6 py-2 rounded-full shadow-lg shadow-primary-500/30 hover:bg-primary-600 transition-all"
             >
-              Limpar todos os filtros
+              Limpar Filtros
             </button>
           </div>
         ) : (
@@ -162,76 +173,77 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
             return (
               <div key={day} className="mb-8 last:mb-0">
-                <div className="flex items-center justify-between mb-3 sticky top-0 bg-white/95 backdrop-blur-sm z-10 py-2 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-slate-900 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-sm">DIA {day}</span>
+                <div className="flex items-center justify-between mb-4 sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10 py-3 border-b border-slate-200/50">
+                  <div className="flex items-center gap-3">
+                    <span className="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-md shadow-slate-900/10">DIA {day}</span>
+                    <div className="h-px w-8 bg-slate-300 hidden sm:block"></div>
                   </div>
-                  <span className={`text-[10px] font-black px-2 py-1 rounded border shadow-sm ${dayTotal >= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
-                    FLUXO: {formatCurrency(dayTotal)}
+                  <span className={`text-xs font-bold px-3 py-1 rounded-lg border ${dayTotal >= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
+                    Dia: {formatCurrency(dayTotal)}
                   </span>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {dayTrans.map(t => (
-                    <div key={t.id} className={`group flex items-center justify-between p-3 rounded-xl border transition-all ${t.type === 'appointment' ? (t.completed ? 'border-slate-100 bg-slate-50 opacity-60' : 'border-indigo-100 bg-indigo-50/30 shadow-sm shadow-indigo-500/5') : (t.type === 'income' && t.completed ? 'bg-blue-50 border-blue-100 hover:shadow-lg hover:shadow-blue-200/50 hover:border-blue-200 hover:-translate-y-0.5' : 'bg-white border-slate-100 hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200 hover:-translate-y-0.5')}`}>
-                      <div className="flex items-start gap-3 overflow-hidden">
-                        <div className="flex items-center gap-3 shrink-0">
+                    <div key={t.id} className={`group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 hover:shadow-md 
+                        ${t.type === 'appointment'
+                        ? (t.completed ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-indigo-100 shadow-sm shadow-indigo-500/5')
+                        : (t.type === 'income' && t.completed
+                          ? 'bg-gradient-to-r from-white to-emerald-50/30 border-emerald-100/50 hover:border-emerald-200'
+                          : 'bg-white border-slate-100 hover:border-slate-200')
+                      }
+                    `}>
+                      <div className="flex items-center gap-4 overflow-hidden flex-1">
+                        <div className="shrink-0">
                           <button
                             onClick={() => onToggleComplete?.(t.id)}
-                            className={`transition-colors shrink-0 ${t.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-500'}`}
+                            className={`transition-all duration-300 hover:scale-110 ${t.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-500'}`}
                             title={t.completed ? "Marcar como não pago" : "Marcar como pago"}
                           >
-                            {t.completed ? <CheckCircle2 size={22} className="fill-emerald-50" /> : <Circle size={22} />}
+                            {t.completed ? <CheckCircle2 size={24} className="fill-emerald-100" /> : <Circle size={24} strokeWidth={1.5} />}
                           </button>
-
-                          {/* Icon Type (Visual only now) */}
-                          {t.type !== 'appointment' && (
-                            <div className={`p-2 rounded-xl shrink-0 shadow-sm ${t.type === 'income' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'
-                              }`}>
-                              {t.type === 'income' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                            </div>
-                          )}
                         </div>
 
-                        <div className="min-w-0">
-                          <p className={`font-bold text-sm truncate leading-tight ${t.type === 'appointment' ? (t.completed ? 'text-slate-400 line-through' : 'text-indigo-900 italic font-black') : 'text-slate-800'}`}>
-                            {t.description}
-                          </p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter ${t.type === 'appointment' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}`}>
+                        {/* Icon Box */}
+                        <div className={`p-3 rounded-2xl shrink-0 shadow-sm ${t.type === 'appointment' ? 'bg-indigo-50 text-indigo-500' :
+                          t.type === 'income' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'
+                          }`}>
+                          {t.type === 'appointment' ? <Clock size={20} /> : t.type === 'income' ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className={`font-bold text-base truncate leading-tight ${t.type === 'appointment' ? (t.completed ? 'text-slate-400 line-through' : 'text-indigo-900') : 'text-slate-800'}`}>
+                              {t.description}
+                            </p>
+                            {t.type === 'appointment' && !t.completed && <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide border ${t.type === 'appointment' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
                               {t.category}
                             </span>
                             {t.subCategory && (
-                              <>
-                                <ChevronRight size={10} className="text-slate-300" />
-                                <span className="text-[8px] font-bold text-indigo-500 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded uppercase tracking-tighter">
-                                  {t.subCategory}
-                                </span>
-                              </>
+                              <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
+                                <ChevronRight size={10} />
+                                {t.subCategory}
+                              </span>
                             )}
-                            {/* Client Name & External Link Badge */}
+
                             {t.client_name && (
-                              <>
-                                <ChevronRight size={10} className="text-slate-300" />
-                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter truncate max-w-[100px]">
-                                  {t.client_name}
-                                </span>
-                              </>
+                              <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50/50 px-2 py-0.5 rounded-md uppercase tracking-wide flex items-center gap-1">
+                                {t.client_name}
+                              </span>
                             )}
 
                             {/* Status Badge */}
-                            {t.perfex_status && (
-                              <>
-                                <ChevronRight size={10} className="text-slate-300" />
-                                <span className={`text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded border ${t.perfex_status === 'Paga' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                  t.perfex_status === 'Atrasada' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                                    t.perfex_status === 'Em Aberto' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                      t.perfex_status === 'Parcial' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                        'bg-slate-50 text-slate-500 border-slate-200'
-                                  }`}>
-                                  {t.perfex_status}
-                                </span>
-                              </>
+                            {t.perfex_status && t.perfex_status !== 'Paga' && (
+                              <span className={`text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded border ${t.perfex_status === 'Atrasada' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                t.perfex_status === 'Em Aberto' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                  'bg-blue-50 text-blue-600 border-blue-100'
+                                }`}>
+                                {t.perfex_status}
+                              </span>
                             )}
 
                             {t.external_url && (
@@ -239,44 +251,45 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                                 href={t.external_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="ml-1 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-tighter transition-colors"
-                                title="Ver Fatura"
+                                className="text-indigo-400 hover:text-indigo-600 transition-colors"
+                                title="Link Externo"
                               >
-                                Ver Fatura <Move size={8} className="-rotate-45" />
+                                <Move size={12} className="-rotate-45" />
                               </a>
                             )}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0 ml-4">
+                      <div className="flex items-center gap-6 shrink-0 ml-4">
                         {t.type !== 'appointment' ? (
-                          <span className={`font-black text-sm whitespace-nowrap tabular-nums ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          <span className={`font-bold text-lg whitespace-nowrap tabular-nums tracking-tight ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
                             {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
                           </span>
                         ) : (
-                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${t.completed ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                            {t.completed ? 'Concluído' : 'Agenda'}
+                          <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">
+                            Agenda
                           </span>
                         )}
 
-                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity bg-slate-50 rounded-lg p-1 border border-slate-100">
-                          <button onClick={() => onEdit(t)} className="text-slate-400 hover:text-indigo-600 p-1.5 transition-colors" title="Editar"><Pencil size={14} /></button>
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all duration-200 gap-1 translate-x-4 group-hover:translate-x-0">
+                          <button onClick={() => onEdit(t)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Editar"><Pencil size={16} /></button>
                           {movingId === t.id ? (
-                            <div className="flex items-center gap-1 mx-1">
+                            <div className="flex items-center gap-1 bg-white shadow-lg p-1 rounded-lg absolute right-0 z-20 border border-slate-100">
                               <input
                                 type="number"
-                                className="w-10 text-[10px] p-1 border border-indigo-200 rounded focus:ring-1 focus:ring-indigo-400 outline-none"
+                                className="w-12 text-xs p-1 border border-indigo-200 rounded focus:ring-1 focus:ring-indigo-400 outline-none"
                                 value={newDayVal}
                                 autoFocus
                                 onChange={(e) => setNewDayVal(e.target.value)}
                               />
-                              <button onClick={() => { onMove(t.id, parseInt(newDayVal)); setMovingId(null); }} className="text-emerald-500 hover:scale-110 transition-transform"><Settings size={14} /></button>
+                              <button onClick={() => { onMove(t.id, parseInt(newDayVal)); setMovingId(null); }} className="text-emerald-500 hover:bg-emerald-50 p-1 rounded"><CheckCircle2 size={16} /></button>
+                              <button onClick={() => setMovingId(null)} className="text-rose-500 hover:bg-rose-50 p-1 rounded"><Trash2 size={16} /></button>
                             </div>
                           ) : (
-                            <button onClick={() => { setMovingId(t.id); setNewDayVal(t.day.toString()); }} className="text-slate-400 hover:text-amber-500 p-1.5 transition-colors" title="Mudar Dia"><Move size={14} /></button>
+                            <button onClick={() => { setMovingId(t.id); setNewDayVal(t.day.toString()); }} className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors" title="Mudar Dia"><Move size={16} /></button>
                           )}
-                          <button onClick={() => onDelete(t.id)} className="text-slate-300 hover:text-rose-500 p-1.5 transition-colors" title="Excluir"><Trash2 size={14} /></button>
+                          <button onClick={() => onDelete(t.id)} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors" title="Excluir"><Trash2 size={16} /></button>
                         </div>
                       </div>
                     </div>

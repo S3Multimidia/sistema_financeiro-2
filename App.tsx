@@ -88,6 +88,7 @@ const App: React.FC = () => {
   };
 
   const handlePerfexAutoSync = async () => {
+    console.log("🔄 Iniciando Auto-Sync do Perfex CRM...");
     // Default Credentials
     const DEFAULT_PERFEX_URL = 'https://admin.s3m.com.br/api';
     const DEFAULT_PERFEX_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiczNtdWx0aW1pZGlhQGdtYWlsLmNvbSIsIm5hbWUiOiJQbGFuaWxoYSIsIkFQSV9USU1FIjoxNzU4MDUxOTc5fQ.SbhzQOgmMHh_eTiw_HuJUBgz-2POwkXj1umAe4kT6Uc';
@@ -106,12 +107,21 @@ const App: React.FC = () => {
 
     if (url && token) {
       try {
+        setCloudStatus('syncing'); // Show syncing indicator
         // We import PerfexService dynamically to avoid circular deps if any, or just assumes it's available.
         // Actually, importing at top level is fine in App.tsx. I need to add the import.
         const { PerfexService } = await import('./services/perfexService'); // Dynamic import to be safe
-        await PerfexService.syncInvoicesToSystem({ url, token });
+        console.log("📡 Conectando ao Perfex...");
+        await PerfexService.syncInvoicesToSystem({ url, token }, (msg) => console.log(`[Perfex Sync] ${msg}`));
+        console.log("✅ Auto-Sync Perfex concluído com sucesso.");
+        // Reload cloud data to reflect changes
+        await loadFromCloud();
       } catch (e) {
-        console.warn('Auto-sync failed:', e);
+        console.warn('❌ Auto-sync failed:', e);
+        setCloudStatus('error');
+      } finally {
+        // loadFromCloud sets status to 'ok' or 'idle', but if we failed line above might leave it.
+        // If successful, loadFromCloud handles it. If failed, we set error.
       }
     }
   };
@@ -242,10 +252,19 @@ const App: React.FC = () => {
 
   return (
     <>
+
       {!user ? (
         <LoginPage onLoginSuccess={(u) => { setUser(u); loadFromCloud(); }} />
       ) : (
-        <div className="min-h-screen bg-slate-50 pb-12 font-sans">
+        <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans selection:bg-indigo-500 selection:text-white">
+
+          {/* Ambient Background Effects */}
+          <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+            <div className="absolute top-0 right-1/4 w-96 h-96 bg-secondary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+            <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+          </div>
+
           <AppointmentPopup appointments={transactions.filter(t => t.type === 'appointment' && t.day === new Date().getDate() && t.month === new Date().getMonth() && !t.completed && !acknowledgedIds.has(t.id))} onAcknowledge={id => setAcknowledgedIds(prev => new Set([...prev, id]))} />
 
           {editingTransaction && (
@@ -280,104 +299,106 @@ const App: React.FC = () => {
             />
           )}
 
-          <header className="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-3">
-            <div className="max-w-[1800px] mx-auto flex items-center justify-between">
+          {/* Floating Glass Header */}
+          <header className="fixed top-6 left-4 right-4 md:left-8 md:right-8 z-50">
+            <div className="glass rounded-2xl px-6 py-4 flex items-center justify-between shadow-xl shadow-slate-200/40 transition-all duration-500">
               <div className="flex items-center gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="bg-slate-900 p-2 rounded-xl text-white shadow-lg"><LayoutDashboard size={22} /></div>
+                <div className="flex items-center gap-4">
+                  <div className="bg-gradient-to-br from-primary-800 to-primary-950 p-2.5 rounded-xl text-white shadow-lg shadow-primary-900/20">
+                    <LayoutDashboard size={24} />
+                  </div>
                   <div>
-                    <h1 className="text-sm font-black text-slate-900 leading-none uppercase tracking-tight">{appConfig.appName}</h1>
-                    <div className="flex items-center gap-3 mt-1">
+                    <h1 className="text-lg font-bold text-slate-900 leading-tight uppercase tracking-tight">{appConfig.appName}</h1>
+                    <div className="flex items-center gap-3">
                       {cloudStatus === 'ok' ? (
-                        <span className="text-[8px] font-black text-emerald-500 uppercase flex items-center gap-1">
-                          <CloudCheck size={10} /> Sincronizado
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                          <CloudCheck size={12} /> Sincronizado
                         </span>
                       ) : cloudStatus === 'syncing' ? (
-                        <span className="text-[8px] font-black text-amber-500 uppercase flex items-center gap-1">
-                          <Loader2 size={10} className="animate-spin" /> Salvando...
+                        <span className="text-[10px] font-bold text-amber-600 uppercase flex items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                          <Loader2 size={12} className="animate-spin" /> Salvando...
                         </span>
                       ) : cloudStatus === 'idle' ? (
-                        <span className="text-[8px] font-black text-indigo-500 uppercase flex items-center gap-1">
-                          <CloudCheck size={10} /> Nuvem Ativa
+                        <span className="text-[10px] font-bold text-primary-600 uppercase flex items-center gap-1.5 bg-primary-50 px-2 py-0.5 rounded-full border border-primary-100">
+                          <CloudCheck size={12} /> Nuvem Ativa
                         </span>
                       ) : (
-                        <span className="text-[8px] font-black text-rose-500 uppercase flex items-center gap-1">
-                          <AlertTriangle size={10} /> Erro Nuvem
-                        </span>
-                      )}
-                      {localStorage.getItem('finan_auto_sync') === 'true' && (
-                        <span className="text-[8px] font-black text-indigo-500 uppercase flex items-center gap-1 border-l border-slate-200 pl-2">
-                          <Timer size={10} /> 10 Min
+                        <span className="text-[10px] font-bold text-rose-600 uppercase flex items-center gap-1.5 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
+                          <AlertTriangle size={12} /> Erro Nuvem
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => loadFromCloud()}
-                  className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-xl border border-indigo-200 transition-all group"
-                  title="Recarregar Dados"
-                >
-                  <RefreshCw size={14} className="text-indigo-500 group-hover:rotate-180 transition-transform" />
-                  <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Recarregar</span>
-                </button>
-
-                <div className="bg-slate-900 text-white rounded-xl px-4 py-2 flex items-center gap-3 shadow-xl">
-                  <Wallet size={16} className="text-emerald-400" />
-                  <div className="flex flex-col">
-                    <span className="text-[7px] font-black text-white/40 uppercase leading-none mb-0.5">Saldo Total</span>
-                    <span className="text-xs font-black leading-none">{totalOverallBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                  </div>
+                <div className="hidden md:flex bg-slate-100/50 p-1 rounded-xl border border-slate-200/50">
+                  <button onClick={() => setCurrentView('dashboard')} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-all duration-300 ${currentView === 'dashboard' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <LayoutDashboard size={16} /> Dashboard
+                  </button>
+                  <button onClick={() => setCurrentView('yearly')} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-all duration-300 ${currentView === 'yearly' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <BarChart3 size={16} /> Relatórios
+                  </button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-8">
-                <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                  <button onClick={() => setCurrentView('dashboard')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all ${currentView === 'dashboard' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>
-                    <LayoutDashboard size={14} /> Dashboard
-                  </button>
-                  <button onClick={() => setCurrentView('yearly')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all ${currentView === 'yearly' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>
-                    <BarChart3 size={14} /> Relatório Anual
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-                  <button onClick={() => { const d = new Date(currentYear, currentMonth - 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-1 hover:bg-white rounded-lg transition-all text-slate-400"><ChevronLeft size={16} /></button>
+              <div className="flex items-center gap-3 md:gap-6">
+                <div className="flex items-center gap-1 bg-white/50 px-2 py-1 rounded-xl border border-white/50 backdrop-blur-sm">
+                  <button onClick={() => { const d = new Date(currentYear, currentMonth - 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-primary-600"><ChevronLeft size={18} /></button>
                   <div className="text-center min-w-[120px]">
-                    <p className="text-[10px] font-black text-indigo-500 uppercase leading-none mb-1">{MONTHS_NAMES[currentMonth]}</p>
-                    <p className="text-xs font-bold text-slate-800 leading-none">{currentYear}</p>
+                    <p className="text-xs font-bold text-primary-600 uppercase leading-none mb-1 tracking-wide">{MONTHS_NAMES[currentMonth]}</p>
+                    <p className="text-sm font-black text-slate-800 leading-none">{currentYear}</p>
                   </div>
-                  <button onClick={() => { const d = new Date(currentYear, currentMonth + 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-1 hover:bg-white rounded-lg transition-all text-slate-400"><ChevronRight size={16} /></button>
+                  <button onClick={() => { const d = new Date(currentYear, currentMonth + 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-primary-600"><ChevronRight size={18} /></button>
                 </div>
 
-                <button onClick={() => setShowSettings(true)} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl transition-all border border-slate-200">
-                  <Settings size={20} />
-                </button>
+                <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
 
-                <button
-                  onClick={() => { ApiService.logout(); setUser(null); }}
-                  className="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-all border border-rose-200"
-                  title="Sair"
-                >
-                  <LogOut size={20} />
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => loadFromCloud()}
+                    className="p-3 bg-white hover:bg-primary-50 text-slate-400 hover:text-primary-600 rounded-xl transition-all border border-slate-100 shadow-sm group"
+                    title="Recarregar"
+                  >
+                    <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
+                  </button>
+
+                  <button onClick={() => setShowSettings(true)} className="p-3 bg-white hover:bg-primary-50 text-slate-400 hover:text-primary-600 rounded-xl transition-all border border-slate-100 shadow-sm">
+                    <Settings size={18} />
+                  </button>
+
+                  <button
+                    onClick={() => { ApiService.logout(); setUser(null); }}
+                    className="p-3 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-all border border-rose-100 shadow-sm"
+                    title="Sair"
+                  >
+                    <LogOut size={18} />
+                  </button>
+                </div>
               </div>
             </div>
           </header>
 
-          <main className="max-w-[1800px] mx-auto p-6 space-y-8">
+          <main className="max-w-[1920px] mx-auto p-4 md:p-8 pt-32 md:pt-36 space-y-8 animate-fade-in">
             {currentView === 'dashboard' ? (
               <div className="space-y-8">
                 <SummaryCards summary={summary} onUpdateStartingBalance={handleUpdateStartingBalance} />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-                  <div className="lg:col-span-3">
-                    <TransactionForm onAdd={handleAddTransaction} categoriesMap={categoriesMap} currentMonth={currentMonth} currentYear={currentYear} />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
+                  <div className="lg:col-span-3 space-y-8">
+                    {/* Glass Card Container for Forms */}
+                    <div className="glass-card p-6 rounded-3xl">
+                      <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <div className="w-1 h-6 bg-primary-500 rounded-full"></div>
+                        Nova Transação
+                      </h3>
+                      <TransactionForm onAdd={handleAddTransaction} categoriesMap={categoriesMap} currentMonth={currentMonth} currentYear={currentYear} />
+                    </div>
                   </div>
+
                   <div className="lg:col-span-3">
                     <AppointmentsSidebarList transactions={transactions} currentMonth={currentMonth} onToggleComplete={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))} />
                   </div>
+
                   <div className="lg:col-span-3">
                     <DailyFlowChart transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} />
                   </div>
@@ -386,28 +407,34 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   <div className="lg:col-span-9">
-                    <TransactionList
-                      transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)}
-                      onDelete={id => updateTransactions('delete', id, prev => prev.filter(t => t.id !== id))}
-                      onEdit={setEditingTransaction}
-                      // For simplicity, move and toggle complete can also be wrapped if needed, 
-                      // but for this task I will focus on Add/Delete/Edit-Save which is in EditModal.
-                      // Toggle Complete logic:
-                      onMove={(id, d) => updateTransactions('update', { id, updates: { day: d } }, prev => prev.map(t => t.id === id ? { ...t, day: d } : t))}
-                      onToggleComplete={id => {
-                        const t = transactions.find(tx => tx.id === id);
-                        if (t) updateTransactions('update', { id, updates: { completed: !t.completed } }, prev => prev.map(tx => tx.id === id ? { ...tx, completed: !tx.completed } : tx));
-                      }}
-                      selectedDay={selectedDayFilter}
-                      onSelectedDayChange={setSelectedDayFilter}
-                      categoriesMap={categoriesMap}
-                      onManageCategories={() => setShowCategoryManager(true)}
-                    />
+                    {/* Wrapped Transaction List in a Glass Card if not internally styled */}
+                    <div className="glass-card rounded-3xl overflow-hidden p-1 shadow-sm border-white/40">
+                      <div className="bg-slate-50/50 p-6 border-b border-slate-100 flex items-center justify-between">
+                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                          <div className="w-1 h-6 bg-secondary-500 rounded-full"></div>
+                          Extrato de Lançamentos
+                        </h3>
+                      </div>
+                      <TransactionList
+                        transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)}
+                        onDelete={id => updateTransactions('delete', id, prev => prev.filter(t => t.id !== id))}
+                        onEdit={setEditingTransaction}
+                        onMove={(id, d) => updateTransactions('update', { id, updates: { day: d } }, prev => prev.map(t => t.id === id ? { ...t, day: d } : t))}
+                        onToggleComplete={id => {
+                          const t = transactions.find(tx => tx.id === id);
+                          if (t) updateTransactions('update', { id, updates: { completed: !t.completed } }, prev => prev.map(tx => tx.id === id ? { ...tx, completed: !tx.completed } : tx));
+                        }}
+                        selectedDay={selectedDayFilter}
+                        onSelectedDayChange={setSelectedDayFilter}
+                        categoriesMap={categoriesMap}
+                        onManageCategories={() => setShowCategoryManager(true)}
+                      />
+                    </div>
                   </div>
 
-                  <div className="lg:col-span-3 space-y-6">
+                  <div className="lg:col-span-3 space-y-8">
                     <Calculator />
                     <ChatAgent
                       transactions={transactions}
@@ -422,13 +449,15 @@ const App: React.FC = () => {
                 <AdvancedDashboard transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} allTransactions={transactions} currentMonth={currentMonth} year={currentYear} />
               </div>
             ) : (
-              <YearlyReport transactions={transactions} year={currentYear} />
+              <div className="animate-slide-up">
+                <YearlyReport transactions={transactions} year={currentYear} />
+              </div>
             )}
           </main>
 
-          <footer className="max-w-[1800px] mx-auto px-6 py-4 text-center">
-            <p className="text-[10px] text-slate-400 font-medium uppercas tracking-wider">
-              Versão {APP_VERSION} dev • © 2026 S3 Multimídia (VPS Edition)
+          <footer className="max-w-[1920px] mx-auto px-6 py-8 text-center">
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-widest opacity-60">
+              {appConfig.appName} • v{APP_VERSION} • © 2026 S3 Multimídia (VPS Edition)
             </p>
           </footer>
         </div>

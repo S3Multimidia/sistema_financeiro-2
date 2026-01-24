@@ -52,25 +52,25 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
   }, [transactions, previousBalance, month, year]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
-      <div className="bg-slate-900 text-white p-4">
-        <h2 className="font-black text-[10px] uppercase tracking-[0.2em] text-center">Calendário de Saldo Acumulado</h2>
+    <div className="glass-card rounded-3xl overflow-hidden flex flex-col h-full border-0">
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-5">
+        <h2 className="font-bold text-[10px] uppercase tracking-[0.2em] text-center opacity-80">Calendário de Saldo Acumulado</h2>
       </div>
 
       {/* Cabeçalho da Semana */}
-      <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-100">
+      <div className="grid grid-cols-7 bg-slate-50/50 border-b border-slate-100/50 backdrop-blur-sm">
         {WEEKDAYS_SHORT.map(wd => (
-          <div key={wd} className="py-2 text-center text-[8px] font-black text-slate-400">
+          <div key={wd} className="py-3 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
             {wd}
           </div>
         ))}
       </div>
 
       {/* Grid de Dias */}
-      <div className="grid grid-cols-7 flex-1 bg-slate-100 gap-px">
+      <div className="grid grid-cols-7 flex-1 bg-slate-200/30 gap-px">
         {calendarData.map((item, idx) => {
           if (item.day === null) {
-            return <div key={`empty-${idx}`} className="bg-slate-50/50" />;
+            return <div key={`empty-${idx}`} className="bg-slate-50/20" />;
           }
 
           const isNegative = item.balance !== null && item.balance < 0;
@@ -81,44 +81,45 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
           return (
             <div
               key={`day-${item.day}`}
-              className={`bg-white p-1 min-h-[60px] flex flex-col justify-between transition-colors hover:bg-slate-50 relative group ${isToday ? 'ring-1 ring-inset ring-indigo-500 z-10' : ''}`}
+              className={`bg-white/60 p-1.5 min-h-[60px] flex flex-col justify-between transition-all duration-200 hover:bg-white hover:shadow-lg hover:z-20 hover:scale-105 relative group backdrop-blur-sm ${isToday ? 'ring-2 ring-inset ring-primary-500 z-10 bg-white' : ''}`}
             >
               <div className="flex justify-between items-start">
-                <span className={`text-xs font-black ${isToday ? 'text-indigo-600' : 'text-slate-300'}`}>
+                <span className={`text-xs font-bold font-mono ${isToday ? 'text-primary-600' : 'text-slate-400'}`}>
                   {item.day.toString().padStart(2, '0')}
                 </span>
-                {isToday && <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>}
+                {isToday && <div className="w-1.5 h-1.5 bg-primary-500 rounded-full shadow-lg shadow-primary-500/50"></div>}
               </div>
 
               <div className="flex flex-col items-center justify-center flex-1">
-                <span className={`text-[10px] font-black leading-tight mb-1 text-center break-all ${isNegative ? 'text-rose-600' : 'text-indigo-600'}`}>
+                <span className={`text-[10px] font-black leading-tight mb-1 text-center break-all ${isNegative ? 'text-rose-500' : 'text-indigo-600'}`}>
                   {item.balance !== null ? formatCompactCurrency(item.balance) : ''}
                 </span>
-                <div className={`w-full h-[3px] rounded-full opacity-20 ${isNegative ? 'bg-rose-500' : 'bg-indigo-500'}`}></div>
+                <div className={`w-full h-[3px] rounded-full opacity-30 ${isNegative ? 'bg-rose-500' : 'bg-indigo-500'}`}></div>
               </div>
 
               {/* Tooltip Simples ao passar o mouse */}
-              <div className="absolute hidden group-hover:flex bottom-full left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[8px] px-2 py-1 rounded mb-1 whitespace-nowrap z-50 pointer-events-none font-bold shadow-xl border border-white/10">
-                Saldo: R$ {item.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              <div className="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] px-3 py-1.5 rounded-lg mb-2 whitespace-nowrap z-50 pointer-events-none font-bold shadow-xl">
+                <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
+                R$ {item.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="bg-slate-50 p-3 border-t border-slate-100">
+      <div className="bg-slate-50/50 p-4 border-t border-slate-100/50 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-            <span className="text-[8px] font-black text-slate-400 uppercase">Positivo</span>
+            <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-md"></div>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Positivo</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-            <span className="text-[8px] font-black text-slate-400 uppercase">Negativo</span>
+            <div className="w-2 h-2 rounded-full bg-rose-500 shadow-md"></div>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Negativo</span>
           </div>
           <div className="ml-auto text-right">
-            <p className="text-[8px] font-black text-slate-400 uppercase">Final do Mês</p>
-            <p className={`text-[11px] font-black ${calendarData[calendarData.length - 1]?.balance < 0 ? 'text-rose-600' : 'text-indigo-600'}`}>
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Final do Mês</p>
+            <p className={`text-xs font-black ${calendarData[calendarData.length - 1]?.balance < 0 ? 'text-rose-600' : 'text-indigo-600'}`}>
               R$ {calendarData[calendarData.length - 1]?.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
           </div>

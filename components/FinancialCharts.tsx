@@ -52,17 +52,17 @@ export const DailyFlowChart: React.FC<ChartProps> = ({ transactions }) => {
   }, [transactions]);
 
   return (
-    <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-100/80 hover:shadow-lg transition-all duration-500 h-full flex flex-col group">
+    <div className="glass-card p-6 rounded-3xl h-full flex flex-col group">
       <div className="flex items-center justify-between mb-8">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-indigo-500 transition-colors">Fluxo Diário do Mês</h3>
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest group-hover:text-primary-500 transition-colors">Fluxo Diário do Mês</h3>
         <div className="flex gap-4">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-emerald-500/50 shadow-sm"></div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Receitas</span>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30"></div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Receitas</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-rose-500 shadow-rose-500/50 shadow-sm"></div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Despesas</span>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-lg shadow-rose-500/30"></div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Despesas</span>
           </div>
         </div>
       </div>
@@ -83,26 +83,26 @@ export const DailyFlowChart: React.FC<ChartProps> = ({ transactions }) => {
                 <stop offset="100%" stopColor="#b91c1c" stopOpacity={0.8} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }}
+              tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }}
               tickLine={false}
               axisLine={false}
               dy={10}
             />
             <YAxis
-              tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }}
+              tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }}
               tickFormatter={(value: number) => `R$${value >= 1000 ? (value / 1000) + 'k' : value}`}
               tickLine={false}
               axisLine={false}
             />
-            <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc', radius: 8 }} />
+            <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(241, 245, 249, 0.4)', radius: 8 }} />
             <Bar
               dataKey="Receitas"
               fill="url(#colorIncome)"
               radius={[6, 6, 6, 6]}
-              maxBarSize={32}
+              maxBarSize={40}
               animationDuration={1500}
               animationEasing="ease-out"
             />
@@ -110,7 +110,7 @@ export const DailyFlowChart: React.FC<ChartProps> = ({ transactions }) => {
               dataKey="Despesas"
               fill="url(#colorExpense)"
               radius={[6, 6, 6, 6]}
-              maxBarSize={32}
+              maxBarSize={40}
               animationDuration={1500}
               animationEasing="ease-out"
             />
