@@ -120,6 +120,21 @@ export const ApiService = {
         if (error) throw error;
     },
 
+    async deleteTransactionsByOriginalIds(originalIds: string[]) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        if (originalIds.length === 0) return;
+
+        const { error } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('user_id', user.id)
+            .in('original_id', originalIds);
+
+        if (error) throw error;
+    },
+
     async upsertInitialTransaction(transaction: Omit<Transaction, 'id'>) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');

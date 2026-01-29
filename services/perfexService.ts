@@ -182,20 +182,39 @@ export const PerfexService = {
     // Start of current month (e.g., 2024-01-01)
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const filteredInvoices = invoices.filter((inv: any) => {
-      if (!inv.date) return false;
+    const invoicesToUpsert: any[] = [];
+    const idsToDelete: string[] = [];
+
+    invoices.forEach((inv: any) => {
+      if (!inv.date) return;
       // Parse inv.date carefully (YYYY-MM-DD)
       const [year, month, day] = inv.date.split('-');
       const invoiceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
 
-      // Return if invoice date is equal or greater than start of current month
-      // AND exclude Cancelled invoices (Status 5)
-      return invoiceDate >= startOfCurrentMonth && inv.status !== '5';
+      // Check status 5 (Cancelada)
+      if (inv.status === '5') {
+        idsToDelete.push(`perfex_inv_${inv.id}`);
+      } else if (invoiceDate >= startOfCurrentMonth) {
+        // Only add active invoices from current month onwards
+        invoicesToUpsert.push(inv);
+      }
     });
 
-    if (progressCallback) progressCallback(`Filtrado: ${filteredInvoices.length} faturas (Mês Atual + Futuro).`);
+    if (progressCallback) progressCallback(`Filtrado: ${invoicesToUpsert.length} faturas ativas (Mês Atual + Futuro), ${idsToDelete.length} canceladas.`);
 
-    const transactions = filteredInvoices.map((inv: any) => {
+    // 1. Process Deletions (Cancelled Invoices)
+    if (idsToDelete.length > 0) {
+      if (progressCallback) progressCallback(`Removendo ${idsToDelete.length} faturas canceladas...`);
+      // Batch deletes if necessary (Supabase URL limit), but usually safe for hundreds. 
+      // Splitting by 100 just in case.
+      const DELETE_BATCH = 100;
+      for (let i = 0; i < idsToDelete.length; i += DELETE_BATCH) {
+        await ApiService.deleteTransactionsByOriginalIds(idsToDelete.slice(i, i + DELETE_BATCH));
+      }
+    }
+
+    // 2. Process Upserts (Active Invoices)
+    const transactions = invoicesToUpsert.map((inv: any) => {
       const mapped = this.mapInvoiceToTransaction(inv, config, clientMap);
 
       // If recurring > 0, append info to description
