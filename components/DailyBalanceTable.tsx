@@ -84,7 +84,7 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
             <div
               key={`day-${item.day}`}
               className={`p-1.5 min-h-[60px] flex flex-col justify-between transition-all duration-200 hover:bg-white hover:shadow-lg hover:z-20 hover:scale-105 relative group backdrop-blur-sm 
-                ${isToday ? 'ring-2 ring-inset ring-primary-500 z-10 bg-white' : (isWeekend ? 'bg-rose-50/50' : 'bg-white/60')}
+                ${isToday ? 'ring-2 ring-inset ring-primary-500 z-10 bg-white' : (isWeekend ? 'bg-rose-100/60' : 'bg-white/60')}
               `}
             >
               <div className="flex justify-between items-start">
