@@ -21,6 +21,7 @@ import { DebtWidget } from './components/DebtWidget';
 import { ApiService } from './services/apiService';
 import { CreditCardService } from './services/creditCardService';
 import { SubscriptionService } from './services/subscriptionService';
+import { ConfirmationModal } from './components/ConfirmationModal';
 import {
   LayoutDashboard,
   ChevronLeft,
@@ -45,6 +46,8 @@ const MONTHS_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
+
+
 
 const App: React.FC = () => {
   const STORAGE_KEY = 'finan_agenda_data_2026_v2';
@@ -313,8 +316,6 @@ const App: React.FC = () => {
     if (action === 'update' && payload.updates.amount !== undefined) {
       const t = transactions.find(tx => tx.id === payload.id);
       if (t && t.debtId) {
-        // Diff = Old(Payment) - New(Payment)
-        // If I paid 100, now I pay 80. Diff = 20. Debt increases by 20 (I paid back 20 less).
         const diff = t.amount - payload.updates.amount;
         setDebts(prev => prev.map(d => d.id === t.debtId ? {
           ...d,
@@ -328,55 +329,53 @@ const App: React.FC = () => {
       const transToEdit = transactions.find(t => t.id === payload.id);
       if (transToEdit && transToEdit.isFixed && transToEdit.installmentId && transToEdit.installmentId.startsWith('fixed_')) {
         const updates = payload.updates;
-        // Check if relevant fields are changed (Amount, Day, Category, Desc)
         const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined;
 
-        if (isRelevantChange) {
-          if (confirm('Esta é uma despesa MENSAL FIXA. Deseja aplicar as alterações para todos os meses seguintes?')) {
-            const startMonthParams = (transToEdit.year * 12) + transToEdit.month;
-            const groupTransactions = transactions.filter(t =>
-              t.installmentId === transToEdit.installmentId &&
-              ((t.year * 12) + t.month) >= startMonthParams
-            );
+        if (isRelevantChange && payload.cascade === true) {
+          const startMonthParams = (transToEdit.year * 12) + transToEdit.month;
+          const groupTransactions = transactions.filter(t =>
+            t.installmentId === transToEdit.installmentId &&
+            ((t.year * 12) + t.month) >= startMonthParams
+          );
 
-            // Prepare updates excluding month/year to preserve series sequence
-            // If day changed, apply new day to all.
-            const { month, year, id, ...safeUpdates } = updates;
+          // Prepare updates excluding month/year to preserve series sequence
+          const { month, year, id, ...safeUpdates } = updates;
 
-            // Apply to Local State
-            setTransactions(prev => prev.map(t => {
-              if (groupTransactions.find(g => g.id === t.id)) {
-                return { ...t, ...safeUpdates };
-              }
-              return t;
-            }));
+          // Apply to Local State
+          setTransactions(prev => prev.map(t => {
+            if (groupTransactions.find(g => g.id === t.id)) {
+              return { ...t, ...safeUpdates };
+            }
+            return t;
+          }));
 
-            // Apply to Cloud
-            setCloudStatus('syncing');
-            try {
-              for (const t of groupTransactions) {
-                // We update each transaction with the new values
-                await ApiService.updateTransaction(t.id, safeUpdates);
-              }
-              await loadFromCloud();
-              return; // Exit handled
-            } catch (e) { console.error("Error updating fixed group", e); }
-          }
+          // Apply to Cloud
+          setCloudStatus('syncing');
+          try {
+            for (const t of groupTransactions) {
+              await ApiService.updateTransaction(t.id, safeUpdates);
+            }
+            await loadFromCloud();
+            return; // Exit handled
+          } catch (e) { console.error("Error updating fixed group", e); }
         }
       }
     }
 
     // CUSTOM LOGIC: Reverse Sync for Debts (Delete Payment -> Increase Debt)
-
     if (action === 'delete') {
-      const transactionToDelete = transactions.find(t => t.id === payload);
+      // Payload might be object {id, cascade} or just string id
+      const idToDelete = typeof payload === 'object' ? payload.id : payload;
+      const cascade = typeof payload === 'object' ? payload.cascade : false;
+
+      const transactionToDelete = transactions.find(t => t.id === idToDelete);
 
       if (transactionToDelete && transactionToDelete.debtId) {
         const debt = debts.find(d => d.id === transactionToDelete.debtId);
         if (debt) {
           setDebts(prev => prev.map(d => d.id === debt.id ? {
             ...d,
-            currentBalance: d.currentBalance + transactionToDelete.amount, // Revert payment (Increase debt)
+            currentBalance: d.currentBalance + transactionToDelete.amount,
             history: d.history ? d.history.filter(h => h.linkedTransactionId !== transactionToDelete.id) : []
           } : d));
         }
@@ -384,13 +383,10 @@ const App: React.FC = () => {
 
       // CUSTOM LOGIC: Cascade Delete for Fixed Monthly (Grouped)
       if (transactionToDelete && transactionToDelete.isFixed && transactionToDelete.installmentId && transactionToDelete.installmentId.startsWith('fixed_')) {
-        if (confirm('Esta é uma despesa MENSAL FIXA. Deseja apagar todas as ocorrências futuras também?')) {
-          // Find all transactions in this group
+        if (cascade === true) {
           const startMonthParams = (transactionToDelete.year * 12) + transactionToDelete.month;
-
           const groupTransactions = transactions.filter(t =>
             t.installmentId === transactionToDelete.installmentId &&
-            // Same Group AND Same or Future Month
             ((t.year * 12) + t.month) >= startMonthParams
           );
 
@@ -412,39 +408,27 @@ const App: React.FC = () => {
 
       // CUSTOM LOGIC: Cascade Delete for Subscriptions
       if (transactionToDelete && transactionToDelete.isSubscription && transactionToDelete.subscriptionId) {
-        // Cascade Delete Logic
-        if (confirm('Esta é uma assinatura recorrente. Deseja cancelar as cobranças futuras também?')) {
-
-          // Find future transactions for this subscription
+        if (cascade === true) {
           const futureTransactions = transactions.filter(t =>
             t.isSubscription &&
             t.subscriptionId === transactionToDelete.subscriptionId &&
-            // Logic: Is same or future date
             (t.year > transactionToDelete.year || (t.year === transactionToDelete.year && t.month >= transactionToDelete.month))
           );
 
-          // Update Optimistic State: Remove all future occurrences
           setTransactions(prev => prev.filter(t => !futureTransactions.map(ft => ft.id).includes(t.id)));
           setCloudStatus('syncing');
 
-          // Delete from Backend
           try {
-            // We need to delete multiple items. The API might verify one by one or we loop.
-            // Ideally delete the subscription itself or just the transactions.
-            // The loop below deletes them one by one.
             for (const ft of futureTransactions) {
               await ApiService.deleteTransaction(ft.id);
             }
-
-            // Also mark subscription as inactive to prevent re-sync
             const subId = transactionToDelete.subscriptionId;
             const sub = subscriptions.find(s => s.id === subId);
             if (sub) {
               setSubscriptions(prev => prev.map(s => s.id === subId ? { ...s, active: false } : s));
             }
-
             await loadFromCloud();
-            return; // Exit here as we handled everything
+            return;
           } catch (e) {
             console.error("Cascade Delete Error:", e);
             setCloudStatus('error');
@@ -454,14 +438,12 @@ const App: React.FC = () => {
       }
     }
 
-
     // 1. Optimistic Update (Normal Flow)
-    setTransactions(optimisticUpdate);
+    if (optimisticUpdate) setTransactions(optimisticUpdate);
     setCloudStatus('syncing');
 
     try {
       if (action === 'add') {
-        // If payload is an array (installments), add each
         if (Array.isArray(payload)) {
           for (const t of payload) await ApiService.addTransaction(t);
         } else {
@@ -470,16 +452,100 @@ const App: React.FC = () => {
       } else if (action === 'update') {
         await ApiService.updateTransaction(payload.id, payload.updates);
       } else if (action === 'delete') {
-        await ApiService.deleteTransaction(payload);
+        const id = typeof payload === 'object' ? payload.id : payload;
+        await ApiService.deleteTransaction(id);
       }
 
-      // Force reload to ensure we have real IDs and consistent state
       await loadFromCloud();
     } catch (e) {
       console.error("API Sync Error:", e);
       setCloudStatus('error');
-      // Optionally revert optimistic update here
     }
+  };
+
+  // --- Handlers for Confirmation ---
+  const handleDeleteRequest = (id: string, forceSingle = false) => {
+    const tx = transactions.find(t => t.id === id);
+    if (!tx) return;
+
+    // Case 1: Fixed Monthly
+    if (!forceSingle && tx.isFixed && tx.installmentId?.startsWith('fixed_')) {
+      setConfirmation({
+        isOpen: true,
+        title: 'Excluir Recorrência',
+        message: 'Esta é uma despesa MENSAL FIXA. Deseja apagar todas as ocorrências futuras também?',
+        confirmLabel: 'Todas as Futuras',
+        cancelLabel: 'Apenas Esta',
+        onConfirm: () => {
+          setConfirmation(null);
+          updateTransactions('delete', { id, cascade: true }, (prev) => prev /* handled inside or need optimistic? */);
+          // Wait, updateTransactions with cascade handles optimistic inside.
+          // But updateTransactions signature requires optimisticUpdate function.
+          // I will pass a dummy identity function because updateTransactions cascade logic calls setTransactions directly.
+          // Or I will pass null definition in my signature.
+          // In the signature above: optimisticUpdate is mandatory? No, I added check `if (optimisticUpdate)`.
+        },
+        onCancel: () => {
+          setConfirmation(null);
+          handleDeleteRequest(id, true); // Recurse as forceSingle
+        }
+      });
+      return;
+    }
+
+    // Case 2: Subscription
+    if (!forceSingle && tx.isSubscription && tx.subscriptionId) {
+      setConfirmation({
+        isOpen: true,
+        title: 'Cancelar Assinatura',
+        message: 'Esta transação pertence a uma ASSINATURA. Deseja cancelar e remover as cobranças futuras?',
+        confirmLabel: 'Sim, Cancelar Futuras',
+        cancelLabel: 'Apenas Esta',
+        onConfirm: () => {
+          setConfirmation(null);
+          updateTransactions('delete', { id, cascade: true }, (prev) => []); // Dummy
+        },
+        onCancel: () => {
+          setConfirmation(null);
+          handleDeleteRequest(id, true);
+        }
+      });
+      return;
+    }
+
+    // Default (no cascade or single force)
+    updateTransactions('delete', { id, cascade: false }, (prev) => prev.filter(t => t.id !== id));
+  };
+
+  const handleUpdateTransactionRequest = (id: string, updates: Partial<Transaction>) => {
+    const tx = transactions.find(t => t.id === id);
+    if (!tx) return;
+
+    // Check for fixed group
+    const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined;
+
+    if (isRelevantChange && tx.isFixed && tx.installmentId?.startsWith('fixed_')) {
+      setConfirmation({
+        isOpen: true,
+        title: 'Atualizar Recorrência',
+        message: 'Esta é uma despesa MENSAL FIXA. Deseja aplicar as alterações para todos os meses seguintes?',
+        confirmLabel: 'Sim, Todas',
+        cancelLabel: 'Não, Apenas Esta',
+        onConfirm: () => {
+          setConfirmation(null);
+          updateTransactions('update', { id, updates, cascade: true }, (prev) => []); // Dummy, handled inside
+        },
+        onCancel: () => {
+          setConfirmation(null);
+          // Single update
+          updateTransactions('update', { id, updates, cascade: false }, (prev) => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+        }
+      });
+      return;
+    }
+
+    // Default
+    updateTransactions('update', { id, updates, cascade: false }, (prev) => prev.map(t => t.id === id ? { ...t, ...updates } : t));
   };
 
   // Pre-Update Hook for Debts (Amount Change)
@@ -535,14 +601,34 @@ const App: React.FC = () => {
     };
   }, [transactions, currentMonth, currentYear]);
 
+  // Confirmation Modal State
+  const [confirmation, setConfirmation] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'warning'
+  } | null>(null);
+
   const handleAddTransaction = (tData: Omit<Transaction, 'id'>, options: { installments: number, isFixed: boolean }) => {
     // Logic for new transactions
     const transactionsToAdd: any[] = [];
 
     if (options.installments > 1 && tData.type !== 'appointment') {
       for (let i = 0; i < options.installments; i++) {
-        // Handle month rollover correctly
-        const d = new Date(tData.year, tData.month + i, tData.day);
+        // Handle month rollover correctly with day clamping
+        // If day is 31, and next month has 30, it should be 30.
+        const targetMonth = tData.month + i;
+        const yearOffset = Math.floor(targetMonth / 12);
+        const monthInYear = targetMonth % 12;
+        const targetYear = tData.year + yearOffset;
+
+        // Find max day in target month
+        const maxDay = new Date(targetYear, monthInYear + 1, 0).getDate();
+        const safeDay = Math.min(tData.day, maxDay);
+
+        const d = new Date(targetYear, monthInYear, safeDay);
+
         transactionsToAdd.push({
           ...tData,
           day: d.getDate(),
@@ -556,7 +642,17 @@ const App: React.FC = () => {
       // Mensal Fixo: Generate for next 12 months by default
       const fixedGroupId = 'fixed_' + Math.random().toString(36).substr(2, 9); // Create unique group ID
       for (let i = 0; i < 12; i++) {
-        const d = new Date(tData.year, tData.month + i, tData.day);
+        const targetMonth = tData.month + i;
+        const yearOffset = Math.floor(targetMonth / 12);
+        const monthInYear = targetMonth % 12;
+        const targetYear = tData.year + yearOffset;
+
+        // Find max day in target month (Safety for day 31 -> 30/28)
+        const maxDay = new Date(targetYear, monthInYear + 1, 0).getDate();
+        const safeDay = Math.min(tData.day, maxDay);
+
+        const d = new Date(targetYear, monthInYear, safeDay);
+
         transactionsToAdd.push({
           ...tData,
           day: d.getDate(),
@@ -570,9 +666,8 @@ const App: React.FC = () => {
       transactionsToAdd.push(tData); // Single transaction
     }
 
-    // Call updateTransactions
+    // Call updateTransactions (Optimistic ID generation)
     updateTransactions('add', transactionsToAdd, (prev) => {
-      // Optimistic UI: We need IDs. We can generate temp ones.
       return [...prev, ...transactionsToAdd.map(t => ({ ...t, id: 'temp-' + Math.random() }))];
     });
   };
@@ -607,7 +702,7 @@ const App: React.FC = () => {
               transaction={editingTransaction}
               categoriesMap={categoriesMap}
               onSave={(u) => {
-                updateTransactions('update', { id: u.id, updates: u }, prev => prev.map(t => t.id === u.id ? u : t));
+                handleUpdateTransactionRequest(u.id, u);
                 setEditingTransaction(null);
               }}
               onClose={() => setEditingTransaction(null)}
@@ -772,7 +867,7 @@ const App: React.FC = () => {
                       </div>
                       <TransactionList
                         transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)}
-                        onDelete={id => updateTransactions('delete', id, prev => prev.filter(t => t.id !== id))}
+                        onDelete={(id) => handleDeleteRequest(id)}
                         onEdit={setEditingTransaction}
                         onMove={(id, d) => updateTransactions('update', { id, updates: { day: d } }, prev => prev.map(t => t.id === id ? { ...t, day: d } : t))}
                         onToggleComplete={id => {
@@ -940,6 +1035,20 @@ const App: React.FC = () => {
             </div>
           )}
 
+
+
+          {confirmation && (
+            <ConfirmationModal
+              isOpen={confirmation.isOpen}
+              title={confirmation.title}
+              message={confirmation.message}
+              onConfirm={confirmation.onConfirm}
+              onCancel={confirmation.onCancel}
+              confirmLabel={confirmation.confirmLabel}
+              cancelLabel={confirmation.cancelLabel}
+              type={confirmation.type}
+            />
+          )}
 
           <footer className="max-w-[1920px] mx-auto px-6 py-8 text-center">
             <p className="text-xs text-slate-400 font-medium uppercase tracking-widest opacity-60">
