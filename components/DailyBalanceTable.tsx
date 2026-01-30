@@ -74,6 +74,8 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
           }
 
           const isNegative = item.balance !== null && item.balance < 0;
+          const dateObj = new Date(year, month, item.day);
+          const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
           const isToday = new Date().getDate() === item.day &&
             new Date().getMonth() === month &&
             new Date().getFullYear() === year;
@@ -81,7 +83,9 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
           return (
             <div
               key={`day-${item.day}`}
-              className={`bg-white/60 p-1.5 min-h-[60px] flex flex-col justify-between transition-all duration-200 hover:bg-white hover:shadow-lg hover:z-20 hover:scale-105 relative group backdrop-blur-sm ${isToday ? 'ring-2 ring-inset ring-primary-500 z-10 bg-white' : ''}`}
+              className={`p-1.5 min-h-[60px] flex flex-col justify-between transition-all duration-200 hover:bg-white hover:shadow-lg hover:z-20 hover:scale-105 relative group backdrop-blur-sm 
+                ${isToday ? 'ring-2 ring-inset ring-primary-500 z-10 bg-white' : (isWeekend ? 'bg-rose-50/50' : 'bg-white/60')}
+              `}
             >
               <div className="flex justify-between items-start">
                 <span className={`text-xs font-bold font-mono ${isToday ? 'text-primary-600' : 'text-slate-400'}`}>
