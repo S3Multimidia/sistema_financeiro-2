@@ -248,16 +248,14 @@ const App: React.FC = () => {
         });
         setTransactions(sorted);
       } else if (cloudTransactions) {
-        // Empty cloud -> potentially clear local if we trust cloud fully?
-        // User said "don't make data disappear". 
-        // If User has local data and cloud is 0, we should probably UPLOAD local to cloud (first sync), not clear local.
-        // Check if user has local data but cloud is empty (First run on this device after SQL setup?)
-        // If so, we should keep local and let the Sync Effects upload it.
-        if (transactions.length === 0) {
-          setTransactions([]);
-        } else {
-          console.log("⚠️ Local has data but cloud is empty. Keeping local and will sync UP.");
-        }
+        if (transactions.length === 0) setTransactions([]);
+      }
+
+      // 6. Categories (Sync)
+      const cloudCats = await ApiService.fetchCategories();
+      if (cloudCats && Object.keys(cloudCats).length > 0) {
+        console.log("📂 Categories Loaded from Cloud");
+        setCategoriesMap(cloudCats);
       }
 
       setCloudStatus('ok');
@@ -268,7 +266,17 @@ const App: React.FC = () => {
   };
 
   // --- Auto-Sync Effects for New Entities ---
-  // Note: We sync even if empty to ensure deletions are propagated to server
+
+  // Sync Categories
+  useEffect(() => {
+    // Debounce to avoid spamming API on every keystroke in manager
+    const timer = setTimeout(() => {
+      if (categoriesMap && Object.keys(categoriesMap).length > 0) {
+        ApiService.saveCategories(categoriesMap);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [categoriesMap]);
 
   // Sync Debts
   useEffect(() => {

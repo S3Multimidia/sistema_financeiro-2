@@ -266,6 +266,23 @@ export const ApiService = {
         return data.user?.user_metadata?.perfex_config;
     },
 
+    // --- Categories (Global via Auth Metadata) ---
+    async fetchCategories() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+        return user.user_metadata?.categories_map || null;
+    },
+
+    async saveCategories(categories: Record<string, string[]>) {
+        const { data, error } = await supabase.auth.updateUser({
+            data: { categories_map: categories }
+        });
+        if (error) {
+            console.error("Error saving categories to cloud:", error);
+            // Silent fail or retry logic could go here
+        }
+    },
+
     // --- Debts (Crediários) ---
     async fetchDebts() {
         const { data: { user } } = await supabase.auth.getUser();
