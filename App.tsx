@@ -580,7 +580,14 @@ const App: React.FC = () => {
   }, [transactions]);
 
   const summary = useMemo(() => {
-    const currentMonthTrans = transactions.filter(t => t.month === currentMonth && t.year === currentYear);
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const currentMonthTrans = transactions.filter(t =>
+      t.month === currentMonth &&
+      t.year === currentYear &&
+      t.day !== undefined &&
+      t.day >= 1 &&
+      t.day <= daysInMonth
+    );
 
     // Projected (All)
     const totalIncome = currentMonthTrans.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
