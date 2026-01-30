@@ -323,6 +323,49 @@ const App: React.FC = () => {
       }
     }
 
+    // CUSTOM LOGIC: Cascade Update for Fixed Monthly (Grouped)
+    if (action === 'update') {
+      const transToEdit = transactions.find(t => t.id === payload.id);
+      if (transToEdit && transToEdit.isFixed && transToEdit.installmentId && transToEdit.installmentId.startsWith('fixed_')) {
+        const updates = payload.updates;
+        // Check if relevant fields are changed (Amount, Day, Category, Desc)
+        const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined;
+
+        if (isRelevantChange) {
+          if (confirm('Esta é uma despesa MENSAL FIXA. Deseja aplicar as alterações para todos os meses seguintes?')) {
+            const startMonthParams = (transToEdit.year * 12) + transToEdit.month;
+            const groupTransactions = transactions.filter(t =>
+              t.installmentId === transToEdit.installmentId &&
+              ((t.year * 12) + t.month) >= startMonthParams
+            );
+
+            // Prepare updates excluding month/year to preserve series sequence
+            // If day changed, apply new day to all.
+            const { month, year, id, ...safeUpdates } = updates;
+
+            // Apply to Local State
+            setTransactions(prev => prev.map(t => {
+              if (groupTransactions.find(g => g.id === t.id)) {
+                return { ...t, ...safeUpdates };
+              }
+              return t;
+            }));
+
+            // Apply to Cloud
+            setCloudStatus('syncing');
+            try {
+              for (const t of groupTransactions) {
+                // We update each transaction with the new values
+                await ApiService.updateTransaction(t.id, safeUpdates);
+              }
+              await loadFromCloud();
+              return; // Exit handled
+            } catch (e) { console.error("Error updating fixed group", e); }
+          }
+        }
+      }
+    }
+
     // CUSTOM LOGIC: Reverse Sync for Debts (Delete Payment -> Increase Debt)
 
     if (action === 'delete') {
@@ -336,6 +379,34 @@ const App: React.FC = () => {
             currentBalance: d.currentBalance + transactionToDelete.amount, // Revert payment (Increase debt)
             history: d.history ? d.history.filter(h => h.linkedTransactionId !== transactionToDelete.id) : []
           } : d));
+        }
+      }
+
+      // CUSTOM LOGIC: Cascade Delete for Fixed Monthly (Grouped)
+      if (transactionToDelete && transactionToDelete.isFixed && transactionToDelete.installmentId && transactionToDelete.installmentId.startsWith('fixed_')) {
+        if (confirm('Esta é uma despesa MENSAL FIXA. Deseja apagar todas as ocorrências futuras também?')) {
+          // Find all transactions in this group
+          const startMonthParams = (transactionToDelete.year * 12) + transactionToDelete.month;
+
+          const groupTransactions = transactions.filter(t =>
+            t.installmentId === transactionToDelete.installmentId &&
+            // Same Group AND Same or Future Month
+            ((t.year * 12) + t.month) >= startMonthParams
+          );
+
+          const idsToDelete = groupTransactions.map(t => t.id);
+
+          // Optimistic UI
+          setTransactions(prev => prev.filter(t => !idsToDelete.includes(t.id)));
+
+          // Cloud Sync
+          try {
+            for (const id of idsToDelete) {
+              await ApiService.deleteTransaction(id);
+            }
+            await loadFromCloud();
+            return; // Exit as handled
+          } catch (e) { console.error("Error deleting fixed group", e); }
         }
       }
 
@@ -483,6 +554,7 @@ const App: React.FC = () => {
       }
     } else if (options.isFixed && tData.type !== 'appointment') {
       // Mensal Fixo: Generate for next 12 months by default
+      const fixedGroupId = 'fixed_' + Math.random().toString(36).substr(2, 9); // Create unique group ID
       for (let i = 0; i < 12; i++) {
         const d = new Date(tData.year, tData.month + i, tData.day);
         transactionsToAdd.push({
@@ -490,7 +562,8 @@ const App: React.FC = () => {
           day: d.getDate(),
           month: d.getMonth(),
           year: d.getFullYear(),
-          isFixed: true
+          isFixed: true,
+          installmentId: fixedGroupId // Link them together
         });
       }
     } else {
