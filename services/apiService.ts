@@ -251,6 +251,21 @@ export const ApiService = {
         return { success: true };
     },
 
+    // --- Perfex Config (Global via Auth Metadata) ---
+    async getPerfexConfig() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+        return user.user_metadata?.perfex_config || null;
+    },
+
+    async updatePerfexConfig(config: { url: string; token: string; enabled: boolean }) {
+        const { data, error } = await supabase.auth.updateUser({
+            data: { perfex_config: config }
+        });
+        if (error) throw error;
+        return data.user?.user_metadata?.perfex_config;
+    },
+
     // --- Debts (Crediários) ---
     async fetchDebts() {
         const { data: { user } } = await supabase.auth.getUser();

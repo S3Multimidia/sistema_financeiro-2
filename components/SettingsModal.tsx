@@ -29,11 +29,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       const key = await SupabaseService.getGeminiKey();
       if (key) setGeminiKey(key);
 
-      const pUrl = localStorage.getItem('perfex_url') || '';
-      const pToken = localStorage.getItem('perfex_token') || '';
-      setPerfexUrl(pUrl);
-      setPerfexToken(pToken);
-      setPerfexSyncEnabled(localStorage.getItem('perfex_sync_enabled') !== 'false');
+      // Load Perfex Config (Global > Local)
+      const globalConfig = await ApiService.getPerfexConfig();
+      if (globalConfig) {
+        setPerfexUrl(globalConfig.url || '');
+        setPerfexToken(globalConfig.token || '');
+        setPerfexSyncEnabled(globalConfig.enabled !== false); // Default true if global set
+
+        // Update local to match global
+        localStorage.setItem('perfex_url', globalConfig.url || '');
+        localStorage.setItem('perfex_token', globalConfig.token || '');
+        localStorage.setItem('perfex_sync_enabled', String(globalConfig.enabled !== false));
+
+      } else {
+        const pUrl = localStorage.getItem('perfex_url') || '';
+        const pToken = localStorage.getItem('perfex_token') || '';
+        setPerfexUrl(pUrl);
+        setPerfexToken(pToken);
+        setPerfexSyncEnabled(localStorage.getItem('perfex_sync_enabled') !== 'false');
+      }
     };
     loadSettings();
   }, []);
@@ -53,9 +67,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
     try {
       // Save Perfex Config
+      // Save Perfex Config (Global + Local)
       localStorage.setItem('perfex_url', perfexUrl);
       localStorage.setItem('perfex_token', perfexToken);
       localStorage.setItem('perfex_sync_enabled', String(perfexSyncEnabled));
+
+      try {
+        await ApiService.updatePerfexConfig({
+          url: perfexUrl,
+          token: perfexToken,
+          enabled: perfexSyncEnabled
+        });
+      } catch (e) {
+        console.warn('Could not save Perfex config globally:', e);
+      }
 
       // Force reload to apply changes if needed (API tokens usually require it or context update)
       // For simple UX, we simulate delay and notify.

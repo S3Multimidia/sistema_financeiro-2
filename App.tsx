@@ -140,10 +140,23 @@ const App: React.FC = () => {
   };
 
   const handlePerfexAutoSync = async () => {
-    // Check Master Switch
-    const isSyncEnabled = localStorage.getItem('perfex_sync_enabled') !== 'false';
+    // 1. Check Global Config (Cloud)
+    let globalConfig = null;
+    try {
+      globalConfig = await ApiService.getPerfexConfig();
+      if (globalConfig) {
+        // Sync Local with Global
+        localStorage.setItem('perfex_sync_enabled', String(globalConfig.enabled !== false));
+        if (globalConfig.url) localStorage.setItem('perfex_url', globalConfig.url);
+        if (globalConfig.token) localStorage.setItem('perfex_token', globalConfig.token);
+      }
+    } catch (e) { console.warn('Could not fetch global perfex config, using local.'); }
+
+    // 2. Decide based on (Global > Local)
+    const isSyncEnabled = globalConfig ? (globalConfig.enabled !== false) : (localStorage.getItem('perfex_sync_enabled') !== 'false');
+
     if (!isSyncEnabled) {
-      console.log("🚫 Auto-Sync Perfex DESATIVADO nas configurações. Ignorando.");
+      console.log("🚫 Auto-Sync Perfex DESATIVADO (Global/Local Settings). Ignorando.");
       return;
     }
 
@@ -152,9 +165,9 @@ const App: React.FC = () => {
     const DEFAULT_PERFEX_URL = 'https://admin.s3m.com.br/api';
     const DEFAULT_PERFEX_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiczNtdWx0aW1pZGlhQGdtYWlsLmNvbSIsIm5hbWUiOiJQbGFuaWxoYSIsIkFQSV9USU1FIjoxNzU4MDUxOTc5fQ.SbhzQOgmMHh_eTiw_HuJUBgz-2POwkXj1umAe4kT6Uc';
 
-    // Get current config or use defaults
-    let url = localStorage.getItem('perfex_url');
-    let token = localStorage.getItem('perfex_token');
+    // Get current config (Prioritise Global -> Local -> Default)
+    let url = globalConfig?.url || localStorage.getItem('perfex_url');
+    let token = globalConfig?.token || localStorage.getItem('perfex_token');
 
     // Setup Defaults if missing
     if (!url || !token) {
@@ -163,6 +176,9 @@ const App: React.FC = () => {
       localStorage.setItem('perfex_url', url);
       localStorage.setItem('perfex_token', token);
     }
+
+    // Save defaults to global if first run and we have defaults but nothing upstream? 
+    // Maybe too aggressive. Let's just use them.
 
     if (url && token) {
       try {
