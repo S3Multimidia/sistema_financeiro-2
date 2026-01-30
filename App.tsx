@@ -140,6 +140,13 @@ const App: React.FC = () => {
   };
 
   const handlePerfexAutoSync = async () => {
+    // Check Master Switch
+    const isSyncEnabled = localStorage.getItem('perfex_sync_enabled') !== 'false';
+    if (!isSyncEnabled) {
+      console.log("🚫 Auto-Sync Perfex DESATIVADO nas configurações. Ignorando.");
+      return;
+    }
+
     console.log("🔄 Iniciando Auto-Sync do Perfex CRM...");
     // Default Credentials
     const DEFAULT_PERFEX_URL = 'https://admin.s3m.com.br/api';

@@ -20,6 +20,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [geminiKey, setGeminiKey] = useState('');
   const [perfexUrl, setPerfexUrl] = useState('');
   const [perfexToken, setPerfexToken] = useState('');
+  const [perfexSyncEnabled, setPerfexSyncEnabled] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       const pToken = localStorage.getItem('perfex_token') || '';
       setPerfexUrl(pUrl);
       setPerfexToken(pToken);
+      setPerfexSyncEnabled(localStorage.getItem('perfex_sync_enabled') !== 'false');
     };
     loadSettings();
   }, []);
@@ -53,6 +55,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       // Save Perfex Config
       localStorage.setItem('perfex_url', perfexUrl);
       localStorage.setItem('perfex_token', perfexToken);
+      localStorage.setItem('perfex_sync_enabled', String(perfexSyncEnabled));
 
       // Force reload to apply changes if needed (API tokens usually require it or context update)
       // For simple UX, we simulate delay and notify.
@@ -119,6 +122,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-red-100 shadow-inner space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-red-50">
+                <div>
+                  <label className="text-[10px] font-black text-red-600 uppercase block">Sincronização Ativa</label>
+                  <p className="text-[8px] font-bold text-slate-400">Ligar/Desligar conexão automática</p>
+                </div>
+                <button
+                  onClick={() => setPerfexSyncEnabled(!perfexSyncEnabled)}
+                  className={`w-10 h-5 rounded-full relative transition-colors shadow-inner ${perfexSyncEnabled ? 'bg-red-500' : 'bg-slate-200'}`}
+                >
+                  <div className={`w-3 h-3 bg-white rounded-full absolute top-1 shadow-sm transition-all ${perfexSyncEnabled ? 'left-6' : 'left-1'}`} />
+                </button>
+              </div>
               <div>
                 <label className="text-[9px] font-black text-slate-400 uppercase block mb-2">URL do CRM</label>
                 <input
@@ -159,7 +174,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       setIsSaving(false);
                     }
                   }}
-                  disabled={isSaving}
+                  disabled={isSaving || !perfexSyncEnabled}
                   className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold text-[10px] uppercase transition-colors flex items-center justify-center gap-2"
                 >
                   <RefreshCw size={14} className={isSaving ? "animate-spin" : ""} />
@@ -182,7 +197,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       setIsSaving(false);
                     }
                   }}
-                  disabled={isSaving}
+                  disabled={isSaving || !perfexSyncEnabled}
                   className="w-full py-3 bg-white border border-red-100 hover:bg-red-50 text-red-600 rounded-xl font-bold text-[9px] uppercase transition-colors flex items-center justify-center gap-2"
                 >
                   <ShieldAlert size={14} />
