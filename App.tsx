@@ -924,17 +924,17 @@ const App: React.FC = () => {
                   <div className="lg:col-span-3 space-y-6">
 
                     {/* 1. Lançamento Inteligente */}
-                    <div className="glass-card p-6 rounded-3xl">
-                      <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-primary-500 rounded-full"></div>
+                    <div className="bg-[#1e1e2d] p-6 rounded-3xl shadow-2xl border border-white/5">
+                      <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                        <div className="w-1 h-6 bg-indigo-500 rounded-full"></div>
                         Lançamento Inteligente
                       </h3>
-                      <TransactionForm onAdd={handleAddTransaction} categoriesMap={categoriesMap} currentMonth={currentMonth} currentYear={currentYear} />
+                      <TransactionForm onAdd={handleAddTransaction} categoriesMap={categoriesMap} currentMonth={currentMonth} currentYear={currentYear} isDarkMode={true} />
                     </div>
 
                     {/* 2. Agenda (Fixed Height for Scroll) */}
                     <div className="h-[450px]">
-                      <AppointmentsSidebarList transactions={transactions} currentMonth={currentMonth} onToggleComplete={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))} />
+                      <AppointmentsSidebarList transactions={transactions} currentMonth={currentMonth} onToggleComplete={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))} isDarkMode={true} />
                     </div>
 
                     {/* Widgets (Following Sequence) */}
