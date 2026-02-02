@@ -786,6 +786,9 @@ const App: React.FC = () => {
                     <span className="text-sm font-black text-slate-700">
                       {summary.realizedIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
+                    <span className="text-[9px] font-medium text-slate-400">
+                      de {summary.totalIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
                   </div>
 
                   {/* Despesas */}
@@ -795,6 +798,9 @@ const App: React.FC = () => {
                     </span>
                     <span className="text-sm font-black text-slate-700">
                       {summary.realizedExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                    <span className="text-[9px] font-medium text-slate-400">
+                      de {summary.totalExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
 
