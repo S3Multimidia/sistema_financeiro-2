@@ -42,7 +42,11 @@ import {
   TrendingDown,
   ArrowUp,
   ArrowDown,
-  CalendarCheck
+  CalendarCheck,
+  Search,
+  Calendar,
+  ChevronDown,
+  Filter
 } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 
@@ -117,6 +121,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'dashboard' | 'yearly'>('dashboard');
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(2026);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedDayFilter, setSelectedDayFilter] = useState<string>('');
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -912,7 +917,54 @@ const App: React.FC = () => {
             </div>
           </header>
 
-          <main className="max-w-[1920px] mx-auto p-4 md:p-8 pt-32 lg:pt-40 space-y-8 animate-fade-in">
+          {/* Fixed Search Bar - Secondary Header */}
+          <div className="fixed top-16 left-0 right-0 z-40 bg-zinc-900/40 backdrop-blur-xl border-b border-white/10 shadow-lg h-auto py-3 animate-slide-down">
+            <div className="max-w-[1920px] mx-auto px-4 md:px-8 flex flex-col md:flex-row items-center gap-4 justify-center">
+
+              {/* Search Input */}
+              <div className="relative w-full max-w-2xl group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-cyan-400 transition-colors pointer-events-none">
+                  <Search size={18} />
+                </div>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por descrição, categoria, valor..."
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-900/60 border border-slate-700/50 rounded-xl text-slate-200 placeholder:text-slate-500 font-medium focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all shadow-inner"
+                />
+              </div>
+
+              {/* Filters Row */}
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="relative flex-1 md:w-48 group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-cyan-400 transition-colors pointer-events-none">
+                    <Calendar size={18} />
+                  </div>
+                  <select
+                    value={selectedDayFilter}
+                    onChange={(e) => setSelectedDayFilter(e.target.value)}
+                    className="w-full pl-11 pr-10 py-2.5 bg-slate-900/60 border border-slate-700/50 rounded-xl text-slate-200 font-medium focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all appearance-none cursor-pointer shadow-inner"
+                  >
+                    <option value="">Todo o Mês</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                      <option key={d} value={d}>Dia {d}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                    <ChevronDown size={14} />
+                  </div>
+                </div>
+
+                {/* Visual Filter Icon (Decorative or Functional) */}
+                <button className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-cyan-400 rounded-xl border border-slate-700/50 transition-colors" title="Mais Filtros">
+                  <Filter size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <main className="max-w-[1920px] mx-auto p-4 md:p-8 pt-48 lg:pt-56 space-y-8 animate-fade-in">
             {currentView === 'dashboard' ? (
               <div className="space-y-8">
                 {/* SummaryCards removed as requested - Stats now in Header */}
@@ -931,6 +983,8 @@ const App: React.FC = () => {
                       </div>
                       <TransactionList
                         transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)}
+                        searchTerm={searchTerm}
+                        onSearchChange={setSearchTerm}
                         onDelete={(id) => handleDeleteRequest(id)}
                         onEdit={setEditingTransaction}
                         onMove={(id, d) => updateTransactions('update', { id, updates: { day: d } }, prev => prev.map(t => t.id === id ? { ...t, day: d } : t))}

@@ -11,8 +11,8 @@ interface TransactionListProps {
   onToggleComplete?: (id: string) => void;
   selectedDay: string;
   onSelectedDayChange: (day: string) => void;
-  categoriesMap: Record<string, string[]>;
-  onManageCategories: () => void;
+  searchTerm: string;
+  onSearchChange: (term: string) => void;
 }
 
 const formatCurrency = (value: number) => {
@@ -31,11 +31,13 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   selectedDay,
   onSelectedDayChange,
   categoriesMap,
-  onManageCategories
+  onManageCategories,
+  searchTerm,
+  onSearchChange
 }) => {
   const [filterType, setFilterType] = useState<'ALL' | 'income' | 'expense' | 'appointment'>('ALL');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  // searchTerm moved to props
   const [movingId, setMovingId] = useState<string | null>(null);
   const [newDayVal, setNewDayVal] = useState<string>('');
   const listContainerRef = useRef<HTMLDivElement>(null);
@@ -86,13 +88,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-slate-50/50 relative">
-      <div className="sticky top-16 z-30 bg-slate-50/95 backdrop-blur-md p-6 border-b border-slate-200/60 flex flex-col gap-5 transition-all duration-300">
-        {/* ... (header content remains safely outside of this replacement if scoped correctly, but line 79 is inside header. Wait.
-           StartLine 41 (useRef) -> 74 (sort).
-           Let's look at the context.
-           I need to modify `days` sorting AND add the effect.
-           I will modify from the end of `useMemo` to the return statement.
-        */}
+      <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md p-6 border-b border-slate-200/60 flex flex-col gap-5 transition-all duration-300">
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -135,34 +131,6 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             </button>
           </div>
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 group">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
-            <input
-              type="text"
-              placeholder="Buscar por descrição, categoria..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 text-sm font-medium border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all shadow-sm group-hover:border-slate-300"
-            />
-          </div>
-
-          <div className="relative min-w-[160px] group">
-            <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
-            <select
-              value={selectedDay}
-              onChange={(e) => onSelectedDayChange(e.target.value)}
-              className="w-full pl-10 pr-10 py-3 text-sm font-medium border border-slate-200 rounded-xl bg-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all shadow-sm group-hover:border-slate-300"
-            >
-              <option value="">Todo o Mês</option>
-              {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>Dia {d}</option>)}
-            </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-              <Filter size={14} />
-            </div>
-          </div>
-        </div>
       </div>
 
       <div ref={listContainerRef} className="overflow-y-auto flex-1 p-6 min-h-[400px] max-h-[800px] scroll-smooth custom-scrollbar bg-slate-50/30">
@@ -174,7 +142,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Nada encontrado</p>
             <p className="text-xs text-slate-400 mt-1">Tente ajustar seus filtros</p>
             <button
-              onClick={() => { setFilterType('ALL'); setSearchTerm(''); onSelectedDayChange(''); }}
+              onClick={() => { setFilterType('ALL'); onSearchChange(''); onSelectedDayChange(''); }}
               className="mt-6 text-xs font-bold text-white bg-primary-500 px-6 py-2 rounded-full shadow-lg shadow-primary-500/30 hover:bg-primary-600 transition-all"
             >
               Limpar Filtros
