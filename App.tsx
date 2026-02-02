@@ -932,12 +932,14 @@ const App: React.FC = () => {
                       <TransactionForm onAdd={handleAddTransaction} categoriesMap={categoriesMap} currentMonth={currentMonth} currentYear={currentYear} />
                     </div>
 
-                    {/* 2. Agenda */}
-                    <AppointmentsSidebarList transactions={transactions} currentMonth={currentMonth} onToggleComplete={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))} />
+                    {/* 2. Agenda (Fixed Height for Scroll) */}
+                    <div className="h-[450px]">
+                      <AppointmentsSidebarList transactions={transactions} currentMonth={currentMonth} onToggleComplete={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))} />
+                    </div>
 
                     {/* Widgets (Following Sequence) */}
-                    <div className="flex flex-col gap-6" style={{ minHeight: '800px' }}>
-                      <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
+                    <div className="flex flex-col gap-6">
+                      <div className="h-[400px] overflow-hidden rounded-3xl shadow-2xl">
                         <CreditCardWidget
                           cards={cards}
                           setCards={setCards}
@@ -948,7 +950,7 @@ const App: React.FC = () => {
                         />
                       </div>
 
-                      <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
+                      <div className="h-[400px] overflow-hidden rounded-3xl shadow-2xl">
                         <SubscriptionsWidget
                           subscriptions={subscriptions}
                           setSubscriptions={setSubscriptions}
@@ -982,7 +984,7 @@ const App: React.FC = () => {
                         />
                       </div>
 
-                      <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
+                      <div className="h-[400px] overflow-hidden rounded-3xl shadow-2xl">
                         <DebtWidget
                           debts={debts}
                           setDebts={setDebts}
