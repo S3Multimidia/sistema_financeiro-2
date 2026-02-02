@@ -3,7 +3,6 @@ import { INITIAL_TRANSACTIONS, INITIAL_PREVIOUS_BALANCE, APP_VERSION } from './c
 import { Transaction, INITIAL_CATEGORIES_MAP, CreditCard, CardTransaction, Subscription, DebtAccount, DebtTransaction } from './types';
 import { SummaryCards } from './components/SummaryCards';
 import { TransactionList } from './components/TransactionList';
-import { DailyFlowChart } from './components/FinancialCharts';
 import { TransactionForm } from './components/TransactionForm';
 import { DailyBalanceTable } from './components/DailyBalanceTable';
 import { CategoryManager } from './components/CategoryManager';
@@ -854,33 +853,11 @@ const App: React.FC = () => {
               <div className="space-y-8">
                 {/* SummaryCards removed as requested - Stats now in Header */}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
-                  <div className="lg:col-span-3 space-y-8">
-                    {/* Glass Card Container for Forms */}
-                    <div className="glass-card p-6 rounded-3xl">
-                      <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                        <div className="w-1 h-6 bg-primary-500 rounded-full"></div>
-                        Nova Transação
-                      </h3>
-                      <TransactionForm onAdd={handleAddTransaction} categoriesMap={categoriesMap} currentMonth={currentMonth} currentYear={currentYear} />
-                    </div>
-                  </div>
-
-                  <div className="lg:col-span-3">
-                    <AppointmentsSidebarList transactions={transactions} currentMonth={currentMonth} onToggleComplete={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))} />
-                  </div>
-
-                  <div className="lg:col-span-3">
-                    <DailyFlowChart transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} />
-                  </div>
-                  <div className="lg:col-span-3">
-                    <DailyBalanceTable transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} previousBalance={summary.previousBalance} month={currentMonth} year={currentYear} />
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  <div className="lg:col-span-8">
-                    {/* Wrapped Transaction List in a Glass Card if not internally styled */}
+
+                  {/* LEFT COLUMN - 75% */}
+                  <div className="lg:col-span-9 space-y-8">
+                    {/* Extrato de Lançamentos */}
                     <div className="glass-card rounded-3xl overflow-hidden p-1 shadow-sm border-white/40">
                       <div className="bg-slate-50/50 p-6 border-b border-slate-100 flex items-center justify-between">
                         <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -937,141 +914,156 @@ const App: React.FC = () => {
                         onManageCategories={() => setShowCategoryManager(true)}
                       />
                     </div>
+
+                    <DailyBalanceTable transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} previousBalance={summary.previousBalance} month={currentMonth} year={currentYear} />
+
+                    <AdvancedDashboard transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} allTransactions={transactions} currentMonth={currentMonth} year={currentYear} />
                   </div>
 
-                  <div className="lg:col-span-4 flex flex-col gap-6" style={{ height: '1100px' }}>
-                    <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
-                      <CreditCardWidget
-                        cards={cards}
-                        setCards={setCards}
-                        cardTransactions={cardTransactions}
-                        onAddTransaction={(newTrans) => setCardTransactions(prev => [...prev, ...newTrans])}
-                        onDeleteTransaction={handleDeleteCardTransaction}
-                        onEditTransaction={handleEditCardTransaction}
-                      />
+                  {/* RIGHT COLUMN - 25% */}
+                  <div className="lg:col-span-3 space-y-6">
+
+                    {/* 1. Lançamento Inteligente */}
+                    <div className="glass-card p-6 rounded-3xl">
+                      <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <div className="w-1 h-6 bg-primary-500 rounded-full"></div>
+                        Lançamento Inteligente
+                      </h3>
+                      <TransactionForm onAdd={handleAddTransaction} categoriesMap={categoriesMap} currentMonth={currentMonth} currentYear={currentYear} />
                     </div>
 
-                    <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
-                      <SubscriptionsWidget
-                        subscriptions={subscriptions}
-                        setSubscriptions={setSubscriptions}
-                        onDelete={(id) => {
-                          // 1. Remove associated transactions from view/DB
-                          const linkedTransactions = transactions.filter(t => t.subscriptionId === id);
-                          if (linkedTransactions.length > 0) {
-                            // Loop delete for safety with API
-                            linkedTransactions.forEach(t => {
-                              // Optimistic delete from current view handled by next setTransactions? 
-                              // No, we should update state.
-                              // Ideally we call a batch delete or loop updateTransactions('delete').
-                              // But purely for UI responsiveness:
-                              ApiService.deleteTransaction(t.id).catch(e => console.warn('Could not delete from cloud (might be local only)', e));
-                            });
-                            setTransactions(prev => prev.filter(t => t.subscriptionId !== id));
-                          }
+                    {/* 2. Agenda */}
+                    <AppointmentsSidebarList transactions={transactions} currentMonth={currentMonth} onToggleComplete={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))} />
 
-                          // 2. Remove Subscription itself
-                          setSubscriptions(prev => prev.filter(s => s.id !== id));
-                        }}
-                        onSync={(sub) => {
-                          // Force add transaction for this month
-                          handleAddTransaction({
-                            description: sub.name,
-                            amount: sub.amount,
-                            day: sub.day,
-                            month: currentMonth,
-                            year: currentYear,
-                            type: 'expense',
-                            category: 'Assinaturas',
-                            completed: false,
-                            isSubscription: true,
-                            subscriptionId: sub.id,
-                            isFixed: true, // Auto-mark as fixed
-                            installmentNumber: 1,
-                            totalInstallments: 1
-                          }, { installments: 1, isFixed: true });
-                          // alert('Assinatura lançada para este mês!'); // Removed as requested
-                        }}
-                      />
+                    {/* Widgets (Following Sequence) */}
+                    <div className="flex flex-col gap-6" style={{ minHeight: '800px' }}>
+                      <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
+                        <CreditCardWidget
+                          cards={cards}
+                          setCards={setCards}
+                          cardTransactions={cardTransactions}
+                          onAddTransaction={(newTrans) => setCardTransactions(prev => [...prev, ...newTrans])}
+                          onDeleteTransaction={handleDeleteCardTransaction}
+                          onEditTransaction={handleEditCardTransaction}
+                        />
+                      </div>
+
+                      <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
+                        <SubscriptionsWidget
+                          subscriptions={subscriptions}
+                          setSubscriptions={setSubscriptions}
+                          onDelete={(id) => {
+                            const linkedTransactions = transactions.filter(t => t.subscriptionId === id);
+                            if (linkedTransactions.length > 0) {
+                              linkedTransactions.forEach(t => {
+                                ApiService.deleteTransaction(t.id).catch(e => console.warn('Could not delete from cloud (might be local only)', e));
+                              });
+                              setTransactions(prev => prev.filter(t => t.subscriptionId !== id));
+                            }
+                            setSubscriptions(prev => prev.filter(s => s.id !== id));
+                          }}
+                          onSync={(sub) => {
+                            handleAddTransaction({
+                              description: sub.name,
+                              amount: sub.amount,
+                              day: sub.day,
+                              month: currentMonth,
+                              year: currentYear,
+                              type: 'expense',
+                              category: 'Assinaturas',
+                              completed: false,
+                              isSubscription: true,
+                              subscriptionId: sub.id,
+                              isFixed: true,
+                              installmentNumber: 1,
+                              totalInstallments: 1
+                            }, { installments: 1, isFixed: true });
+                          }}
+                        />
+                      </div>
+
+                      <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
+                        <DebtWidget
+                          debts={debts}
+                          setDebts={setDebts}
+                          onSchedulePay={(debtId, amount, name, date) => {
+                            handleAddTransaction({
+                              description: `Pagamento Crediário - ${name}`,
+                              amount: amount,
+                              day: date.getDate(),
+                              month: date.getMonth(),
+                              year: date.getFullYear(),
+                              type: 'expense',
+                              category: 'Crediário/Dividas',
+                              completed: false,
+                              debtId: debtId
+                            }, { installments: 1, isFixed: false });
+                          }}
+                        />
+                      </div>
                     </div>
 
-                    <div className="flex-1 overflow-hidden bg-[#1e1e2d] rounded-3xl shadow-2xl">
-                      <DebtWidget
-                        debts={debts}
-                        setDebts={setDebts}
-                        onSchedulePay={(debtId, amount, name, date) => {
-                          handleAddTransaction({
-                            description: `Pagamento Crediário - ${name}`,
-                            amount: amount,
-                            day: date.getDate(),
-                            month: date.getMonth(),
-                            year: date.getFullYear(),
-                            type: 'expense',
-                            category: 'Crediário/Dividas',
-                            completed: false, // Pending!
-                            debtId: debtId // Link to debt
-                          }, { installments: 1, isFixed: false });
-                          // alert suppressed
-                        }}
-                      />
-                    </div>
                   </div>
                 </div>
-
-                <AdvancedDashboard transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} allTransactions={transactions} currentMonth={currentMonth} year={currentYear} />
               </div>
             ) : (
               <div className="animate-slide-up">
                 <YearlyReport transactions={transactions} year={currentYear} />
               </div>
             )}
-          </main>
+          </main >
 
           {/* Floating Widgets Layer */}
-          {showCalculator && (
-            <div className="fixed top-28 right-8 z-[60] animate-fade-in shadow-2xl rounded-xl overflow-hidden ring-1 ring-white/20">
-              <div className="bg-slate-900 flex justify-between items-center px-4 py-2 border-b border-slate-800 handle cursor-move">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculadora</span>
-                <button onClick={() => setShowCalculator(false)} className="text-slate-500 hover:text-white transition-colors"><X size={14} /></button>
+          {
+            showCalculator && (
+              <div className="fixed top-28 right-8 z-[60] animate-fade-in shadow-2xl rounded-xl overflow-hidden ring-1 ring-white/20">
+                <div className="bg-slate-900 flex justify-between items-center px-4 py-2 border-b border-slate-800 handle cursor-move">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculadora</span>
+                  <button onClick={() => setShowCalculator(false)} className="text-slate-500 hover:text-white transition-colors"><X size={14} /></button>
+                </div>
+                <Calculator />
               </div>
-              <Calculator />
-            </div>
-          )}
+            )
+          }
 
-          {showChat && (
-            <div className="fixed bottom-8 right-8 z-[60] w-[350px] animate-slide-up shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/20">
-              <div className="bg-indigo-600 flex justify-between items-center px-4 py-3 border-b border-indigo-500 handle cursor-move">
-                <span className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
-                  <Sparkles size={14} /> IA Financeira
-                </span>
-                <button onClick={() => setShowChat(false)} className="text-indigo-200 hover:text-white transition-colors"><X size={16} /></button>
+          {
+            showChat && (
+              <div className="fixed bottom-8 right-8 z-[60] w-[350px] animate-slide-up shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/20">
+                <div className="bg-indigo-600 flex justify-between items-center px-4 py-3 border-b border-indigo-500 handle cursor-move">
+                  <span className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
+                    <Sparkles size={14} /> IA Financeira
+                  </span>
+                  <button onClick={() => setShowChat(false)} className="text-indigo-200 hover:text-white transition-colors"><X size={16} /></button>
+                </div>
+                <div className="bg-white h-[500px] overflow-hidden flex flex-col">
+                  <ChatAgent
+                    transactions={transactions}
+                    currentBalance={totalOverallBalance}
+                    categoriesMap={categoriesMap}
+                    setTransactions={setTransactions}
+                    setCategoriesMap={setCategoriesMap}
+                  />
+                </div>
               </div>
-              <div className="bg-white h-[500px] overflow-hidden flex flex-col">
-                <ChatAgent
-                  transactions={transactions}
-                  currentBalance={totalOverallBalance}
-                  categoriesMap={categoriesMap}
-                  setTransactions={setTransactions}
-                  setCategoriesMap={setCategoriesMap}
-                />
-              </div>
-            </div>
-          )}
+            )
+          }
 
 
 
-          {confirmation && (
-            <ConfirmationModal
-              isOpen={confirmation.isOpen}
-              title={confirmation.title}
-              message={confirmation.message}
-              onConfirm={confirmation.onConfirm}
-              onCancel={confirmation.onCancel}
-              confirmLabel={confirmation.confirmLabel}
-              cancelLabel={confirmation.cancelLabel}
-              type={confirmation.type}
-            />
-          )}
+          {
+            confirmation && (
+              <ConfirmationModal
+                isOpen={confirmation.isOpen}
+                title={confirmation.title}
+                message={confirmation.message}
+                onConfirm={confirmation.onConfirm}
+                onCancel={confirmation.onCancel}
+                confirmLabel={confirmation.confirmLabel}
+                cancelLabel={confirmation.cancelLabel}
+                type={confirmation.type}
+              />
+            )
+          }
 
           <footer className="max-w-[1920px] mx-auto px-6 py-8 text-center">
             <p className="text-xs text-slate-400 font-medium uppercase tracking-widest opacity-60">
