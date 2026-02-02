@@ -874,6 +874,19 @@ const App: React.FC = () => {
                       {summary.endOfMonthBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
+
+                  {/* Calculadora (Destacado) */}
+                  <div className="flex items-center px-4 py-1 border-l border-slate-100">
+                    <button
+                      onClick={() => setShowCalculator(true)}
+                      className="group relative"
+                      title="Abrir Calculadora"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 hover:scale-105 active:scale-95 transition-all duration-200">
+                        <CalculatorIcon size={18} strokeWidth={2.5} />
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -887,9 +900,6 @@ const App: React.FC = () => {
                 <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
                   <button onClick={() => loadFromCloud()} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors" title="Recarregar">
                     <RefreshCw size={18} />
-                  </button>
-                  <button onClick={() => setShowCalculator(true)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors" title="Calculadora">
-                    <CalculatorIcon size={18} />
                   </button>
                   <button onClick={() => setShowSettings(true)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors" title="Configurações">
                     <Settings size={18} />
