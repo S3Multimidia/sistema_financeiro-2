@@ -282,9 +282,16 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
                       <div className="flex items-center gap-6 shrink-0 ml-4">
                         {t.type !== 'appointment' ? (
-                          <span className={`font-bold text-lg whitespace-nowrap tabular-nums tracking-tight ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
-                          </span>
+                          <div className="flex flex-col items-end">
+                            <span className={`font-bold text-lg whitespace-nowrap tabular-nums tracking-tight ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
+                            </span>
+                            {t.originalAmount && t.originalAmount !== t.amount && (
+                              <span className="text-[10px] text-slate-400 font-medium line-through decoration-slate-300">
+                                Orig: {formatCurrency(t.originalAmount)}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">
                             Agenda
@@ -319,6 +326,6 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           })
         )}
       </div>
-    </div>
+    </div >
   );
 };
