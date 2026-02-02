@@ -9,10 +9,10 @@ interface TransactionListProps {
   onEdit: (transaction: Transaction) => void;
   onMove: (id: string, newDay: number) => void;
   onToggleComplete?: (id: string) => void;
-  selectedDay: string;
-  onSelectedDayChange: (day: string) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
+  filterType: 'ALL' | 'income' | 'expense' | 'appointment';
+  onFilterTypeChange?: (type: 'ALL' | 'income' | 'expense' | 'appointment') => void;
 }
 
 const formatCurrency = (value: number) => {
@@ -33,11 +33,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   categoriesMap,
   onManageCategories,
   searchTerm,
-  onSearchChange
+  onSearchChange,
+  filterType,
+  onFilterTypeChange
 }) => {
-  const [filterType, setFilterType] = useState<'ALL' | 'income' | 'expense' | 'appointment'>('ALL');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
-  // searchTerm moved to props
+  // filterType moved to props
   const [movingId, setMovingId] = useState<string | null>(null);
   const [newDayVal, setNewDayVal] = useState<string>('');
   const listContainerRef = useRef<HTMLDivElement>(null);
@@ -88,47 +89,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-slate-50/50 relative">
-      <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md p-6 border-b border-slate-200/60 flex flex-col gap-5 transition-all duration-300">
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            {/* Title removed, as parent container or context makes it clear, or keep small */}
-            <div className="flex items-center gap-2">
-              <ListFilter size={20} className="text-primary-600" />
-              <h2 className="text-base font-bold text-slate-700">Filtros & Busca</h2>
-            </div>
-
-            <div className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full border border-primary-100">
-              {transactions.length} registros
-            </div>
-          </div>
-
-          {/* Botões de Filtro de Tipo */}
-          <div className="flex items-center bg-white p-1.5 rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
-            <button
-              onClick={() => setFilterType('ALL')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap ${filterType === 'ALL' ? 'bg-primary-600 text-white shadow-md shadow-primary-500/30' : 'text-slate-500 hover:text-primary-600 hover:bg-slate-50'}`}
-            >
-              Todos
-            </button>
-            <button
-              onClick={() => setFilterType('income')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 whitespace-nowrap ${filterType === 'income' ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30' : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'}`}
-            >
-              <TrendingUp size={14} /> Receitas
-            </button>
-            <button
-              onClick={() => setFilterType('expense')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 whitespace-nowrap ${filterType === 'expense' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30' : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'}`}
-            >
-              <TrendingDown size={14} /> Despesas
-            </button>
-            <button
-              onClick={() => setFilterType('appointment')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all flex items-center gap-2 whitespace-nowrap ${filterType === 'appointment' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'}`}
-            >
-              <Clock size={14} /> Agenda
-            </button>
+      {/* Header with quick stats or simplified view if needed */}
+      <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md px-6 py-4 border-b border-slate-200/60 flex items-center justify-between transition-all duration-300">
+        <div className="flex items-center gap-2">
+          <div className="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full border border-primary-100">
+            {transactions.length} registros
           </div>
         </div>
       </div>
@@ -142,7 +107,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Nada encontrado</p>
             <p className="text-xs text-slate-400 mt-1">Tente ajustar seus filtros</p>
             <button
-              onClick={() => { setFilterType('ALL'); onSearchChange(''); onSelectedDayChange(''); }}
+              onClick={() => { onFilterTypeChange?.('ALL'); onSearchChange(''); onSelectedDayChange(''); }}
               className="mt-6 text-xs font-bold text-white bg-primary-500 px-6 py-2 rounded-full shadow-lg shadow-primary-500/30 hover:bg-primary-600 transition-all"
             >
               Limpar Filtros
