@@ -826,7 +826,7 @@ const App: React.FC = () => {
               </div>
 
               {/* Center: Financial Stats (The Requested "Fixed Values") */}
-              <div className="flex-1 max-w-4xl hidden lg:flex items-center justify-center">
+              <div className="flex-1 max-w-4xl hidden lg:flex items-center justify-center gap-3">
                 <div className="flex items-center gap-1 bg-white border border-slate-200/60 shadow-sm rounded-2xl px-2 py-1.5">
 
                   {/* Receitas */}
@@ -874,20 +874,19 @@ const App: React.FC = () => {
                       {summary.endOfMonthBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
-
-                  {/* Calculadora (Destacado) */}
-                  <div className="flex items-center px-4 py-1 border-l border-slate-100">
-                    <button
-                      onClick={() => setShowCalculator(true)}
-                      className="group relative"
-                      title="Abrir Calculadora"
-                    >
-                      <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 hover:scale-105 active:scale-95 transition-all duration-200">
-                        <CalculatorIcon size={18} strokeWidth={2.5} />
-                      </div>
-                    </button>
-                  </div>
                 </div>
+
+                {/* Calculadora (Destacado - Standalone) */}
+                <button
+                  onClick={() => setShowCalculator(true)}
+                  className="group relative flex items-center justify-center p-0.5"
+                  title="Abrir Calculadora"
+                >
+                  <div className="absolute inset-0 bg-indigo-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
+                  <div className="relative w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-xl shadow-indigo-600/30 border border-indigo-400 hover:bg-indigo-500 hover:scale-105 active:scale-95 transition-all duration-300">
+                    <CalculatorIcon size={22} strokeWidth={2.5} />
+                  </div>
+                </button>
               </div>
 
               {/* Right: Actions */}
