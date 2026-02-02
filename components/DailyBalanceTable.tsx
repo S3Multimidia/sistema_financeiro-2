@@ -56,17 +56,30 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -z-0 pointer-events-none"></div>
 
-      <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between relative z-10">
+      <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between relative z-10 shrink-0">
         <h2 className="font-bold text-sm uppercase tracking-wider text-slate-100 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
-          Fevereiro 2026
+          {new Date(year, month).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
         </h2>
-        <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wide">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div> Positivo
+
+        {/* Header Summary for Immediate Match */}
+        <div className="flex items-center gap-4">
+          <div className="text-right hidden sm:block">
+            <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Fechamento Previsto</div>
+            <div className={`text-base font-black ${calendarData.length > 0 && calendarData[calendarData.length - 1]?.balance < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+              {calendarData.length > 0 && calendarData[calendarData.length - 1]?.balance !== null
+                ? formatCompactCurrency(calendarData[calendarData.length - 1].balance!)
+                : 'R$ 0,00'}
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div> Negativo
+
+          <div className="flex gap-2 text-[9px] font-bold uppercase tracking-wide">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div> <span className="hidden xl:inline">Positivo</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div> <span className="hidden xl:inline">Negativo</span>
+            </div>
           </div>
         </div>
       </div>
@@ -97,7 +110,7 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
             <div
               key={`day-${item.day}`}
               className={`
-                min-h-[90px] rounded-2xl flex flex-col relative group transition-all duration-300 p-2 justify-between border
+                min-h-[60px] rounded-xl flex flex-col relative group transition-all duration-300 p-1.5 justify-between border
                 ${isToday
                   ? 'bg-slate-800 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.3)] z-20 scale-[1.02]'
                   : 'bg-[#27272a] border-slate-800 hover:border-slate-600 hover:bg-slate-800'
@@ -137,6 +150,10 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
             </div>
           );
         })}
+        {/* End Padding to fill grid if needed */}
+        {Array.from({ length: (7 - (calendarData.length % 7)) % 7 }).map((_, i) => (
+          <div key={`end-pad-${i}`} className="" />
+        ))}
       </div>
 
       {/* Rodapé Resumo */}
