@@ -888,6 +888,9 @@ const App: React.FC = () => {
                   <button onClick={() => loadFromCloud()} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors" title="Recarregar">
                     <RefreshCw size={18} />
                   </button>
+                  <button onClick={() => setShowCalculator(true)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors" title="Calculadora">
+                    <CalculatorIcon size={18} />
+                  </button>
                   <button onClick={() => setShowSettings(true)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors" title="Configurações">
                     <Settings size={18} />
                   </button>
