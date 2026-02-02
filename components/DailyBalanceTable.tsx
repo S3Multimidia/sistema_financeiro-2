@@ -52,21 +52,21 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
   }, [transactions, previousBalance, month, year]);
 
   return (
-    <div className="bg-[#18181b] rounded-3xl overflow-hidden flex flex-col h-full border border-slate-800 shadow-2xl font-sans relative">
+    <div className="bg-[#18181b] rounded-3xl overflow-hidden flex flex-col h-auto border border-slate-800 shadow-2xl font-sans relative">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -z-0 pointer-events-none"></div>
 
-      <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between relative z-10 shrink-0">
-        <h2 className="font-bold text-sm uppercase tracking-wider text-slate-100 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+      <div className="px-5 py-3 border-b border-slate-800 flex items-center justify-between relative z-10 shrink-0">
+        <h2 className="font-bold text-xs uppercase tracking-wider text-slate-100 flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
           {new Date(year, month).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
         </h2>
 
         {/* Header Summary for Immediate Match */}
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
-            <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Fechamento Previsto</div>
-            <div className={`text-base font-black ${calendarData.length > 0 && calendarData[calendarData.length - 1]?.balance < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+            <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Fechamento</div>
+            <div className={`text-xs font-black ${calendarData.length > 0 && calendarData[calendarData.length - 1]?.balance < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
               {calendarData.length > 0 && calendarData[calendarData.length - 1]?.balance !== null
                 ? formatCompactCurrency(calendarData[calendarData.length - 1].balance!)
                 : 'R$ 0,00'}
@@ -85,16 +85,16 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
       </div>
 
       {/* Cabeçalho da Semana */}
-      <div className="grid grid-cols-7 border-b border-slate-800/50 bg-[#18181b]/50 relative z-10">
+      <div className="grid grid-cols-7 border-b border-slate-800/50 bg-[#18181b]/50 relative z-10 shrink-0">
         {WEEKDAYS_SHORT.map(wd => (
-          <div key={wd} className="py-3 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+          <div key={wd} className="py-1.5 text-center text-[9px] font-bold text-slate-500 uppercase tracking-widest">
             {wd}
           </div>
         ))}
       </div>
 
       {/* Grid de Dias */}
-      <div className="grid grid-cols-7 flex-1 gap-2 p-3 bg-[#18181b] overflow-y-auto relative z-10 custom-scrollbar">
+      <div className="grid grid-cols-7 gap-1 p-2 bg-[#18181b] relative z-10 content-start">
         {calendarData.map((item, idx) => {
           if (item.day === null) {
             return <div key={`empty-${idx}`} className="" />;
@@ -110,42 +110,30 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
             <div
               key={`day-${item.day}`}
               className={`
-                min-h-[60px] rounded-xl flex flex-col relative group transition-all duration-300 p-1.5 justify-between border
+                min-h-[42px] rounded-lg flex flex-col relative group transition-all duration-300 px-1 py-0.5 justify-center border
                 ${isToday
-                  ? 'bg-slate-800 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.3)] z-20 scale-[1.02]'
+                  ? 'bg-slate-800 border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.2)] z-20 scale-[1.05]'
                   : 'bg-[#27272a] border-slate-800 hover:border-slate-600 hover:bg-slate-800'
                 }
               `}
             >
-              {/* Dia */}
-              <div className="flex justify-between items-start">
-                <span className={`text-[12px] font-bold ${isToday ? 'text-cyan-400' : 'text-slate-400 group-hover:text-slate-200'}`}>
+              <div className="flex items-center justify-between">
+                <span className={`text-[10px] font-bold ${isToday ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
                   {item.day}
                 </span>
-              </div>
 
-              {/* Saldo Principal - HERO */}
-              <div className="flex flex-col items-center justify-center -mt-2 flex-1">
-                <span className={`text-[13px] md:text-[15px] font-bold tracking-tight ${isNegative ? 'text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.3)]' : 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]'}`}>
-                  {balance !== null ? formatCompactCurrency(balance) : '...'}
+                <span className={`text-[10px] sm:text-[11px] font-black tracking-tight ${isNegative ? 'text-rose-400' : 'text-emerald-400'}`}>
+                  {balance !== null ? formatCompactCurrency(balance) : '-'}
                 </span>
-              </div>
-
-              {/* Status Dot */}
-              <div className="flex justify-center pb-1 opacity-50 group-hover:opacity-100 transition-opacity">
-                {/* Decorative logic - maybe a small bar or dot indicating health */}
-                <div className={`h-1 w-8 rounded-full ${isNegative ? 'bg-rose-500/50' : 'bg-emerald-500/50'}`}></div>
               </div>
 
               {/* Tooltip Detalhado */}
-              <div className="absolute hidden group-hover:flex bottom-full left-1/2 -translate-x-1/2 mb-3 z-50 pointer-events-none flex-col items-center animate-fade-in-up">
-                <div className="bg-slate-900/90 backdrop-blur-md text-white text-[11px] px-4 py-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-slate-700 w-max text-center">
-                  <div className="text-slate-400 text-[9px] uppercase tracking-wider mb-1 font-bold">Saldo {item.day}/{month + 1}</div>
-                  <div className={`text-base font-black ${isNegative ? 'text-rose-400' : 'text-emerald-400'}`}>
+              <div className="absolute hidden group-hover:flex bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 pointer-events-none flex-col items-center animate-fade-in-up">
+                <div className="bg-slate-900/95 backdrop-blur-md text-white text-[10px] px-2 py-1.5 rounded-lg shadow-xl border border-slate-700 w-max text-center z-50">
+                  <div className={`text-xs font-black ${isNegative ? 'text-rose-400' : 'text-emerald-400'}`}>
                     R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
-                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900/90"></div>
               </div>
             </div>
           );
