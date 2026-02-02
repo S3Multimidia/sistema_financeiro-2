@@ -38,7 +38,11 @@ import {
   X,
   Sparkles,
   MessageSquare,
-  Calculator as CalculatorIcon
+  Calculator as CalculatorIcon,
+  TrendingUp,
+  TrendingDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 
@@ -736,104 +740,99 @@ const App: React.FC = () => {
             />
           )}
 
-          {/* Floating Glass Header */}
-          <header className="fixed top-6 left-4 right-4 md:left-8 md:right-8 z-50">
-            <div className="glass rounded-2xl px-6 py-4 flex items-center justify-between shadow-xl shadow-slate-200/40 transition-all duration-500">
+          {/* Fixed Minimalist Header */}
+          <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 shadow-sm transition-all duration-300 h-16">
+            <div className="max-w-[1920px] mx-auto px-4 md:px-6 h-full flex items-center justify-between gap-4">
+              
+              {/* Left: Logo & Month Nav */}
               <div className="flex items-center gap-6">
-                <div className="flex items-center gap-4">
-                  <div className="bg-gradient-to-br from-primary-800 to-primary-950 p-2.5 rounded-xl text-white shadow-lg shadow-primary-900/20">
-                    <LayoutDashboard size={24} />
+                <div className="flex items-center gap-3">
+                  <div className="bg-indigo-600 p-2 rounded-lg text-white shadow-md shadow-indigo-600/20">
+                    <LayoutDashboard size={20} />
                   </div>
-                  <div>
-                    <h1 className="text-lg font-bold text-slate-900 leading-tight uppercase tracking-tight">{appConfig.appName}</h1>
-                    <div className="flex items-center gap-3">
-                      {cloudStatus === 'ok' ? (
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                          <CloudCheck size={12} /> Sincronizado
-                        </span>
-                      ) : cloudStatus === 'syncing' ? (
-                        <span className="text-[10px] font-bold text-amber-600 uppercase flex items-center gap-1.5 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                          <Loader2 size={12} className="animate-spin" /> Salvando...
-                        </span>
-                      ) : cloudStatus === 'idle' ? (
-                        <span className="text-[10px] font-bold text-primary-600 uppercase flex items-center gap-1.5 bg-primary-50 px-2 py-0.5 rounded-full border border-primary-100">
-                          <CloudCheck size={12} /> Nuvem Ativa
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold text-rose-600 uppercase flex items-center gap-1.5 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
-                          <AlertTriangle size={12} /> Erro Nuvem
-                        </span>
-                      )}
+                  <div className="hidden md:block">
+                    <h1 className="text-sm font-bold text-slate-900 leading-none uppercase tracking-tight">{appConfig.appName}</h1>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                       {cloudStatus === 'ok' && <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-100"><CloudCheck size={10} /> Sync On</span>}
+                       {cloudStatus === 'syncing' && <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full flex items-center gap-1 border border-amber-100"><Loader2 size={10} className="animate-spin" /> Saving</span>}
+                       {cloudStatus === 'error' && <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-full flex items-center gap-1 border border-rose-100"><AlertTriangle size={10} /> Error</span>}
                     </div>
                   </div>
                 </div>
 
-                <div className="hidden md:flex bg-slate-100/50 p-1 rounded-xl border border-slate-200/50">
-                  <button onClick={() => setCurrentView('dashboard')} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-all duration-300 ${currentView === 'dashboard' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                    <LayoutDashboard size={16} /> Dashboard
-                  </button>
-                  <button onClick={() => setCurrentView('yearly')} className={`px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-all duration-300 ${currentView === 'yearly' ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                    <BarChart3 size={16} /> Relatórios
-                  </button>
-                </div>
-              </div>
+                <div className="h-6 w-px bg-slate-200/80 hidden md:block"></div>
 
-              <div className="flex items-center gap-3 md:gap-6">
-                <div className="flex items-center gap-1 bg-white/50 px-2 py-1 rounded-xl border border-white/50 backdrop-blur-sm">
-                  <button onClick={() => { const d = new Date(currentYear, currentMonth - 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-primary-600"><ChevronLeft size={18} /></button>
-                  <div className="text-center min-w-[120px]">
-                    <p className="text-xs font-bold text-primary-600 uppercase leading-none mb-1 tracking-wide">{MONTHS_NAMES[currentMonth]}</p>
-                    <p className="text-sm font-black text-slate-800 leading-none">{currentYear}</p>
+                {/* Date Navigation */}
+                <div className="flex items-center bg-slate-100/80 rounded-lg p-1 border border-slate-200/50">
+                  <button onClick={() => { const d = new Date(currentYear, currentMonth - 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-1 hover:bg-white rounded-md text-slate-400 hover:text-indigo-600 transition-all"><ChevronLeft size={16} /></button>
+                  <div className="px-3 text-center min-w-[90px]">
+                    <span className="text-xs font-black text-slate-700 uppercase block leading-none">{MONTHS_NAMES[currentMonth]}</span>
+                    <span className="text-[10px] font-bold text-slate-400 leading-none">{currentYear}</span>
                   </div>
-                  <button onClick={() => { const d = new Date(currentYear, currentMonth + 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-primary-600"><ChevronRight size={18} /></button>
-                </div>
-
-                <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setShowCalculator(!showCalculator)}
-                    className={`p-3 rounded-xl transition-all border shadow-sm group ${showCalculator ? 'bg-primary-50 text-primary-600 border-primary-200' : 'bg-white hover:bg-primary-50 text-slate-400 hover:text-primary-600 border-slate-100'}`}
-                    title="Calculadora"
-                  >
-                    <CalculatorIcon size={18} />
-                  </button>
-
-                  <button
-                    onClick={() => setShowChat(!showChat)}
-                    className={`p-3 rounded-xl transition-all border shadow-sm group ${showChat ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 border-slate-100'}`}
-                    title="IA Financeira"
-                  >
-                    <Sparkles size={18} />
-                  </button>
-
-                  <div className="h-4 w-px bg-slate-200 mx-1"></div>
-
-                  <button
-                    onClick={() => loadFromCloud()}
-                    className="p-3 bg-white hover:bg-primary-50 text-slate-400 hover:text-primary-600 rounded-xl transition-all border border-slate-100 shadow-sm group"
-                    title="Recarregar"
-                  >
-                    <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
-                  </button>
-
-                  <button onClick={() => setShowSettings(true)} className="p-3 bg-white hover:bg-primary-50 text-slate-400 hover:text-primary-600 rounded-xl transition-all border border-slate-100 shadow-sm">
-                    <Settings size={18} />
-                  </button>
-
-                  <button
-                    onClick={() => { ApiService.logout(); setUser(null); }}
-                    className="p-3 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition-all border border-rose-100 shadow-sm"
-                    title="Sair"
-                  >
-                    <LogOut size={18} />
-                  </button>
+                  <button onClick={() => { const d = new Date(currentYear, currentMonth + 1); setCurrentMonth(d.getMonth()); setCurrentYear(d.getFullYear()); }} className="p-1 hover:bg-white rounded-md text-slate-400 hover:text-indigo-600 transition-all"><ChevronRight size={16} /></button>
                 </div>
               </div>
+
+              {/* Center: Financial Stats (The Requested "Fixed Values") */}
+              <div className="flex-1 max-w-4xl hidden lg:flex items-center justify-center">
+                 <div className="flex items-center gap-1 bg-white border border-slate-200/60 shadow-sm rounded-2xl px-2 py-1.5">
+                    
+                    {/* Receitas */}
+                    <div className="flex flex-col px-4 py-1 border-r border-slate-100 min-w-[140px]">
+                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Receitas
+                       </span>
+                       <span className="text-sm font-black text-slate-700">
+                          {summary.realizedIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                       </span>
+                    </div>
+
+                    {/* Despesas */}
+                    <div className="flex flex-col px-4 py-1 border-r border-slate-100 min-w-[140px]">
+                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
+                          <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div> Despesas
+                       </span>
+                       <span className="text-sm font-black text-slate-700">
+                          {summary.realizedExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                       </span>
+                    </div>
+
+                    {/* Saldo */}
+                    <div className="flex flex-col px-4 py-1 min-w-[160px]">
+                       <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
+                          <Wallet size={10} strokeWidth={3} /> Saldo Atual
+                       </span>
+                       <span className={`text-lg font-black ${summary.currentBalance >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+                          {summary.currentBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                       </span>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Right: Actions */}
+              <div className="flex items-center gap-2">
+                 <div className="hidden md:flex items-center gap-1 mr-2">
+                    <button onClick={() => setCurrentView('dashboard')} className={`p-2 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all ${currentView === 'dashboard' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>Dashboard</button>
+                    <button onClick={() => setCurrentView('yearly')} className={`p-2 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all ${currentView === 'yearly' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}>Relatórios</button>
+                 </div>
+
+                 <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                    <button onClick={() => loadFromCloud()} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors" title="Recarregar">
+                      <RefreshCw size={18} />
+                    </button>
+                    <button onClick={() => setShowSettings(true)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors" title="Configurações">
+                      <Settings size={18} />
+                    </button>
+                    <button onClick={() => { ApiService.logout(); setUser(null); }} className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Sair">
+                      <LogOut size={18} />
+                    </button>
+                 </div>
+              </div>
+
             </div>
           </header>
 
-          <main className="max-w-[1920px] mx-auto p-4 md:p-8 pt-32 md:pt-36 space-y-8 animate-fade-in">
+          <main className="max-w-[1920px] mx-auto p-4 md:p-8 pt-24 space-y-8 animate-fade-in">
             {currentView === 'dashboard' ? (
               <div className="space-y-8">
                 <SummaryCards summary={summary} onUpdateStartingBalance={handleUpdateStartingBalance} />
