@@ -52,39 +52,43 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
   }, [transactions, previousBalance, month, year]);
 
   return (
-    <div className="glass-card rounded-3xl overflow-hidden flex flex-col h-full border border-white/50 shadow-xl">
-      <div className="bg-gradient-to-r from-slate-50 to-white px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-        <h2 className="font-bold text-xs uppercase tracking-wider text-slate-700 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-          Saldo Diário Previsto
+    <div className="bg-[#18181b] rounded-3xl overflow-hidden flex flex-col h-full border border-slate-800 shadow-2xl font-sans relative">
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -z-0 pointer-events-none"></div>
+
+      <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between relative z-10">
+        <h2 className="font-bold text-sm uppercase tracking-wider text-slate-100 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+          Fevereiro 2026
         </h2>
-        <div className="flex gap-3 text-[9px] font-bold uppercase tracking-wide">
-          <div className="flex items-center gap-1 text-emerald-600">
-            <div className="w-1.5 h-1.5 rounded-sm bg-emerald-100 border border-emerald-200"></div> Positivo
+        <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wide">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div> Positivo
           </div>
-          <div className="flex items-center gap-1 text-rose-600">
-            <div className="w-1.5 h-1.5 rounded-sm bg-rose-100 border border-rose-200"></div> Negativo
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div> Negativo
           </div>
         </div>
       </div>
 
       {/* Cabeçalho da Semana */}
-      <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-200/50">
+      <div className="grid grid-cols-7 border-b border-slate-800/50 bg-[#18181b]/50 relative z-10">
         {WEEKDAYS_SHORT.map(wd => (
-          <div key={wd} className="py-2 text-center text-[9px] font-black text-slate-400">
+          <div key={wd} className="py-3 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
             {wd}
           </div>
         ))}
       </div>
 
       {/* Grid de Dias */}
-      <div className="grid grid-cols-7 flex-1 bg-slate-100/50 gap-px p-px">
+      <div className="grid grid-cols-7 flex-1 gap-2 p-3 bg-[#18181b] overflow-y-auto relative z-10 custom-scrollbar">
         {calendarData.map((item, idx) => {
           if (item.day === null) {
-            return <div key={`empty-${idx}`} className="bg-slate-50/30" />;
+            return <div key={`empty-${idx}`} className="" />;
           }
 
-          const isNegative = item.balance !== null && item.balance < 0;
+          const balance = item.balance ?? 0;
+          const isNegative = balance < 0;
           const isToday = new Date().getDate() === item.day &&
             new Date().getMonth() === month &&
             new Date().getFullYear() === year;
@@ -92,29 +96,43 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
           return (
             <div
               key={`day-${item.day}`}
-              className={`min-h-[60px] flex flex-col items-center justify-center relative group transition-all duration-200 
-                ${isNegative ? 'bg-rose-50/60 hover:bg-rose-100/80' : 'bg-white hover:bg-indigo-50/50'}
-                ${isToday ? 'ring-2 ring-inset ring-indigo-500 z-10' : ''}
+              className={`
+                min-h-[90px] rounded-2xl flex flex-col relative group transition-all duration-300 p-2 justify-between border
+                ${isToday
+                  ? 'bg-slate-800 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.3)] z-20 scale-[1.02]'
+                  : 'bg-[#27272a] border-slate-800 hover:border-slate-600 hover:bg-slate-800'
+                }
               `}
             >
-              <div className="absolute top-1 left-1.5">
-                <span className={`text-[10px] font-bold font-mono ${isToday ? 'text-indigo-600' : 'text-slate-300'}`}>
+              {/* Dia */}
+              <div className="flex justify-between items-start">
+                <span className={`text-[12px] font-bold ${isToday ? 'text-cyan-400' : 'text-slate-400 group-hover:text-slate-200'}`}>
                   {item.day}
                 </span>
               </div>
 
-              <div className="flex flex-col items-center z-0 pt-3">
-                <span className={`text-[11px] font-black tracking-tight ${isNegative ? 'text-rose-600' : 'text-emerald-600'}`}>
-                  {item.balance !== null ? formatCompactCurrency(item.balance) : ''}
+              {/* Saldo Principal - HERO */}
+              <div className="flex flex-col items-center justify-center -mt-2 flex-1">
+                <span className={`text-[13px] md:text-[15px] font-bold tracking-tight ${isNegative ? 'text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.3)]' : 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]'}`}>
+                  {balance !== null ? formatCompactCurrency(balance) : '...'}
                 </span>
               </div>
 
+              {/* Status Dot */}
+              <div className="flex justify-center pb-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                {/* Decorative logic - maybe a small bar or dot indicating health */}
+                <div className={`h-1 w-8 rounded-full ${isNegative ? 'bg-rose-500/50' : 'bg-emerald-500/50'}`}></div>
+              </div>
+
               {/* Tooltip Detalhado */}
-              <div className="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none">
-                <div className="bg-slate-800 text-white text-[10px] px-3 py-1.5 rounded-lg shadow-xl font-bold whitespace-nowrap">
-                  R$ {item.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+              <div className="absolute hidden group-hover:flex bottom-full left-1/2 -translate-x-1/2 mb-3 z-50 pointer-events-none flex-col items-center animate-fade-in-up">
+                <div className="bg-slate-900/90 backdrop-blur-md text-white text-[11px] px-4 py-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-slate-700 w-max text-center">
+                  <div className="text-slate-400 text-[9px] uppercase tracking-wider mb-1 font-bold">Saldo {item.day}/{month + 1}</div>
+                  <div className={`text-base font-black ${isNegative ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </div>
                 </div>
+                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-slate-900/90"></div>
               </div>
             </div>
           );
@@ -122,10 +140,13 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
       </div>
 
       {/* Rodapé Resumo */}
-      <div className="bg-white p-3 border-t border-slate-100 flex justify-end">
-        <div className="text-right">
-          <span className="text-[9px] font-bold text-slate-400 uppercase mr-2">Fechamento:</span>
-          <span className={`text-xs font-black ${calendarData[calendarData.length - 1]?.balance < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+      <div className="bg-[#18181b] p-4 border-t border-slate-800 flex justify-between items-center relative z-10">
+        <span className="text-[10px] text-slate-500 font-medium hidden md:block">
+          Visão Geral Mensal
+        </span>
+        <div className="text-right flex items-center gap-3 bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50 ml-auto">
+          <span className="text-[10px] font-bold text-slate-400 uppercase">Saldo Final:</span>
+          <span className={`text-sm font-black ${calendarData[calendarData.length - 1]?.balance < 0 ? 'text-rose-400 drop-shadow-[0_0_5px_rgba(251,113,133,0.5)]' : 'text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]'}`}>
             R$ {calendarData[calendarData.length - 1]?.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </span>
         </div>
