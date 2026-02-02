@@ -85,8 +85,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   const days = Object.keys(groupedTransactions).map(Number).sort((a, b) => a - b);
 
   return (
-    <div className="flex flex-col h-full bg-slate-50/50">
-      <div className="p-6 border-b border-slate-200/60 flex flex-col gap-5">
+    <div className="flex flex-col h-full bg-slate-50/50 relative">
+      <div className="sticky top-16 z-30 bg-slate-50/95 backdrop-blur-md p-6 border-b border-slate-200/60 flex flex-col gap-5 transition-all duration-300">
         {/* ... (header content remains safely outside of this replacement if scoped correctly, but line 79 is inside header. Wait.
            StartLine 41 (useRef) -> 74 (sort).
            Let's look at the context.

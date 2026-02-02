@@ -792,8 +792,8 @@ const App: React.FC = () => {
             />
           )}
 
-          {/* Fixed Minimalist Header */}
-          <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 shadow-sm transition-all duration-300 h-16">
+          {/* Fixed Minimalist Header - Acinzentado */}
+          <header className="fixed top-0 left-0 right-0 z-50 bg-slate-100/90 backdrop-blur-xl border-b border-slate-200/60 shadow-sm transition-all duration-300 h-16">
             <div className="max-w-[1920px] mx-auto px-4 md:px-6 h-full flex items-center justify-between gap-4">
 
               {/* Left: Logo & Month Nav */}
