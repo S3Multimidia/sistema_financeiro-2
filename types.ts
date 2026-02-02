@@ -29,6 +29,14 @@ export interface Transaction {
   isSubscription?: boolean;
   subscriptionId?: string;
   debtId?: string;
+
+  // Partial Payments Logic
+  originalAmount?: number;
+  partialPayments?: {
+    id: string; // ID of the payment transaction
+    date: string; // ISO or formatted date
+    amount: number;
+  }[];
 }
 
 export interface CreditCard {

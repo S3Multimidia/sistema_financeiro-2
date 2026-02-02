@@ -691,6 +691,57 @@ const App: React.FC = () => {
     setCardTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
   };
 
+  // Handler para Pagamento Parcial
+  const handlePartialPayment = (originalId: string, date: { day: number, month: number, year: number }, amount: number) => {
+    const originalTransaction = transactions.find(t => t.id === originalId);
+    if (!originalTransaction) return;
+
+    // 1. Atualizar transação original (reduzir valor e registrar histórico)
+    const updatedOriginal: Transaction = {
+      ...originalTransaction,
+      amount: originalTransaction.amount - amount,
+      originalAmount: originalTransaction.originalAmount || originalTransaction.amount,
+      partialPayments: [
+        ...(originalTransaction.partialPayments || []),
+        {
+          id: crypto.randomUUID(),
+          date: new Date(date.year, date.month, date.day).toISOString(),
+          amount: amount
+        }
+      ]
+    };
+
+    // 2. Criar nova transação do pagamento parcial
+    const paymentTransaction: Transaction = {
+      id: crypto.randomUUID(),
+      description: `Pagamento Parcial - ${originalTransaction.description}`,
+      amount: amount,
+      type: originalTransaction.type,
+      category: originalTransaction.category,
+      subCategory: 'Parcial',
+      day: date.day,
+      month: date.month,
+      year: date.year,
+      completed: true,
+      isFixed: false
+    };
+
+    setTransactions(prev => [
+      ...prev.map(t => t.id === originalId ? updatedOriginal : t),
+      paymentTransaction
+    ]);
+
+    // Persistir API (manual para garantir)
+    ApiService.updateTransaction(originalId, {
+      amount: updatedOriginal.amount,
+      originalAmount: updatedOriginal.originalAmount,
+      partialPayments: updatedOriginal.partialPayments
+    });
+    ApiService.addTransaction(paymentTransaction);
+  };
+
+
+
   return (
     <>
 
@@ -717,6 +768,7 @@ const App: React.FC = () => {
                 setEditingTransaction(null);
               }}
               onClose={() => setEditingTransaction(null)}
+              onPartialPayment={handlePartialPayment}
             />
           )}
 
@@ -848,7 +900,7 @@ const App: React.FC = () => {
             </div>
           </header>
 
-          <main className="max-w-[1920px] mx-auto p-4 md:p-8 pt-24 space-y-8 animate-fade-in">
+          <main className="max-w-[1920px] mx-auto p-4 md:p-8 pt-32 lg:pt-40 space-y-8 animate-fade-in">
             {currentView === 'dashboard' ? (
               <div className="space-y-8">
                 {/* SummaryCards removed as requested - Stats now in Header */}
