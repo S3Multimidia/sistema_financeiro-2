@@ -21,7 +21,11 @@ const mapToApp = (t: any): Transaction => ({
     client_name: t.client_name,
     external_url: t.external_url,
     perfex_status: t.perfex_status,
-    debtId: t.debt_id // Map DB snake_case to App camelCase
+    debtId: t.debt_id,
+    isSubscription: t.is_subscription,
+    subscriptionId: t.subscription_id,
+    isCreditCardBill: t.is_credit_card_bill,
+    relatedCardId: t.related_card_id
 });
 
 // Helper to map App camelCase to DB snake_case
@@ -33,6 +37,10 @@ const mapToDB = (t: Partial<Transaction>) => {
     if (t.installmentNumber !== undefined) mapped.installment_number = t.installmentNumber;
     if (t.totalInstallments !== undefined) mapped.installments_total = t.totalInstallments;
     if (t.debtId !== undefined) mapped.debt_id = t.debtId;
+    if (t.isSubscription !== undefined) mapped.is_subscription = t.isSubscription;
+    if (t.subscriptionId !== undefined) mapped.subscription_id = t.subscriptionId;
+    if (t.isCreditCardBill !== undefined) mapped.is_credit_card_bill = t.isCreditCardBill;
+    if (t.relatedCardId !== undefined) mapped.related_card_id = t.relatedCardId;
 
     // client_name/external_url/perfex_status match DB columns
     // Ensure original_id is passed if present (critical for duplicate prevention)
@@ -44,7 +52,11 @@ const mapToDB = (t: Partial<Transaction>) => {
     delete mapped.installmentId;
     delete mapped.installmentNumber;
     delete mapped.totalInstallments;
-    delete mapped.debtId; // Remove camelCase version
+    delete mapped.debtId;
+    delete mapped.isSubscription;
+    delete mapped.subscriptionId;
+    delete mapped.isCreditCardBill;
+    delete mapped.relatedCardId;
 
     return mapped;
 };

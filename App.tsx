@@ -461,7 +461,22 @@ const App: React.FC = () => {
           await ApiService.addTransaction(payload);
         }
       } else if (action === 'update') {
-        await ApiService.updateTransaction(payload.id, payload.updates);
+        // Auto-Detect Virtual Transaction (Subscription not yet saved)
+        // If ID is not UUID, it's a local virtual ID. We must INSERT instead of UPDATE.
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(payload.id)) {
+          const existing = transactions.find(t => t.id === payload.id);
+          if (existing) {
+            const { id: virtualId, ...toInsert } = { ...existing, ...payload.updates };
+            // Ensure we keep isSubscription flags if they exist (they should be in 'existing')
+            await ApiService.addTransaction(toInsert);
+          } else {
+            // Fallback if not found (unexpected)
+            await ApiService.updateTransaction(payload.id, payload.updates);
+          }
+        } else {
+          await ApiService.updateTransaction(payload.id, payload.updates);
+        }
       } else if (action === 'delete') {
         const id = typeof payload === 'object' ? payload.id : payload;
         await ApiService.deleteTransaction(id);
