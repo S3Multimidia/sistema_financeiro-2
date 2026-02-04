@@ -468,6 +468,17 @@ const App: React.FC = () => {
           const existing = transactions.find(t => t.id === payload.id);
           if (existing) {
             const { id: virtualId, ...toInsert } = { ...existing, ...payload.updates };
+
+            // FIX: Sanitize Virtual Subscriptions before saving to Real DB
+            // Virtual subs often have isFixed=true (for UI) but invalid/missing installmentIds
+            // We should strip these to avoid DB constraint errors.
+            if (toInsert.isSubscription) {
+              delete (toInsert as any).isFixed;
+              delete (toInsert as any).installmentId;
+              delete (toInsert as any).installmentNumber;
+              delete (toInsert as any).totalInstallments;
+            }
+
             // Ensure we keep isSubscription flags if they exist (they should be in 'existing')
             await ApiService.addTransaction(toInsert);
           } else {
