@@ -465,27 +465,37 @@ const App: React.FC = () => {
         // If ID is not UUID, it's a local virtual ID. We must INSERT instead of UPDATE.
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         if (!uuidRegex.test(payload.id)) {
+          console.log('🔍 Detected VIRTUAL transaction (non-UUID ID):', payload.id);
           const existing = transactions.find(t => t.id === payload.id);
           if (existing) {
             const { id: virtualId, ...toInsert } = { ...existing, ...payload.updates };
+
+            console.log('📦 Virtual transaction BEFORE sanitization:', JSON.stringify(toInsert, null, 2));
 
             // FIX: Sanitize Virtual Subscriptions before saving to Real DB
             // Virtual subs often have isFixed=true (for UI) but invalid/missing installmentIds
             // We should strip these to avoid DB constraint errors.
             if (toInsert.isSubscription) {
+              console.log('🧹 Sanitizing subscription fields...');
               delete (toInsert as any).isFixed;
               delete (toInsert as any).installmentId;
               delete (toInsert as any).installmentNumber;
               delete (toInsert as any).totalInstallments;
             }
 
+            console.log('✅ Virtual transaction AFTER sanitization:', JSON.stringify(toInsert, null, 2));
+            console.log('🚀 Attempting to INSERT as new transaction...');
+
             // Ensure we keep isSubscription flags if they exist (they should be in 'existing')
             await ApiService.addTransaction(toInsert);
+            console.log('✔️ Successfully inserted virtual transaction!');
           } else {
+            console.warn('⚠️ Virtual transaction not found in local state, attempting update anyway');
             // Fallback if not found (unexpected)
             await ApiService.updateTransaction(payload.id, payload.updates);
           }
         } else {
+          console.log('📝 Updating existing transaction (UUID):', payload.id);
           await ApiService.updateTransaction(payload.id, payload.updates);
         }
       } else if (action === 'delete') {
@@ -493,9 +503,12 @@ const App: React.FC = () => {
         await ApiService.deleteTransaction(id);
       }
 
+
       await loadFromCloud();
-    } catch (e) {
-      console.error("API Sync Error:", e);
+    } catch (e: any) {
+      console.error("❌ API Sync Error:", e);
+      console.error("❌ Error message:", e?.message);
+      console.error("❌ Error details:", e?.error || e?.details || e);
       setCloudStatus('error');
     }
   };
