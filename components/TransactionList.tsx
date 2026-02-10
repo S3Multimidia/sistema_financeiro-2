@@ -132,46 +132,35 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             const accumulatedIncome = transactionsBeforeToday.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
             const accumulatedExpense = transactionsBeforeToday.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
             const openingBalance = previousBalance + accumulatedIncome - accumulatedExpense;
+            const closingBalance = openingBalance + dayTotal;
 
             return (
-              <div key={day} id={`day-${day}`} className="mb-8 last:mb-0">
-                <div className="flex items-center justify-between mb-4 sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10 py-3 border-b border-slate-200/50">
+              <div key={day} id={`day-${day}`} className="mb-8 last:mb-0 border border-slate-200/60 rounded-3xl overflow-hidden bg-white/40 shadow-sm">
+
+                {/* HEAD: SALDO INICIAL */}
+                <div className="flex items-center justify-between px-6 py-3 bg-slate-100/50 border-b border-slate-200/50">
                   <div className="flex items-center gap-3">
-                    <span className="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-md shadow-slate-900/10">DIA {day}</span>
+                    <span className="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm">DIA {day}</span>
                     <div className="h-px w-8 bg-slate-300 hidden sm:block"></div>
                   </div>
                   <div className="flex items-center gap-4">
                     <span
-                      title={`Receitas: ${formatCurrency(dayTrans.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0))} | Despesas: ${formatCurrency(dayTrans.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0))}`}
-                      className={`text-[10px] font-bold uppercase tracking-wide cursor-help ${dayTotal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
+                      className="text-[10px] font-bold uppercase tracking-wide text-slate-500"
                     >
-                      Fluxo: {formatCurrency(dayTotal)}
+                      Saldo Inicial:
                     </span>
-                    <div className="h-4 w-px bg-slate-200"></div>
                     <span
-                      title={`Saldo Inicial do Dia (Abertura)\nAnterior (${formatCurrency(previousBalance)}) + Entradas Anteriores (${formatCurrency(accumulatedIncome)}) - Saídas Anteriores (${formatCurrency(accumulatedExpense)})`}
-                      className={`text-xs font-black px-3 py-1 rounded-lg border cursor-help ${openingBalance >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}
+                      className={`text-xs font-black px-3 py-1 rounded-lg border ${openingBalance >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}
                     >
-                      Saldo: {formatCurrency(openingBalance)}
+                      {formatCurrency(openingBalance)}
                     </span>
-                    {/* DEBUG: Se houver Fluxo mas não houver itens financeiros listados */}
-                    {dayTotal !== 0 && !dayTrans.some(t => t.type === 'income' || t.type === 'expense') && (
-                      <span className="text-[10px] bg-red-500 text-white px-1 rounded animate-pulse" title="Erro Crítico: O cálculo detectou valores mas os itens parecem ser apenas agendamentos.">
-                        !
-                      </span>
-                    )}
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-0 divide-y divide-slate-100">
                   {dayTrans.map(t => (
-                    <div key={t.id} className={`group relative flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 hover:shadow-md 
-                        ${t.type === 'appointment'
-                        ? (t.completed ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-indigo-100 shadow-sm shadow-indigo-500/5')
-                        : (t.type === 'income' && t.completed
-                          ? 'bg-gradient-to-r from-white to-emerald-50/30 border-emerald-100/50 hover:border-emerald-200'
-                          : 'bg-white border-slate-100 hover:border-slate-200')
-                      }
+                    <div key={t.id} className={`group relative flex items-center justify-between p-4 hover:bg-white transition-all duration-200 
+                        ${t.type === 'appointment' ? 'opacity-70 grayscale-[0.3]' : ''}
                     `}>
                       <div className="flex items-center gap-4 overflow-hidden flex-1">
                         <div className="shrink-0">
@@ -282,6 +271,25 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* FOOT: SALDO FINAL */}
+                <div className="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-200/50 rounded-b-3xl">
+                  <span className={`text-[10px] font-bold uppercase tracking-wide ${dayTotal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    Fluxo do Dia: {formatCurrency(dayTotal)}
+                  </span>
+                  <div className="flex items-center gap-4">
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wide text-slate-500"
+                    >
+                      Saldo Final:
+                    </span>
+                    <span
+                      className={`text-xs font-black px-3 py-1 rounded-lg border ${closingBalance >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}
+                    >
+                      {formatCurrency(closingBalance)}
+                    </span>
+                  </div>
                 </div>
               </div>
             );
