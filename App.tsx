@@ -623,14 +623,33 @@ const App: React.FC = () => {
   };
 
   const totalOverallBalance = useMemo(() => {
+    // Agora o Saldo Total Geral considera o Saldo Inicial de Fev/2026 + Todas as Transações
+    // Mas espere, transactions já contém tudo? Sim.
+
+    // Cálculo do Saldo Acumulado até o final do tempo
     const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
     const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-    // Explicitly removed startingBalance from appConfig usage here as it's now a transaction
-    return income - expense;
+    return INITIAL_PREVIOUS_BALANCE + income - expense;
   }, [transactions]);
 
   const summary = useMemo(() => {
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    // 1. Calcular Saldo Inicial (Acumulado de meses anteriores ao atual)
+    // Filtra tudo que é ANTES do dia 1 do mês atual/ano atual
+    const previousTransactions = transactions.filter(t => {
+      if (t.year < currentYear) return true;
+      if (t.year === currentYear && t.month < currentMonth) return true;
+      return false;
+    });
+
+    const prevIncome = previousTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+    const prevExpense = previousTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+
+    // Saldo Inicial = Base (Fev/26) + Acumulado Histórico
+    const previousBalance = INITIAL_PREVIOUS_BALANCE + prevIncome - prevExpense;
+
+    // 2. Dados do Mês Atual
     const currentMonthTrans = transactions.filter(t =>
       t.month === currentMonth &&
       t.year === currentYear &&
@@ -648,13 +667,15 @@ const App: React.FC = () => {
     const realizedExpense = currentMonthTrans.filter(t => t.type === 'expense' && t.completed).reduce((acc, curr) => acc + curr.amount, 0);
 
     return {
-      previousBalance: 0, // Disabled as requested (Manual 'Saldo Inicial' transaction used instead)
+      previousBalance,
       totalIncome,
       totalExpense,
       realizedIncome,
       realizedExpense,
-      currentBalance: realizedIncome - realizedExpense,
-      endOfMonthBalance: totalIncome - totalExpense,
+      // Current Balance = Starting Balance + Realized Flow of Month
+      currentBalance: previousBalance + realizedIncome - realizedExpense,
+      // Estimated End Balance = Starting Balance + All Projected Flow of Month
+      endOfMonthBalance: previousBalance + totalIncome - totalExpense,
     };
   }, [transactions, currentMonth, currentYear]);
 
@@ -874,6 +895,15 @@ const App: React.FC = () => {
               {/* Center: Financial Stats (The Requested "Fixed Values") */}
               <div className="flex-1 max-w-4xl hidden lg:flex items-center justify-center gap-3">
                 <div className="flex items-center gap-1 bg-white border border-slate-200/60 shadow-sm rounded-2xl px-2 py-1.5">
+                  {/* Saldo Inicial (Novo) */}
+                  <div className="flex flex-col px-4 py-1 border-r border-slate-100 min-w-[140px]">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div> Saldo Inicial
+                    </span>
+                    <span className="text-sm font-black text-slate-700">
+                      {summary.previousBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  </div>
 
                   {/* Receitas */}
                   <div className="flex flex-col px-4 py-1 border-r border-slate-100 min-w-[140px]">
@@ -901,7 +931,7 @@ const App: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Saldo */}
+                  {/* Saldo Atual */}
                   <div className="flex flex-col px-4 py-1 border-r border-slate-100 min-w-[160px]">
                     <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
                       <Wallet size={10} strokeWidth={3} /> Saldo Atual
@@ -914,7 +944,7 @@ const App: React.FC = () => {
                   {/* Previsão */}
                   <div className="flex flex-col px-4 py-1 min-w-[140px]">
                     <span className="text-[9px] font-bold text-violet-500 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
-                      <CalendarCheck size={10} strokeWidth={3} /> Previsão
+                      <CalendarCheck size={10} strokeWidth={3} /> Previsão Final
                     </span>
                     <span className={`text-md font-black ${summary.endOfMonthBalance >= 0 ? 'text-slate-700' : 'text-rose-600'}`}>
                       {summary.endOfMonthBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -1105,6 +1135,7 @@ const App: React.FC = () => {
                         onSelectedDayChange={setSelectedDayFilter}
                         categoriesMap={categoriesMap}
                         onManageCategories={() => setShowCategoryManager(true)}
+                        previousBalance={summary.previousBalance}
                       />
                     </div>
 

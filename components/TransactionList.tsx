@@ -13,6 +13,7 @@ interface TransactionListProps {
   onSearchChange: (term: string) => void;
   filterType: 'ALL' | 'income' | 'expense' | 'appointment';
   onFilterTypeChange?: (type: 'ALL' | 'income' | 'expense' | 'appointment') => void;
+  previousBalance?: number;
 }
 
 const formatCurrency = (value: number) => {
@@ -35,7 +36,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   searchTerm,
   onSearchChange,
   filterType,
-  onFilterTypeChange
+  onFilterTypeChange,
+  previousBalance = 0
 }) => {
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   // filterType moved to props
@@ -116,11 +118,26 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         ) : (
           days.map(day => {
             const dayTrans = groupedTransactions[day];
+
+            // Calculate Day Flow
             const dayTotal = dayTrans.reduce((acc, curr) => {
               if (curr.type === 'income') return acc + curr.amount;
               if (curr.type === 'expense') return acc - curr.amount;
               return acc;
             }, 0);
+
+            // Calculate Running Balance (Accumulated) up to this day
+            // Logic: previousBalance + (all days before this one in this month) + (this day)
+            // But groupedTransactions only has filtered ones? 
+            // Better approach: Calculate based on ALL transactions passed in props for accurate balance, 
+            // OR ignore filters for balance calculation? 
+            // Current 'transactions' prop is already filtered by month/year in App.tsx. 
+            // So we just need to sum all transactions where day <= current day.
+
+            const transactionsUpToToday = transactions.filter(t => t.day <= day);
+            const accumulatedIncome = transactionsUpToToday.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+            const accumulatedExpense = transactionsUpToToday.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            const runningBalance = previousBalance + accumulatedIncome - accumulatedExpense;
 
             return (
               <div key={day} id={`day-${day}`} className="mb-8 last:mb-0">
@@ -129,9 +146,15 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     <span className="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-md shadow-slate-900/10">DIA {day}</span>
                     <div className="h-px w-8 bg-slate-300 hidden sm:block"></div>
                   </div>
-                  <span className={`text-xs font-bold px-3 py-1 rounded-lg border ${dayTotal >= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
-                    Dia: {formatCurrency(dayTotal)}
-                  </span>
+                  <div className="flex items-center gap-4">
+                    <span className={`text-[10px] font-bold uppercase tracking-wide ${dayTotal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      Fluxo: {formatCurrency(dayTotal)}
+                    </span>
+                    <div className="h-4 w-px bg-slate-200"></div>
+                    <span className={`text-xs font-black px-3 py-1 rounded-lg border ${runningBalance >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
+                      Saldo: {formatCurrency(runningBalance)}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
