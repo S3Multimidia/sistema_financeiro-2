@@ -1342,7 +1342,7 @@ const App: React.FC = () => {
                               month: currentMonth,
                               year: currentYear,
                               type: 'expense',
-                              category: 'Assinaturas',
+                              category: 'Contas Fixas',
                               completed: false,
                               isSubscription: true,
                               subscriptionId: sub.id,

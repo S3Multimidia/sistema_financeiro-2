@@ -20,7 +20,7 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
         name: '',
         amount: 0,
         day: 1,
-        category: 'Assinaturas',
+        category: 'Contas Fixas',
         active: true
     });
 
@@ -32,7 +32,7 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
             name: newSub.name!,
             amount: Number(newSub.amount),
             day: Number(newSub.day) || 1,
-            category: newSub.category || 'Assinaturas',
+            category: newSub.category || 'Contas Fixas',
             active: true,
             lastGeneratedMonth: undefined,
             lastGeneratedYear: undefined
@@ -44,11 +44,11 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
         onSync(subscriptionToAdd);
 
         setIsAdding(false);
-        setNewSub({ name: '', amount: 0, day: 1, category: 'Assinaturas', active: true });
+        setNewSub({ name: '', amount: 0, day: 1, category: 'Contas Fixas', active: true });
     };
 
     const handleDelete = (id: string) => {
-        if (confirm('Tem certeza? Isso removerá a assinatura e todos os lançamentos associados.')) {
+        if (confirm('Tem certeza? Isso removerá a conta fixa e todos os lançamentos associados.')) {
             // Call parent to handle full cleanup (transactions + subscription state)
             onDelete(id);
         }
@@ -59,7 +59,7 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
             <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
                 <h3 className="text-xs font-bold text-indigo-400 flex items-center gap-2 uppercase tracking-widest">
                     <RefreshCcw size={14} />
-                    Assinaturas
+                    CONTAS FIXAS
                 </h3>
                 <button
                     onClick={() => setIsAdding(!isAdding)}
@@ -106,7 +106,7 @@ export const SubscriptionsWidget: React.FC<SubscriptionsWidgetProps> = ({
 
                 {subscriptions.length === 0 && !isAdding && (
                     <div className="text-center py-8 opacity-50">
-                        <p className="text-[10px] uppercase font-bold text-white/30 tracking-widest">Nenhuma assinatura</p>
+                        <p className="text-[10px] uppercase font-bold text-white/30 tracking-widest">Nenhuma conta fixa</p>
                     </div>
                 )}
 

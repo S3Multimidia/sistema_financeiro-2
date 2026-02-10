@@ -20,7 +20,7 @@ interface TransactionFormProps {
   onAddDebtTransaction: (debtId: string, amount: number, description: string, date: Date) => void;
 }
 
-type TabType = 'RECEITA' | 'DESPESA' | 'AGENDA' | 'CARTÕES' | 'ASSINATURAS' | 'DÍVIDAS';
+type TabType = 'RECEITA' | 'DESPESA' | 'AGENDA' | 'CARTÕES' | 'CONTAS FIXAS' | 'DÍVIDAS';
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({
   onAdd,
@@ -77,8 +77,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     setTime('');
 
     // Set Defaults per Tab
-    if (tab === 'ASSINATURAS') {
-      setCategory('Assinaturas');
+    if (tab === 'CONTAS FIXAS') {
+      setCategory('Contas Fixas');
     } else if (tab === 'DÍVIDAS') {
       setCategory('Crediário/Dividas');
     } else if (tab === 'CARTÕES') {
@@ -134,8 +134,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
       onAddCardTransaction(installments);
     }
 
-    // 3. ASSINATURAS
-    else if (activeTab === 'ASSINATURAS') {
+    // 3. CONTAS FIXAS
+    else if (activeTab === 'CONTAS FIXAS') {
       const newSub: Subscription = {
         id: Math.random().toString(36).substr(2, 9),
         name: description,
@@ -169,7 +169,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           { id: 'DESPESA', icon: DollarSign, color: 'text-rose-400' },
           { id: 'AGENDA', icon: Calendar, color: 'text-indigo-400' },
           { id: 'CARTÕES', icon: CreditCardIcon, color: 'text-purple-400' },
-          { id: 'ASSINATURAS', icon: RefreshCcw, color: 'text-blue-400' },
+          { id: 'CONTAS FIXAS', icon: RefreshCcw, color: 'text-blue-400' },
           { id: 'DÍVIDAS', icon: Receipt, color: 'text-amber-400' },
         ].map((tab: any) => (
           <button
@@ -194,7 +194,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           {/* DATA (Todos) */}
           <div className={activeTab === 'AGENDA' ? 'col-span-6' : 'col-span-3'}>
             <label className="block text-[10px] font-bold mb-1 uppercase text-white/30">Dia</label>
-            {(activeTab === 'ASSINATURAS') ? (
+            {(activeTab === 'CONTAS FIXAS') ? (
               <input type="number" min="1" max="31" value={subDay} onChange={(e) => setSubDay(e.target.value)} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500/50 outline-none" placeholder="Venc." />
             ) : (
               <input type="number" min="1" max="31" value={day} onChange={(e) => setDay(parseInt(e.target.value))} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500/50 outline-none" />
@@ -261,7 +261,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         {/* DESCRIÇÃO (Standard) */}
         <div>
           <label className="block text-[10px] font-bold mb-1 uppercase tracking-wider text-white/30">Descrição / Nome</label>
-          <input type="text" placeholder={activeTab === 'ASSINATURAS' ? "Ex: Netflix" : "Ex: Supermercado"} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500/50 outline-none placeholder:text-white/10" />
+          <input type="text" placeholder={activeTab === 'CONTAS FIXAS' ? "Ex: Netflix" : "Ex: Supermercado"} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500/50 outline-none placeholder:text-white/10" />
         </div>
 
         {/* CATEGORIA (Exceto Cartões, Dívidas e AGENDA) */}
