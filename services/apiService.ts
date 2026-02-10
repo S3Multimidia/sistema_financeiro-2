@@ -25,38 +25,46 @@ const mapToApp = (t: any): Transaction => ({
     isSubscription: t.is_subscription,
     subscriptionId: t.subscription_id,
     isCreditCardBill: t.is_credit_card_bill,
-    relatedCardId: t.related_card_id
+    relatedCardId: t.related_card_id,
+    time: t.time
 });
 
 // Helper to map App camelCase to DB snake_case
 const mapToDB = (t: Partial<Transaction>) => {
-    const mapped: any = { ...t };
+    const mapped: any = {};
+
+    // Standard columns
+    if (t.day !== undefined) mapped.day = t.day;
+    if (t.month !== undefined) mapped.month = t.month;
+    if (t.year !== undefined) mapped.year = t.year;
+    if (t.category !== undefined) mapped.category = t.category;
+    if (t.description !== undefined) mapped.description = t.description;
+    if (t.amount !== undefined) mapped.amount = t.amount;
+    if (t.type !== undefined) mapped.type = t.type;
+    if (t.acknowledged !== undefined) mapped.acknowledged = t.acknowledged;
+    if (t.completed !== undefined) mapped.completed = t.completed;
+    if (t.client_name !== undefined) mapped.client_name = t.client_name;
+    if (t.external_url !== undefined) mapped.external_url = t.external_url;
+    if (t.perfex_status !== undefined) mapped.perfex_status = t.perfex_status;
+    if (t.time !== undefined) mapped.time = t.time;
+
+    // CamelCase to SnakeCase mappings
     if (t.subCategory !== undefined) mapped.sub_category = t.subCategory;
     if (t.isFixed !== undefined) mapped.is_fixed = t.isFixed;
     if (t.installmentId !== undefined) mapped.installment_id = t.installmentId;
     if (t.installmentNumber !== undefined) mapped.installment_number = t.installmentNumber;
-    if (t.totalInstallments !== undefined) mapped.installments_total = t.totalInstallments;
+    if (t.totalInstallments !== undefined) mapped.total_installments = t.totalInstallments;
     if (t.debtId !== undefined) mapped.debt_id = t.debtId;
     if (t.isSubscription !== undefined) mapped.is_subscription = t.isSubscription;
     if (t.subscriptionId !== undefined) mapped.subscription_id = t.subscriptionId;
     if (t.isCreditCardBill !== undefined) mapped.is_credit_card_bill = t.isCreditCardBill;
     if (t.relatedCardId !== undefined) mapped.related_card_id = t.relatedCardId;
 
-    // client_name/external_url/perfex_status match DB columns
-    // Ensure original_id is passed if present (critical for duplicate prevention)
+    // Preserve original_id if present (for sync logic)
     if ((t as any).original_id) mapped.original_id = (t as any).original_id;
-
-    // Clean up frontend-only props
-    delete mapped.subCategory;
-    delete mapped.isFixed;
-    delete mapped.installmentId;
-    delete mapped.installmentNumber;
-    delete mapped.totalInstallments;
-    delete mapped.debtId;
-    delete mapped.isSubscription;
-    delete mapped.subscriptionId;
-    delete mapped.isCreditCardBill;
-    delete mapped.relatedCardId;
+    if (t.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(t.id)) {
+        mapped.id = t.id;
+    }
 
     return mapped;
 };

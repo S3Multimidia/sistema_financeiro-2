@@ -507,9 +507,10 @@ const App: React.FC = () => {
       await loadFromCloud();
     } catch (e: any) {
       console.error("❌ API Sync Error:", e);
-      console.error("❌ Error message:", e?.message);
-      console.error("❌ Error details:", e?.error || e?.details || e);
+      // alert(`Erro ao salvar na nuvem: ${e?.message || 'Verifique sua conexão ou se a coluna "time" existe no banco.'}`);
       setCloudStatus('error');
+      // Revert optimistic update by reloading from cloud
+      await loadFromCloud();
     }
   };
 
