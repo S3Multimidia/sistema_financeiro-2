@@ -1401,7 +1401,9 @@ const App: React.FC = () => {
                     transactions={transactions}
                     currentBalance={totalOverallBalance}
                     categoriesMap={categoriesMap}
-                    setTransactions={setTransactions}
+                    onAddTransaction={(t) => {
+                      updateTransactions('add', t, (prev) => [...prev, { ...t, id: Math.random().toString(36).substr(2, 9) }]);
+                    }}
                     setCategoriesMap={setCategoriesMap}
                   />
                 </div>

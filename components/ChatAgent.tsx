@@ -18,7 +18,7 @@ interface ChatAgentProps {
   transactions: Transaction[];
   currentBalance: number;
   categoriesMap: Record<string, string[]>;
-  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  onAddTransaction: (transaction: any) => void;
   setCategoriesMap: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
 }
 
@@ -34,7 +34,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
   transactions,
   currentBalance,
   categoriesMap,
-  setTransactions,
+  onAddTransaction,
   setCategoriesMap
 }) => {
   const [activeAgent, setActiveAgent] = useState<AgentMode>('executor');
@@ -76,12 +76,11 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
       if (!action || action.status !== 'pending') return prev;
 
       if (action.name === 'add_transaction') {
-        setTransactions(old => [...old, {
-          id: Math.random().toString(36).substr(2, 9),
+        onAddTransaction({
           ...action.args,
           description: action.args.description?.toUpperCase() || 'SEM DESCRIÇÃO',
           category: action.args.category?.toUpperCase() || 'GERAL'
-        }]);
+        });
       }
       action.status = 'confirmed';
       return newMessages;
