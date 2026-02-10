@@ -543,6 +543,26 @@ const App: React.FC = () => {
       return;
     }
 
+    // Case 1.5: Recurring Appointments
+    if (!forceSingle && tx.type === 'appointment' && tx.isFixed && tx.installmentId?.startsWith('fixed_')) {
+      setConfirmation({
+        isOpen: true,
+        title: 'Excluir Compromisso Recorrente',
+        message: 'Este é um COMPROMISSO RECORRENTE. Deseja excluir apenas este ou todos os meses posteriores?',
+        confirmLabel: 'Todos os Posteriores',
+        cancelLabel: 'Apenas Este',
+        onConfirm: () => {
+          setConfirmation(null);
+          updateTransactions('delete', { id, cascade: true }, (prev) => prev);
+        },
+        onCancel: () => {
+          setConfirmation(null);
+          handleDeleteRequest(id, true);
+        }
+      });
+      return;
+    }
+
     // Case 2: Subscription
     if (!forceSingle && tx.isSubscription && tx.subscriptionId) {
       setConfirmation({

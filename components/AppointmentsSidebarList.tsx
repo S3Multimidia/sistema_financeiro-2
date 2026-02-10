@@ -69,7 +69,7 @@ export const AppointmentsSidebarList: React.FC<AppointmentsSidebarListProps> = (
                 <div className="flex items-center gap-1 mt-1">
                   <Clock size={10} className={`${isDarkMode ? 'text-white/30' : 'text-slate-400'}`} />
                   <span className={`text-[9px] font-black uppercase ${isDarkMode ? 'text-white/30' : 'text-slate-400'}`}>
-                    {app.completed ? 'Concluído' : 'Compromisso'}
+                    {app.time ? app.time : (app.completed ? 'Concluído' : 'Compromisso')}
                   </span>
                 </div>
               </div>

@@ -219,6 +219,15 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide border ${t.type === 'appointment' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
                               {t.category}
                             </span>
+
+                            {/* Show TIME for appointments */}
+                            {t.type === 'appointment' && t.time && (
+                              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50/50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                <Clock size={10} />
+                                {t.time}
+                              </span>
+                            )}
+
                             {t.subCategory && (
                               <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
                                 <ChevronRight size={10} />
