@@ -1192,7 +1192,13 @@ const App: React.FC = () => {
 
                     <DailyBalanceTable transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} previousBalance={summary.previousBalance} month={currentMonth} year={currentYear} />
 
-                    <AdvancedDashboard transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)} allTransactions={transactions} currentMonth={currentMonth} year={currentYear} />
+                    <AdvancedDashboard
+                      transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)}
+                      allTransactions={transactions}
+                      currentMonth={currentMonth}
+                      year={currentYear}
+                      previousBalance={summary.previousBalance}
+                    />
                   </div>
 
                   {/* RIGHT COLUMN - 25% */}

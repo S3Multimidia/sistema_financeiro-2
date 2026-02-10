@@ -1,11 +1,11 @@
 
 import React, { useMemo } from 'react';
-import { 
+import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell, Legend
 } from 'recharts';
 import { Transaction } from '../types';
-import { 
+import {
   TrendingUp, TrendingDown, PiggyBank, Wallet,
   ArrowRight, ShieldCheck, PieChart as PieIcon,
   Activity, Info, Briefcase, Scale
@@ -16,6 +16,7 @@ interface AdvancedDashboardProps {
   allTransactions: Transaction[]; // Todas as transações para cálculo do saldo poupado
   currentMonth: number;
   year: number;
+  previousBalance: number;
 }
 
 const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -37,17 +38,18 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export const AdvancedDashboard: React.FC<AdvancedDashboardProps> = ({ transactions, allTransactions, currentMonth, year }) => {
+export const AdvancedDashboard: React.FC<AdvancedDashboardProps> = ({ transactions, allTransactions, currentMonth, year, previousBalance }) => {
   const stats = useMemo(() => {
     // 1. Cálculos de KPIs
-    const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+    const incomeTransactions = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+    const income = incomeTransactions + previousBalance;
     const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-    
+
     // Valor Poupado no Mês (Transações na categoria POUPANÇA)
     const monthlySavings = transactions
       .filter(t => t.category === 'POUPANÇA')
       .reduce((acc, t) => acc + t.amount, 0);
-    
+
     // Saldo Poupado Acumulado (Histórico de POUPANÇA)
     const totalSavingsBalance = allTransactions
       .filter(t => t.category === 'POUPANÇA')
@@ -113,10 +115,10 @@ export const AdvancedDashboard: React.FC<AdvancedDashboardProps> = ({ transactio
         ].map((m, i) => (
           <div key={i} className={`p-6 rounded-3xl border ${m.border} ${m.bg} shadow-sm group hover:scale-[1.02] transition-all`}>
             <div className="flex justify-between items-start mb-4">
-               <div className={`p-3 rounded-2xl bg-white/60 ${m.color} shadow-sm`}>
-                  <m.icon size={24} strokeWidth={2.5} />
-               </div>
-               <ArrowRight size={16} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+              <div className={`p-3 rounded-2xl bg-white/60 ${m.color} shadow-sm`}>
+                <m.icon size={24} strokeWidth={2.5} />
+              </div>
+              <ArrowRight size={16} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
             </div>
             <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1">{m.label}</p>
             <h3 className={`text-2xl font-black text-slate-900`}>
@@ -129,23 +131,23 @@ export const AdvancedDashboard: React.FC<AdvancedDashboardProps> = ({ transactio
       {/* Novo Gráfico: Entradas X Saídas (Comparativo Geral) */}
       <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
         <div className="flex items-center justify-between mb-8">
-           <div>
-              <h3 className="text-white font-black text-lg uppercase flex items-center gap-2">
-                <Scale className="text-indigo-400" size={22} />
-                Balanço Mensal: Entradas vs Saídas
-              </h3>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Comparativo de volume total do período</p>
-           </div>
-           <div className="flex gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-emerald-500"></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase">Entradas</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-rose-500"></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase">Saídas</span>
-              </div>
-           </div>
+          <div>
+            <h3 className="text-white font-black text-lg uppercase flex items-center gap-2">
+              <Scale className="text-indigo-400" size={22} />
+              Balanço Mensal: Entradas vs Saídas
+            </h3>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Comparativo de volume total do período</p>
+          </div>
+          <div className="flex gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-emerald-500"></div>
+              <span className="text-[10px] font-black text-slate-400 uppercase">Entradas</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-rose-500"></div>
+              <span className="text-[10px] font-black text-slate-400 uppercase">Saídas</span>
+            </div>
+          </div>
         </div>
         <div className="h-[200px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -162,7 +164,7 @@ export const AdvancedDashboard: React.FC<AdvancedDashboardProps> = ({ transactio
 
       {/* Seção de Gráficos de Detalhamento */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* Rentabilidade por Origem (RECEITAS) */}
         <div className="lg:col-span-6 bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
           <div className="flex items-center justify-between mb-8">
@@ -179,12 +181,12 @@ export const AdvancedDashboard: React.FC<AdvancedDashboardProps> = ({ transactio
               <BarChart data={stats.incomeData} layout="vertical" margin={{ left: 40, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
                 <XAxis type="number" hide />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 800}} 
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 800 }}
                   width={120}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffffff05' }} />
@@ -214,12 +216,12 @@ export const AdvancedDashboard: React.FC<AdvancedDashboardProps> = ({ transactio
               <BarChart data={stats.expenseData} layout="vertical" margin={{ left: 40, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
                 <XAxis type="number" hide />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 800}} 
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 800 }}
                   width={120}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffffff05' }} />
@@ -244,44 +246,44 @@ export const AdvancedDashboard: React.FC<AdvancedDashboardProps> = ({ transactio
             </h3>
           </div>
           <div className="space-y-6">
-             {stats.topCategories.map((cat, i) => (
-               <div key={i} className="group cursor-default">
-                  <div className="flex justify-between items-end mb-1">
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter group-hover:text-white transition-colors">{cat.name}</span>
-                     <span className="text-[11px] font-mono font-bold text-white/80">{formatCurrency(cat.value)}</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                     <div 
-                      className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-1000" 
-                      style={{ width: `${(cat.value / stats.expense) * 100}%` }}
-                     ></div>
-                  </div>
-               </div>
-             ))}
+            {stats.topCategories.map((cat, i) => (
+              <div key={i} className="group cursor-default">
+                <div className="flex justify-between items-end mb-1">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter group-hover:text-white transition-colors">{cat.name}</span>
+                  <span className="text-[11px] font-mono font-bold text-white/80">{formatCurrency(cat.value)}</span>
+                </div>
+                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-1000"
+                    style={{ width: `${(cat.value / stats.expense) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="lg:col-span-4 bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl flex flex-col justify-center items-center text-center">
-           <div className="bg-indigo-500/20 p-6 rounded-full text-indigo-400 mb-6 border border-indigo-500/30">
-              <PiggyBank size={48} />
-           </div>
-           <h4 className="text-white font-black text-xl uppercase mb-2">Meta de Poupança</h4>
-           <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Eficiência de Reserva</p>
-           <div className="text-3xl font-black text-emerald-400 mb-2">
-              {((stats.monthlySavings / stats.income) * 100 || 0).toFixed(1)}%
-           </div>
-           <p className="text-[10px] text-slate-500 font-bold uppercase">
-              da sua receita este mês foi destinada para <span className="text-indigo-400">futuro e segurança</span>.
-           </p>
-           
-           <div className="mt-8 p-4 bg-slate-800/50 rounded-2xl border border-white/5 w-full">
-              <div className="flex items-center gap-3 text-left">
-                <Info size={16} className="text-indigo-400 shrink-0" />
-                <p className="text-[9px] font-bold text-slate-400 uppercase leading-tight">
-                  Dica: Tente manter sua taxa de poupança acima de 20% para acelerar sua independência.
-                </p>
-              </div>
-           </div>
+          <div className="bg-indigo-500/20 p-6 rounded-full text-indigo-400 mb-6 border border-indigo-500/30">
+            <PiggyBank size={48} />
+          </div>
+          <h4 className="text-white font-black text-xl uppercase mb-2">Meta de Poupança</h4>
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Eficiência de Reserva</p>
+          <div className="text-3xl font-black text-emerald-400 mb-2">
+            {((stats.monthlySavings / stats.income) * 100 || 0).toFixed(1)}%
+          </div>
+          <p className="text-[10px] text-slate-500 font-bold uppercase">
+            da sua receita este mês foi destinada para <span className="text-indigo-400">futuro e segurança</span>.
+          </p>
+
+          <div className="mt-8 p-4 bg-slate-800/50 rounded-2xl border border-white/5 w-full">
+            <div className="flex items-center gap-3 text-left">
+              <Info size={16} className="text-indigo-400 shrink-0" />
+              <p className="text-[9px] font-bold text-slate-400 uppercase leading-tight">
+                Dica: Tente manter sua taxa de poupança acima de 20% para acelerar sua independência.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
