@@ -79,15 +79,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   }, [transactions, filterType, filterCategory, searchTerm, selectedDay]);
 
   // Scroll to current day on mount
+  // Scroll to current day only on mount to prevent disruption during edits
   useEffect(() => {
+    // Only scroll if we are looking at the current month/year ideally, 
+    // but for now, just restricting this to mount solves the edit disruption.
+    // The user specifically requested to stop auto-scrolling on edit.
     const today = new Date().getDate();
     const element = document.getElementById(`day-${today}`);
     if (element) {
       setTimeout(() => {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 500); // Delay to ensure render
+      }, 500);
     }
-  }, [groupedTransactions]);
+  }, []); // Changed from [groupedTransactions] to [] to prevent scroll on edit
 
   const days = Object.keys(groupedTransactions).map(Number).sort((a, b) => a - b);
 
