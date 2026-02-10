@@ -14,6 +14,7 @@ interface TransactionListProps {
   filterType: 'ALL' | 'income' | 'expense' | 'appointment';
   onFilterTypeChange?: (type: 'ALL' | 'income' | 'expense' | 'appointment') => void;
   previousBalance?: number;
+  previousExpectedBalance?: number;
 }
 
 const formatCurrency = (value: number) => {
@@ -37,7 +38,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   onSearchChange,
   filterType,
   onFilterTypeChange,
-  previousBalance = 0
+  previousBalance = 0,
+  previousExpectedBalance = 0
 }) => {
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   // filterType moved to props
@@ -131,7 +133,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             const transactionsBeforeToday = transactions.filter(t => t.day < day);
             const accumulatedIncome = transactionsBeforeToday.filter(t => t.type === 'income' && t.completed).reduce((acc, t) => acc + t.amount, 0);
             const accumulatedExpense = transactionsBeforeToday.filter(t => t.type === 'expense' && t.completed).reduce((acc, t) => acc + t.amount, 0);
-            const openingBalance = previousBalance + accumulatedIncome - accumulatedExpense;
+            const openingBalanceReal = previousBalance + accumulatedIncome - accumulatedExpense;
 
             // Calculate Day Flow (Realized Only for Balance)
             const realizedDayTotal = dayTrans.reduce((acc, curr) => {
@@ -141,7 +143,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               return acc;
             }, 0);
 
-            const closingBalance = openingBalance + realizedDayTotal;
+            const closingBalanceReal = openingBalanceReal + realizedDayTotal;
+
+            // 2. PREDICTED (All Transactions)
+            const accIncomePred = transactionsBeforeToday.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+            const accExpensePred = transactionsBeforeToday.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            const openingBalancePred = previousExpectedBalance + accIncomePred - accExpensePred;
+
+            const predictedDayTotal = dayTrans.reduce((acc, curr) => {
+              if (curr.type === 'income') return acc + curr.amount;
+              if (curr.type === 'expense') return acc - curr.amount;
+              return acc;
+            }, 0);
+            const closingBalancePred = openingBalancePred + predictedDayTotal;
 
             return (
               <div key={day} id={`day-${day}`} className="mb-8 last:mb-0 border border-slate-200/60 rounded-3xl overflow-hidden bg-white/40 shadow-sm">
@@ -159,9 +173,9 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       Saldo Inicial:
                     </span>
                     <span
-                      className={`text-xs font-black px-3 py-1 rounded-lg border ${openingBalance >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}
+                      className={`text-xs font-black px-3 py-1 rounded-lg border ${openingBalanceReal >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}
                     >
-                      {formatCurrency(openingBalance)}
+                      {formatCurrency(openingBalanceReal)}
                     </span>
                   </div>
                 </div>
@@ -284,19 +298,25 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
                 {/* FOOT: SALDO FINAL */}
                 <div className="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-200/50 rounded-b-3xl">
-                  <span className={`text-[10px] font-bold uppercase tracking-wide ${dayTotal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    Fluxo do Dia: {formatCurrency(dayTotal)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                      Previsto:
+                    </span>
+                    <span className={`text-xs font-bold ${closingBalancePred >= 0 ? 'text-slate-600' : 'text-slate-600'}`}>
+                      {formatCurrency(closingBalancePred)}
+                    </span>
+                  </div>
+
                   <div className="flex items-center gap-4">
                     <span
                       className="text-[10px] font-bold uppercase tracking-wide text-slate-500"
                     >
-                      Saldo Final:
+                      Saldo Final (Real):
                     </span>
                     <span
-                      className={`text-xs font-black px-3 py-1 rounded-lg border ${closingBalance >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}
+                      className={`text-xs font-black px-3 py-1 rounded-lg border ${closingBalanceReal >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}
                     >
-                      {formatCurrency(closingBalance)}
+                      {formatCurrency(closingBalanceReal)}
                     </span>
                   </div>
                 </div>

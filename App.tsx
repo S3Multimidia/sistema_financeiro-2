@@ -652,8 +652,13 @@ const App: React.FC = () => {
     const prevIncome = previousTransactions.filter(t => t.type === 'income' && t.completed).reduce((acc, t) => acc + t.amount, 0);
     const prevExpense = previousTransactions.filter(t => t.type === 'expense' && t.completed).reduce((acc, t) => acc + t.amount, 0);
 
-    // Saldo Inicial = Base (Fev/26) + Acumulado Histórico
+    // Saldo Inicial REAL (Só pagas)
     const previousBalance = INITIAL_PREVIOUS_BALANCE + prevIncome - prevExpense;
+
+    // Saldo Inicial PREVISTO (Com pendentes)
+    const prevExpectedIncome = previousTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+    const prevExpectedExpense = previousTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+    const previousExpectedBalance = INITIAL_PREVIOUS_BALANCE + prevExpectedIncome - prevExpectedExpense;
 
     // 2. Dados do Mês Atual
     const currentMonthTrans = transactions.filter(t =>
@@ -674,6 +679,7 @@ const App: React.FC = () => {
 
     return {
       previousBalance,
+      previousExpectedBalance, // EXPORTANDO NOVO CAMPO
       totalIncome,
       totalExpense,
       realizedIncome,
@@ -1092,6 +1098,8 @@ const App: React.FC = () => {
                       </div>
                       <TransactionList
                         transactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)}
+                        previousBalance={summary.previousBalance}
+                        previousExpectedBalance={summary.previousExpectedBalance}
                         onDelete={(id) => handleDeleteRequest(id)}
                         onEdit={setEditingTransaction}
                         onMove={(id, d) => updateTransactions('update', { id, updates: { day: d } }, prev => prev.map(t => t.id === id ? { ...t, day: d } : t))}
