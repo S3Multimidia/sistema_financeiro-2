@@ -38,31 +38,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-violet-600/20 blur-[120px] rounded-full animate-pulse delay-700"></div>
                 <div className="absolute top-[20%] right-[10%] w-[40%] h-[40%] bg-rose-500/10 blur-[100px] rounded-full animate-pulse delay-1000"></div>
 
-                <div className="relative z-10 max-w-xl text-center">
-                    {/* Stylized S3 Logo */}
+                <div class="relative z-10 max-w-xl text-center">
+                    {/* Official S3 Logo Image */}
                     <div className="flex justify-center mb-10 group cursor-default">
-                        <div className="relative w-32 h-32 flex items-center justify-center">
-                            {/* Metallic Border Circle */}
-                            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-300 via-slate-500 to-slate-200 p-1">
-                                <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center relative overflow-hidden">
-                                    {/* Red Triangle Background */}
-                                    <div
-                                        className="absolute w-24 h-24 bg-rose-600 rotate-45 transform translate-x-4 translate-y-4 rounded-lg opacity-90 group-hover:scale-110 transition-transform duration-500"
-                                        style={{ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }}
-                                    ></div>
-                                    <span className="relative z-10 text-4xl font-black italic tracking-tighter flex items-center">
-                                        <span className="text-white">S</span>
-                                        <span className="text-slate-400">3</span>
-                                    </span>
-                                </div>
-                            </div>
+                        <div className="relative w-48 h-48 flex items-center justify-center">
+                            <img
+                                src="/assets/logo.png"
+                                alt="S3 Multimídia Logo"
+                                className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+                            />
                             {/* Outer Glow */}
-                            <div className="absolute -inset-4 bg-indigo-500/20 blur-2xl rounded-full group-hover:bg-indigo-500/40 transition-all duration-500"></div>
+                            <div className="absolute -inset-4 bg-indigo-500/10 blur-3xl rounded-full group-hover:bg-indigo-500/30 transition-all duration-500"></div>
                         </div>
                     </div>
 
                     <h1 className="text-5xl font-black text-white mb-6 uppercase tracking-tight leading-tight">
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">S3 Multimídia</span>
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 font-sans">S3 Multimídia</span>
                         <br />
                         <span className="text-2xl font-bold text-indigo-400 tracking-[0.2em] opacity-80 mt-2 block">Financeiro Pro</span>
                     </h1>
@@ -94,9 +85,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <div className="w-full lg:w-2/5 bg-white flex flex-col items-center justify-center p-8 md:p-16 relative">
                 {/* Mobile Logo Only */}
                 <div className="lg:hidden mb-12 flex flex-col items-center">
-                    <div className="w-20 h-20 rounded-full bg-slate-900 flex items-center justify-center relative shadow-xl overflow-hidden mb-4">
-                        <div className="absolute w-14 h-14 bg-rose-600 rotate-45 transform translate-x-2 translate-y-2 rounded-lg opacity-90" style={{ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }}></div>
-                        <span className="relative z-10 text-2xl font-black italic tracking-tighter text-white">S3</span>
+                    <div className="w-24 h-24 flex items-center justify-center relative shadow-xl mb-4">
+                        <img
+                            src="/assets/logo.png"
+                            alt="S3 Multimídia Logo"
+                            className="w-full h-full object-contain"
+                        />
                     </div>
                     <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">S3 Multimídia</h2>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Financeiro Pro</span>

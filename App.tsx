@@ -905,8 +905,12 @@ const App: React.FC = () => {
               {/* Left: Logo & Month Nav */}
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
-                  <div className="bg-indigo-600 p-2 rounded-lg text-white shadow-md shadow-indigo-600/20">
-                    <LayoutDashboard size={20} />
+                  <div className="w-10 h-10 flex items-center justify-center relative group">
+                    <img
+                      src="/assets/logo.png"
+                      alt="Logo"
+                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
                   </div>
                   <div className="hidden md:block">
                     <h1 className="text-sm font-bold text-slate-900 leading-none uppercase tracking-tight">{appConfig.appName}</h1>
