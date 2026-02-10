@@ -44,6 +44,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [category, setCategory] = useState<string>(categories[0] || '');
   const [subCategory, setSubCategory] = useState('');
   const [day, setDay] = useState<number>(new Date().getDate());
+  const [time, setTime] = useState('');
 
   // Recurrence / Options
   const [isFixed, setIsFixed] = useState(false);
@@ -73,6 +74,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
     setDescription('');
     setAmount('');
     setDay(new Date().getDate());
+    setTime('');
 
     // Set Defaults per Tab
     if (tab === 'ASSINATURAS') {
@@ -89,9 +91,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!description && activeTab !== 'DÍVIDAS') return; // Debts might have default desc
-    if (!amount) return;
+    if (!amount && activeTab !== 'AGENDA') return; // AGENDA doesn't require amount
 
-    const numAmount = parseFloat(amount.replace(',', '.'));
+    const numAmount = amount ? parseFloat(amount.replace(',', '.')) : 0;
     const transactionDate = new Date(currentYear, currentMonth, day);
 
     // 1. RECEITA / DESPESA / AGENDA (Standard)
@@ -108,10 +110,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         description,
         amount: activeTab === 'AGENDA' ? 0 : numAmount,
         type: type,
-        completed: isPaid
+        completed: isPaid,
+        time: activeTab === 'AGENDA' ? time : undefined
       }, {
         installments: (isInstallment && activeTab === 'DESPESA') ? parseInt(installmentsCount) : 1,
-        isFixed: isFixed && type !== 'appointment'
+        isFixed: activeTab === 'AGENDA' ? isFixed : (isFixed && type !== 'appointment')
       });
     }
 
@@ -189,7 +192,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         <div className="grid grid-cols-12 gap-3">
 
           {/* DATA (Todos) */}
-          <div className="col-span-3">
+          <div className={activeTab === 'AGENDA' ? 'col-span-6' : 'col-span-3'}>
             <label className="block text-[10px] font-bold mb-1 uppercase text-white/30">Dia</label>
             {(activeTab === 'ASSINATURAS') ? (
               <input type="number" min="1" max="31" value={subDay} onChange={(e) => setSubDay(e.target.value)} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500/50 outline-none" placeholder="Venc." />
@@ -198,16 +201,31 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             )}
           </div>
 
-          {/* VALOR (Todos exceto Agenda se for 0) */}
-          <div className="col-span-9">
-            <label className="block text-[10px] font-bold mb-1 uppercase text-white/30">Valor (R$)</label>
-            <input
-              type="number" step="0.01"
-              value={amount} onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500/50 outline-none placeholder:text-white/10 font-bold"
-              placeholder="0,00"
-            />
-          </div>
+          {/* HORA (Só AGENDA) */}
+          {activeTab === 'AGENDA' && (
+            <div className="col-span-6">
+              <label className="block text-[10px] font-bold mb-1 uppercase text-white/30">Hora (Opcional)</label>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500/50 outline-none"
+              />
+            </div>
+          )}
+
+          {/* VALOR (Todos exceto AGENDA) */}
+          {activeTab !== 'AGENDA' && (
+            <div className="col-span-9">
+              <label className="block text-[10px] font-bold mb-1 uppercase text-white/30">Valor (R$)</label>
+              <input
+                type="number" step="0.01"
+                value={amount} onChange={(e) => setAmount(e.target.value)}
+                className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500/50 outline-none placeholder:text-white/10 font-bold"
+                placeholder="0,00"
+              />
+            </div>
+          )}
         </div>
 
         {/* === SPECIFIC FIELDS === */}
@@ -246,8 +264,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
           <input type="text" placeholder={activeTab === 'ASSINATURAS' ? "Ex: Netflix" : "Ex: Supermercado"} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-slate-900/50 border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500/50 outline-none placeholder:text-white/10" />
         </div>
 
-        {/* CATEGORIA (Exceto Cartões e Dívidas que já tem contexto, mas podem ter categoria extra) */}
-        {activeTab !== 'CARTÕES' && activeTab !== 'DÍVIDAS' && (
+        {/* CATEGORIA (Exceto Cartões, Dívidas e AGENDA) */}
+        {activeTab !== 'CARTÕES' && activeTab !== 'DÍVIDAS' && activeTab !== 'AGENDA' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="flex justify-between items-center mb-1">
@@ -287,13 +305,13 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
               </label>
             )}
 
-            {/* 2. RECORRÊNCIA (Standard Only) */}
-            {(activeTab === 'RECEITA' || activeTab === 'DESPESA') && (
+            {/* 2. RECORRÊNCIA (Standard + AGENDA) */}
+            {(activeTab === 'RECEITA' || activeTab === 'DESPESA' || activeTab === 'AGENDA') && (
               <label className="flex items-center gap-2 cursor-pointer group">
                 <input type="checkbox" checked={isFixed} onChange={e => setIsFixed(e.target.checked)} className="w-4 h-4 rounded text-indigo-600" />
                 <div className="flex items-center gap-1 text-white/50 group-hover:text-white">
                   <Repeat size={14} className={isFixed ? 'text-indigo-600' : ''} />
-                  <span className="text-[11px] font-bold uppercase">Mensal Fixo</span>
+                  <span className="text-[11px] font-bold uppercase">{activeTab === 'AGENDA' ? 'Compromisso Recorrente' : 'Mensal Fixo'}</span>
                 </div>
               </label>
             )}

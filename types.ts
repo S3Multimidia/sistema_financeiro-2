@@ -13,6 +13,7 @@ export interface Transaction {
   type: TransactionType;
   acknowledged?: boolean;
   completed?: boolean;
+  time?: string; // HH:MM format
 
   isFixed?: boolean;
   installmentId?: string;
