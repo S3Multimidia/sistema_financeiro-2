@@ -144,6 +144,11 @@ const App: React.FC = () => {
     const u = await ApiService.getUser();
     setUser(u);
     if (u) {
+      // Sync Gemini API Key to LocalStorage for cross-device persistence
+      if (u.gemini_api_key) {
+        localStorage.setItem('gemini_api_key', u.gemini_api_key);
+      }
+
       // Load starting balance from server profile if available
       if (u.starting_balance !== undefined) {
         setAppConfig(prev => ({ ...prev, startingBalance: u.starting_balance }));

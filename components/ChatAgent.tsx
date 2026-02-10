@@ -104,12 +104,12 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
   };
 
   const handleSend = async () => {
-    const apiKey = localStorage.getItem('gemini_api_key') || 'AIzaSyAJx8Uo5aONwpKpwYAJBoVrqfBdBrxp0Ek';
+    const apiKey = localStorage.getItem('gemini_api_key');
 
     if (!apiKey || apiKey === 'SUA_CHAVE_API_AQUI') {
       setMessages(prev => [...prev, {
         role: 'model',
-        text: "⚠️ Erro de Configuração: Chave de API não definida."
+        text: "⚠️ Configuração Necessária: A sua Chave de API Gemini não foi encontrada neste dispositivo. Por favor, vá em Configurações (ícone de engrenagem) e insira sua chave para ativar a Inteligência Artificial."
       }]);
       return;
     }
