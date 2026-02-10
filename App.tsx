@@ -748,7 +748,7 @@ const App: React.FC = () => {
           totalInstallments: options.installments
         });
       }
-    } else if (options.isFixed && tData.type !== 'appointment') {
+    } else if (options.isFixed) {
       // Mensal Fixo: Generate for next 12 months by default
       const fixedGroupId = 'fixed_' + Math.random().toString(36).substr(2, 9); // Create unique group ID
       for (let i = 0; i < 12; i++) {
@@ -1169,7 +1169,6 @@ const App: React.FC = () => {
                         onSelectedDayChange={setSelectedDayFilter}
                         categoriesMap={categoriesMap}
                         onManageCategories={() => setShowCategoryManager(true)}
-                        previousBalance={summary.previousBalance}
                       />
                     </div>
 
@@ -1270,7 +1269,18 @@ const App: React.FC = () => {
 
                     {/* 2. Agenda (Fixed Height for Scroll) */}
                     <div className="h-[450px]">
-                      <AppointmentsSidebarList transactions={transactions} currentMonth={currentMonth} onToggleComplete={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))} isDarkMode={true} />
+                      <AppointmentsSidebarList
+                        transactions={transactions}
+                        currentMonth={currentMonth}
+                        currentYear={currentYear}
+                        onToggleComplete={(id) => {
+                          const t = transactions.find(tx => tx.id === id);
+                          if (t) {
+                            updateTransactions('update', { id, updates: { completed: !t.completed } }, prev => prev.map(tx => tx.id === id ? { ...tx, completed: !tx.completed } : tx));
+                          }
+                        }}
+                        isDarkMode={true}
+                      />
                     </div>
 
                     {/* Widgets (Following Sequence) */}

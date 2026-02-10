@@ -6,6 +6,7 @@ import { Clock, CalendarDays, CheckCircle2, Circle } from 'lucide-react';
 interface AppointmentsSidebarListProps {
   transactions: Transaction[];
   currentMonth: number;
+  currentYear: number;
   onToggleComplete: (id: string) => void;
   isDarkMode?: boolean;
 }
@@ -13,18 +14,19 @@ interface AppointmentsSidebarListProps {
 export const AppointmentsSidebarList: React.FC<AppointmentsSidebarListProps> = ({
   transactions,
   currentMonth,
+  currentYear,
   onToggleComplete,
   isDarkMode = false
 }) => {
   const monthAppointments = useMemo(() => {
     return transactions
-      .filter(t => t.type === 'appointment')
+      .filter(t => t.type === 'appointment' && t.month === currentMonth && t.year === currentYear)
       .sort((a, b) => {
         // Ordena primeiro por não concluídos, depois por dia
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
         return a.day - b.day;
       });
-  }, [transactions]);
+  }, [transactions, currentMonth, currentYear]);
 
   return (
     <div className={`${isDarkMode ? 'bg-[#1e1e2d] border-white/5 shadow-2xl' : 'bg-white shadow-sm border-slate-200'} p-5 rounded-3xl border flex flex-col h-full`}>
