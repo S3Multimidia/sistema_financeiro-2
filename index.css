@@ -121,9 +121,9 @@ body {
 
   --cal-radius: 16px;
 
-  --cal-value-size: 15px;
+  --cal-value-size: 19px;
   /* Maior e Bold */
-  --cal-day-size: 11px;
+  --cal-day-size: 13px;
 
   --cal-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   --cal-glow-today: 0 0 15px rgba(59, 130, 246, 0.4);
@@ -271,7 +271,8 @@ body {
   /* Bold */
   letter-spacing: 0.3px;
   line-height: 1.2;
-  text-align: right;
+  text-align: center;
+  width: 100%;
   white-space: nowrap;
 }
 
