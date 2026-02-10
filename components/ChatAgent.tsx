@@ -140,8 +140,8 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
            - Data: ${today.toLocaleDateString()}`;
 
       // Construct Payload manually for REST API
-      const model = 'gemini-1.5-flash';
-      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+      const model = 'gemini-2.0-flash-exp';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
       const contents = [{
         role: "user",
@@ -153,7 +153,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
       }];
 
       const tools = activeAgent === 'executor' ? [{
-        function_declarations: [{
+        functionDeclarations: [{
           name: 'add_transaction',
           description: 'Adiciona um novo registro financeiro no sistema.',
           parameters: {
