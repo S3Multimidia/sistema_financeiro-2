@@ -24,35 +24,63 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onAdd, categor
   const [isInstallment, setIsInstallment] = useState(false);
   const [installmentsCount, setInstallmentsCount] = useState('1');
 
+  const [isPaid, setIsPaid] = useState(false);
+  const [expenseType, setExpenseType] = useState<'standard' | 'card' | 'subscription' | 'debt'>('standard');
+  const [newCategoryMode, setNewCategoryMode] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
   const subCategoriesList = useMemo(() => {
     return categoriesMap[category] || [];
   }, [category, categoriesMap]);
+
+  // Reset/Preset logic based on Expense Type
+  const handleExpenseTypeChange = (newType: 'standard' | 'card' | 'subscription' | 'debt') => {
+    setExpenseType(newType);
+    if (newType === 'subscription') {
+      setIsFixed(true);
+      setIsInstallment(false);
+    } else if (newType === 'card') {
+      setIsInstallment(true);
+      setIsFixed(false);
+    } else {
+      setIsFixed(false);
+      setIsInstallment(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!description) return;
     if (type !== 'appointment' && !amount) return;
 
+    const finalCategory = newCategoryMode ? newCategoryName : (type === 'appointment' ? 'AGENDA' : category);
+
     onAdd({
       day,
       month: currentMonth,
       year: currentYear,
-      category: type === 'appointment' ? 'AGENDA' : category,
+      category: finalCategory,
       subCategory: type === 'appointment' ? undefined : subCategory.trim(),
       description,
       amount: type === 'appointment' ? 0 : parseFloat(amount.replace(',', '.')),
-      type
+      type,
+      completed: isPaid // Use isPaid state
     }, {
       installments: isInstallment ? parseInt(installmentsCount) : 1,
       isFixed
     });
 
+    // Reset Form
     setDescription('');
     setAmount('');
     setSubCategory('');
     setIsFixed(false);
     setIsInstallment(false);
     setInstallmentsCount('1');
+    setIsPaid(false); // Reset paid status
+    setExpenseType('standard');
+    setNewCategoryMode(false);
+    setNewCategoryName('');
   };
 
   return (
@@ -63,11 +91,35 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onAdd, categor
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 flex-1">
+        {/* Main Type Selector */}
         <div className={`grid grid-cols-3 gap-2 p-1 rounded-lg ${isDarkMode ? 'bg-white/5' : 'bg-slate-100'}`}>
           <button type="button" onClick={() => { setType('income'); setIsInstallment(false); }} className={`py-2 text-[10px] font-bold rounded-md transition-all ${type === 'income' ? (isDarkMode ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' : 'bg-white text-emerald-600 shadow-sm') : (isDarkMode ? 'text-white/40 hover:text-white' : 'text-slate-500')}`}>RECEITA</button>
           <button type="button" onClick={() => { setType('expense'); }} className={`py-2 text-[10px] font-bold rounded-md transition-all ${type === 'expense' ? (isDarkMode ? 'bg-rose-500/20 text-rose-400 border border-rose-500/20' : 'bg-white text-rose-600 shadow-sm') : (isDarkMode ? 'text-white/40 hover:text-white' : 'text-slate-500')}`}>DESPESA</button>
           <button type="button" onClick={() => { setType('appointment'); setIsInstallment(false); }} className={`py-2 text-[10px] font-bold rounded-md transition-all ${type === 'appointment' ? (isDarkMode ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/20' : 'bg-white text-indigo-600 shadow-sm') : (isDarkMode ? 'text-white/40 hover:text-white' : 'text-slate-500')}`}>AGENDA</button>
         </div>
+
+        {/* Expense Sub-Type Tabs (Visible only for Expense) */}
+        {type === 'expense' && (
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {[
+              { id: 'standard', label: 'Padrão' },
+              { id: 'card', label: 'Cartão' },
+              { id: 'subscription', label: 'Assinatura' },
+              { id: 'debt', label: 'Dívida' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleExpenseTypeChange(tab.id as any)}
+                className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase whitespace-nowrap border transition-all ${expenseType === tab.id
+                  ? (isDarkMode ? 'bg-white text-slate-900 border-white' : 'bg-slate-800 text-white border-slate-800')
+                  : (isDarkMode ? 'text-white/40 border-white/10 hover:border-white/30' : 'text-slate-400 border-slate-200 hover:border-slate-300')}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-3">
           <div className="col-span-1">
@@ -101,19 +153,40 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onAdd, categor
         {type !== 'appointment' && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={`block text-[10px] font-bold mb-1 uppercase tracking-wider ${isDarkMode ? 'text-white/30' : 'text-slate-400'}`}>Categoria</label>
-              <select
-                value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value);
-                  setSubCategory('');
-                }}
-                className={`w-full border rounded-lg p-2.5 text-xs outline-none truncate ${isDarkMode ? 'bg-slate-900/50 border-white/10 text-white' : 'border-slate-200 bg-white text-slate-900'}`}
-              >
-                {categories.map(cat => (
-                  <option key={cat} value={cat} className={isDarkMode ? 'text-slate-800' : ''}>{cat}</option>
-                ))}
-              </select>
+              <div className="flex justify-between items-center mb-1">
+                <label className={`block text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-white/30' : 'text-slate-400'}`}>Categoria</label>
+                <button
+                  type="button"
+                  onClick={() => setNewCategoryMode(!newCategoryMode)}
+                  className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-widest"
+                >
+                  {newCategoryMode ? 'Selecionar' : '+ Nova'}
+                </button>
+              </div>
+
+              {newCategoryMode ? (
+                <input
+                  type="text"
+                  placeholder="Nova Categoria"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className={`w-full border rounded-lg p-2.5 text-xs outline-none ${isDarkMode ? 'bg-indigo-500/10 border-indigo-500/50 text-white placeholder:text-white/20' : 'border-indigo-200 bg-indigo-50 text-indigo-900'}`}
+                  autoFocus
+                />
+              ) : (
+                <select
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setSubCategory('');
+                  }}
+                  className={`w-full border rounded-lg p-2.5 text-xs outline-none truncate ${isDarkMode ? 'bg-slate-900/50 border-white/10 text-white' : 'border-slate-200 bg-white text-slate-900'}`}
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat} className={isDarkMode ? 'text-slate-800' : ''}>{cat}</option>
+                  ))}
+                </select>
+              )}
             </div>
             <div>
               <label className={`block text-[10px] font-bold mb-1 uppercase tracking-wider ${isDarkMode ? 'text-white/30' : 'text-slate-400'}`}>Subcategoria (Opc)</label>
@@ -135,7 +208,20 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onAdd, categor
         )}
 
         <div className={`space-y-3 pt-2 mt-auto ${isDarkMode ? 'border-t border-white/10' : 'border-t border-slate-50'}`}>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* CHECKBOX JÁ PAGO (NEW) */}
+            {type !== 'appointment' && (
+              <label className="flex items-center gap-2 cursor-pointer group w-full bg-slate-800/30 p-2 rounded-lg border border-white/5 hover:bg-slate-800/50 transition-all">
+                <div className="relative flex items-center">
+                  <input type="checkbox" checked={isPaid} onChange={e => setIsPaid(e.target.checked)} className="peer sr-only" />
+                  <div className="w-9 h-5 bg-slate-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </div>
+                <span className={`text-[11px] font-bold uppercase ${isPaid ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-300'}`}>
+                  {isPaid ? 'Confirmado / Pago' : 'Marcar como Pago'}
+                </span>
+              </label>
+            )}
+
             <label className="flex items-center gap-2 cursor-pointer group">
               <input type="checkbox" checked={isFixed} onChange={e => { setIsFixed(e.target.checked); if (e.target.checked) setIsInstallment(false); }} className="w-4 h-4 rounded text-indigo-600" />
               <div className={`flex items-center gap-1 ${isDarkMode ? 'text-white/50 group-hover:text-white' : 'text-slate-600 group-hover:text-slate-900'}`}>

@@ -20,6 +20,22 @@ const formatCompactCurrency = (value: number) => {
   }).format(value);
 };
 
+// Feriados Nacionais 2026 (Brasil)
+const HOLIDAYS_2026: Record<string, string> = {
+  '1-1': 'Confraternização Universal',
+  '17-2': 'Carnaval',
+  '3-4': 'Paixão de Cristo',
+  '21-4': 'Tiradentes',
+  '1-5': 'Dia do Trabalho',
+  '4-6': 'Corpus Christi',
+  '7-9': 'Independência',
+  '12-10': 'N. Sra. Aparecida',
+  '2-11': 'Finados',
+  '15-11': 'Proclamação da Rep.',
+  '20-11': 'Consciência Negra',
+  '25-12': 'Natal'
+};
+
 export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactions, previousBalance, month, year }) => {
   const calendarData = useMemo(() => {
     const days = [];
@@ -86,8 +102,8 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
 
       {/* Cabeçalho da Semana */}
       <div className="grid grid-cols-7 border-b border-slate-800/50 bg-[#18181b]/50 relative z-10 shrink-0">
-        {WEEKDAYS_SHORT.map(wd => (
-          <div key={wd} className="py-1.5 text-center text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+        {WEEKDAYS_SHORT.map((wd, index) => (
+          <div key={wd} className={`py-1.5 text-center text-[9px] font-bold uppercase tracking-widest ${index === 0 || index === 6 ? 'text-amber-500/70' : 'text-slate-500'}`}>
             {wd}
           </div>
         ))}
@@ -102,9 +118,15 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
 
           const balance = item.balance ?? 0;
           const isNegative = balance < 0;
+          const dateObj = new Date(year, month, item.day);
           const isToday = new Date().getDate() === item.day &&
             new Date().getMonth() === month &&
             new Date().getFullYear() === year;
+
+          const dayOfWeek = dateObj.getDay();
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 0=Dom, 6=Sab
+          const holidayKey = `${item.day}-${month + 1}`;
+          const holidayName = HOLIDAYS_2026[holidayKey];
 
           return (
             <div
@@ -113,12 +135,14 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
                 min-h-[42px] rounded-lg flex flex-col relative group transition-all duration-300 px-1 py-0.5 justify-center border
                 ${isToday
                   ? 'bg-slate-800 border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.2)] z-20 scale-[1.05]'
-                  : 'bg-[#27272a] border-slate-800 hover:border-slate-600 hover:bg-slate-800'
+                  : isWeekend
+                    ? 'bg-[#202024] border-slate-800/50 hover:border-slate-600 hover:bg-slate-800'
+                    : 'bg-[#27272a] border-slate-800 hover:border-slate-600 hover:bg-slate-800'
                 }
               `}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-bold ${isToday ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                <span className={`text-[10px] font-bold ${isToday ? 'text-cyan-400' : isWeekend ? 'text-amber-500/70' : 'text-slate-500 group-hover:text-slate-300'}`}>
                   {item.day}
                 </span>
 
@@ -127,12 +151,20 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
                 </span>
               </div>
 
+              {/* Holiday Name */}
+              {holidayName && (
+                <div className="text-[7px] font-bold text-amber-400/80 uppercase truncate mt-0.5 text-center leading-tight">
+                  {holidayName}
+                </div>
+              )}
+
               {/* Tooltip Detalhado */}
               <div className="absolute hidden group-hover:flex bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 pointer-events-none flex-col items-center animate-fade-in-up">
                 <div className="bg-slate-900/95 backdrop-blur-md text-white text-[10px] px-2 py-1.5 rounded-lg shadow-xl border border-slate-700 w-max text-center z-50">
                   <div className={`text-xs font-black ${isNegative ? 'text-rose-400' : 'text-emerald-400'}`}>
                     R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
+                  {holidayName && <div className="text-amber-400 mt-1 uppercase font-bold text-[9px]">{holidayName}</div>}
                 </div>
               </div>
             </div>
