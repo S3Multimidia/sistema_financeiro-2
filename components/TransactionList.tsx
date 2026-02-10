@@ -126,18 +126,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               return acc;
             }, 0);
 
-            // Calculate Running Balance (Accumulated) up to this day
-            // Logic: previousBalance + (all days before this one in this month) + (this day)
-            // But groupedTransactions only has filtered ones? 
-            // Better approach: Calculate based on ALL transactions passed in props for accurate balance, 
-            // OR ignore filters for balance calculation? 
-            // Current 'transactions' prop is already filtered by month/year in App.tsx. 
-            // So we just need to sum all transactions where day <= current day.
-
-            const transactionsUpToToday = transactions.filter(t => t.day <= day);
-            const accumulatedIncome = transactionsUpToToday.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-            const accumulatedExpense = transactionsUpToToday.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-            const runningBalance = previousBalance + accumulatedIncome - accumulatedExpense;
+            // Calculate Opening Balance for this day
+            // Logic: previousBalance + (all days BEFORE this one in this month)
+            const transactionsBeforeToday = transactions.filter(t => t.day < day);
+            const accumulatedIncome = transactionsBeforeToday.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+            const accumulatedExpense = transactionsBeforeToday.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            const openingBalance = previousBalance + accumulatedIncome - accumulatedExpense;
 
             return (
               <div key={day} id={`day-${day}`} className="mb-8 last:mb-0">
@@ -155,10 +149,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     </span>
                     <div className="h-4 w-px bg-slate-200"></div>
                     <span
-                      title={`Saldo Anterior (${formatCurrency(previousBalance)}) + Acumulado Entradas (${formatCurrency(accumulatedIncome)}) - Acumulado Saídas (${formatCurrency(accumulatedExpense)})`}
-                      className={`text-xs font-black px-3 py-1 rounded-lg border cursor-help ${runningBalance >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}
+                      title={`Saldo Inicial do Dia (Abertura)\nAnterior (${formatCurrency(previousBalance)}) + Entradas Anteriores (${formatCurrency(accumulatedIncome)}) - Saídas Anteriores (${formatCurrency(accumulatedExpense)})`}
+                      className={`text-xs font-black px-3 py-1 rounded-lg border cursor-help ${openingBalance >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}
                     >
-                      Saldo: {formatCurrency(runningBalance)}
+                      Saldo: {formatCurrency(openingBalance)}
                     </span>
                     {/* DEBUG: Se houver Fluxo mas não houver itens financeiros listados */}
                     {dayTotal !== 0 && !dayTrans.some(t => t.type === 'income' || t.type === 'expense') && (
