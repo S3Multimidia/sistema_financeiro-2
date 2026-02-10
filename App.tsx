@@ -1198,11 +1198,11 @@ const App: React.FC = () => {
                   {/* RIGHT COLUMN - 25% */}
                   <div className="lg:col-span-3 space-y-6">
 
-                    {/* 1. Lançamento Inteligente */}
+                    {/* 1. LANÇAMENTOS */}
                     <div className="bg-[#1e1e2d] p-6 rounded-3xl shadow-2xl border border-white/5">
                       <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
                         <div className="w-1 h-6 bg-indigo-500 rounded-full"></div>
-                        Lançamento Inteligente
+                        LANÇAMENTOS
                       </h3>
                       <TransactionForm
                         onAdd={handleAddTransaction}
