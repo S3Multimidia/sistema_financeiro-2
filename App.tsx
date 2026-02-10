@@ -21,6 +21,7 @@ import { ApiService } from './services/apiService';
 import { CreditCardService } from './services/creditCardService';
 import { SubscriptionService } from './services/subscriptionService';
 import { ConfirmationModal } from './components/ConfirmationModal';
+import { DraggableContainer } from './components/DraggableContainer';
 import {
   LayoutDashboard,
   ChevronLeft,
@@ -1388,13 +1389,15 @@ const App: React.FC = () => {
           {/* Floating Widgets Layer */}
           {
             showCalculator && (
-              <div className="fixed top-28 right-8 z-[60] animate-fade-in shadow-2xl rounded-xl overflow-hidden ring-1 ring-white/20">
-                <div className="bg-slate-900 flex justify-between items-center px-4 py-2 border-b border-slate-800 handle cursor-move">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculadora</span>
-                  <button onClick={() => setShowCalculator(false)} className="text-slate-500 hover:text-white transition-colors"><X size={14} /></button>
+              <DraggableContainer>
+                <div className="w-[320px] shadow-2xl rounded-xl overflow-hidden ring-1 ring-white/20">
+                  <div className="bg-slate-900 flex justify-between items-center px-4 py-2 border-b border-slate-800 handle cursor-move active:cursor-grabbing">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pointer-events-none">Calculadora</span>
+                    <button onClick={() => setShowCalculator(false)} className="text-slate-500 hover:text-white transition-colors"><X size={14} /></button>
+                  </div>
+                  <Calculator />
                 </div>
-                <Calculator />
-              </div>
+              </DraggableContainer>
             )
           }
 
