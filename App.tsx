@@ -649,8 +649,8 @@ const App: React.FC = () => {
       return false;
     });
 
-    const prevIncome = previousTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-    const prevExpense = previousTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+    const prevIncome = previousTransactions.filter(t => t.type === 'income' && t.completed).reduce((acc, t) => acc + t.amount, 0);
+    const prevExpense = previousTransactions.filter(t => t.type === 'expense' && t.completed).reduce((acc, t) => acc + t.amount, 0);
 
     // Saldo Inicial = Base (Fev/26) + Acumulado Histórico
     const previousBalance = INITIAL_PREVIOUS_BALANCE + prevIncome - prevExpense;

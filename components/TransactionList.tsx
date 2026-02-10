@@ -129,10 +129,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             // Calculate Opening Balance for this day
             // Logic: previousBalance + (all days BEFORE this one in this month)
             const transactionsBeforeToday = transactions.filter(t => t.day < day);
-            const accumulatedIncome = transactionsBeforeToday.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-            const accumulatedExpense = transactionsBeforeToday.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            const accumulatedIncome = transactionsBeforeToday.filter(t => t.type === 'income' && t.completed).reduce((acc, t) => acc + t.amount, 0);
+            const accumulatedExpense = transactionsBeforeToday.filter(t => t.type === 'expense' && t.completed).reduce((acc, t) => acc + t.amount, 0);
             const openingBalance = previousBalance + accumulatedIncome - accumulatedExpense;
-            const closingBalance = openingBalance + dayTotal;
+
+            // Calculate Day Flow (Realized Only for Balance)
+            const realizedDayTotal = dayTrans.reduce((acc, curr) => {
+              if (!curr.completed) return acc;
+              if (curr.type === 'income') return acc + curr.amount;
+              if (curr.type === 'expense') return acc - curr.amount;
+              return acc;
+            }, 0);
+
+            const closingBalance = openingBalance + realizedDayTotal;
 
             return (
               <div key={day} id={`day-${day}`} className="mb-8 last:mb-0 border border-slate-200/60 rounded-3xl overflow-hidden bg-white/40 shadow-sm">
