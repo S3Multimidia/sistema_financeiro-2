@@ -147,13 +147,25 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     <div className="h-px w-8 bg-slate-300 hidden sm:block"></div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className={`text-[10px] font-bold uppercase tracking-wide ${dayTotal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <span
+                      title={`Receitas: ${formatCurrency(dayTrans.filter(t => t.type === 'income').reduce((a, b) => a + b.amount, 0))} | Despesas: ${formatCurrency(dayTrans.filter(t => t.type === 'expense').reduce((a, b) => a + b.amount, 0))}`}
+                      className={`text-[10px] font-bold uppercase tracking-wide cursor-help ${dayTotal >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
+                    >
                       Fluxo: {formatCurrency(dayTotal)}
                     </span>
                     <div className="h-4 w-px bg-slate-200"></div>
-                    <span className={`text-xs font-black px-3 py-1 rounded-lg border ${runningBalance >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
+                    <span
+                      title={`Saldo Anterior (${formatCurrency(previousBalance)}) + Acumulado Entradas (${formatCurrency(accumulatedIncome)}) - Acumulado Saídas (${formatCurrency(accumulatedExpense)})`}
+                      className={`text-xs font-black px-3 py-1 rounded-lg border cursor-help ${runningBalance >= 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}
+                    >
                       Saldo: {formatCurrency(runningBalance)}
                     </span>
+                    {/* DEBUG: Se houver Fluxo mas não houver itens financeiros listados */}
+                    {dayTotal !== 0 && !dayTrans.some(t => t.type === 'income' || t.type === 'expense') && (
+                      <span className="text-[10px] bg-red-500 text-white px-1 rounded animate-pulse" title="Erro Crítico: O cálculo detectou valores mas os itens parecem ser apenas agendamentos.">
+                        !
+                      </span>
+                    )}
                   </div>
                 </div>
 
