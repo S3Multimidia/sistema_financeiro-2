@@ -932,63 +932,72 @@ const App: React.FC = () => {
               </div>
 
               {/* Center: Financial Stats (The Requested "Fixed Values") */}
-              <div className="flex-1 max-w-4xl hidden lg:flex items-center justify-center gap-3">
-                <div className="flex items-center gap-1 bg-white border border-slate-200/60 shadow-sm rounded-2xl px-2 py-1.5">
-                  {/* Saldo Inicial (Novo) */}
-                  <div className="flex flex-col px-4 py-1 border-r border-slate-100 min-w-[140px]">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div> Saldo Inicial
+              <div className="flex-1 max-w-5xl hidden lg:flex items-center justify-center gap-3">
+                <div className="flex items-center gap-2 bg-slate-200/50 p-1 rounded-[22px] border border-white/40 shadow-sm backdrop-blur-md">
+
+                  {/* Saldo Inicial */}
+                  <div className="flex flex-col px-5 py-2 bg-white/60 hover:bg-white/90 transition-all rounded-2xl border border-white/60 min-w-[130px] shadow-sm group">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em] flex items-center gap-2 mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> Saldo Inicial
                     </span>
-                    <span className="text-sm font-black text-slate-700">
+                    <span className="text-[15px] font-black text-slate-800 leading-tight">
                       {summary.previousBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">Base Anterior</span>
                   </div>
 
                   {/* Receitas */}
-                  <div className="flex flex-col px-4 py-1 border-r border-slate-100 min-w-[140px]">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
+                  <div className="flex flex-col px-5 py-2 bg-emerald-50/40 hover:bg-emerald-50/80 transition-all rounded-2xl border border-emerald-100/50 min-w-[150px] shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-12 h-12 bg-emerald-500/5 blur-2xl rounded-full"></div>
+                    <span className="text-[9px] font-black text-emerald-600/70 uppercase tracking-[0.1em] flex items-center gap-2 mb-1">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Receitas
                     </span>
-                    <span className="text-sm font-black text-slate-700">
+                    <span className="text-[15px] font-black text-slate-800 leading-tight">
                       {summary.realizedIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
-                    <span className="text-[9px] font-medium text-slate-400">
-                      de {summary.totalIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] font-black text-emerald-600 leading-none">
+                        + {summary.totalIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">total</span>
+                    </div>
                   </div>
 
                   {/* Despesas */}
-                  <div className="flex flex-col px-4 py-1 border-r border-slate-100 min-w-[140px]">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
+                  <div className="flex flex-col px-5 py-2 bg-rose-50/40 hover:bg-rose-50/80 transition-all rounded-2xl border border-rose-100/50 min-w-[150px] shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-12 h-12 bg-rose-500/5 blur-2xl rounded-full"></div>
+                    <span className="text-[9px] font-black text-rose-600/70 uppercase tracking-[0.1em] flex items-center gap-2 mb-1">
                       <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div> Despesas
                     </span>
-                    <span className="text-sm font-black text-slate-700">
+                    <span className="text-[15px] font-black text-slate-800 leading-tight">
                       {summary.realizedExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
-                    <span className="text-[9px] font-medium text-slate-400">
-                      de {summary.totalExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] font-black text-rose-600 leading-none">
+                        - {summary.totalExpense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">total</span>
+                    </div>
                   </div>
 
                   {/* Saldo Atual */}
-                  <div className="flex flex-col px-4 py-1 border-r border-slate-100 min-w-[160px]">
-                    <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
-                      <Wallet size={10} strokeWidth={3} /> Saldo Atual
+                  <div className="flex flex-col px-5 py-2 bg-indigo-600 text-white rounded-2xl border border-indigo-500 min-w-[160px] shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-default">
+                    <span className="text-[9px] font-black text-indigo-100 uppercase tracking-[0.13em] flex items-center gap-2 mb-1">
+                      <Wallet size={10} strokeWidth={3} className="text-indigo-200" /> Saldo Atual
                     </span>
-                    <span className={`text-lg font-black ${summary.currentBalance >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
-                      {summary.currentBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-lg font-black leading-none tracking-tight">
+                        {summary.currentBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-[10px] font-black text-indigo-200 leading-none">
+                          {summary.endOfMonthBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                        <span className="text-[8px] font-bold text-indigo-300 uppercase tracking-tighter">previsão</span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Previsão */}
-                  <div className="flex flex-col px-4 py-1 min-w-[140px]">
-                    <span className="text-[9px] font-bold text-violet-500 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
-                      <CalendarCheck size={10} strokeWidth={3} /> Previsão Final
-                    </span>
-                    <span className={`text-md font-black ${summary.endOfMonthBalance >= 0 ? 'text-slate-700' : 'text-rose-600'}`}>
-                      {summary.endOfMonthBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </span>
-                  </div>
                 </div>
 
                 {/* Calculadora (Destacado - Standalone) */}
