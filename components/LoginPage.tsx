@@ -76,7 +76,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
                 <div className="absolute bottom-10 left-12">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                        <Sparkles size={12} className="text-indigo-500" /> Powered by Vibe Code
+                        <Sparkles size={12} className="text-indigo-500" /> Desenvolvido por : Danilo Xavier
                     </span>
                 </div>
             </div>
