@@ -1389,23 +1389,47 @@ const App: React.FC = () => {
 
           {
             showChat && (
-              <div className="fixed bottom-8 right-8 z-[60] w-[350px] animate-slide-up shadow-2xl rounded-2xl overflow-hidden ring-1 ring-white/20">
-                <div className="bg-indigo-600 flex justify-between items-center px-4 py-3 border-b border-indigo-500 handle cursor-move">
-                  <span className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
-                    <Sparkles size={14} /> IA Financeira
-                  </span>
-                  <button onClick={() => setShowChat(false)} className="text-indigo-200 hover:text-white transition-colors"><X size={16} /></button>
-                </div>
-                <div className="bg-white h-[500px] overflow-hidden flex flex-col">
-                  <ChatAgent
-                    transactions={transactions}
-                    currentBalance={totalOverallBalance}
-                    categoriesMap={categoriesMap}
-                    onAddTransaction={(t) => {
-                      updateTransactions('add', t, (prev) => [...prev, { ...t, id: Math.random().toString(36).substr(2, 9) }]);
-                    }}
-                    setCategoriesMap={setCategoriesMap}
-                  />
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 sm:p-12">
+                {/* Backdrop with extreme blur and dark tint */}
+                <div
+                  className="absolute inset-0 bg-slate-950/80 backdrop-blur-2xl animate-fade-in duration-500"
+                  onClick={() => setShowChat(false)}
+                ></div>
+
+                {/* Center Modal Container */}
+                <div className="relative z-10 w-full max-w-4xl h-[85vh] bg-slate-950 rounded-[3rem] shadow-[0_0_120px_rgba(0,0,0,0.9)] border border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 fade-in slide-in-from-bottom-10 duration-500">
+                  {/* Premium Modal Header */}
+                  <div className="bg-slate-900/50 backdrop-blur-md px-10 py-7 flex justify-between items-center border-b border-white/5">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-white uppercase tracking-[0.3em] flex items-center gap-3">
+                        <div className="relative">
+                          <Sparkles size={18} className="text-emerald-400 animate-pulse" />
+                          <div className="absolute inset-0 bg-emerald-400 blur-lg opacity-40"></div>
+                        </div>
+                        Intellicenter <span className="text-emerald-500/50 font-light">v2.0</span>
+                      </span>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase mt-1 tracking-widest leading-none">Assistência Cognitiva & Execução Financeira</span>
+                    </div>
+                    <button
+                      onClick={() => setShowChat(false)}
+                      className="p-2.5 bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-500 rounded-2xl transition-all duration-300 border border-white/5"
+                    >
+                      <X size={20} strokeWidth={3} />
+                    </button>
+                  </div>
+
+                  {/* Modal Content - Chat Area */}
+                  <div className="flex-1 overflow-hidden relative">
+                    <ChatAgent
+                      transactions={transactions}
+                      currentBalance={totalOverallBalance}
+                      categoriesMap={categoriesMap}
+                      onAddTransaction={(t) => {
+                        updateTransactions('add', t, (prev) => [...prev, { ...t, id: Math.random().toString(36).substr(2, 9) }]);
+                      }}
+                      setCategoriesMap={setCategoriesMap}
+                    />
+                  </div>
                 </div>
               </div>
             )

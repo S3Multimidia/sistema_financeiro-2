@@ -134,10 +134,16 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
            4. Status: Todos os débitos extraídos devem ter 'completed: true'.
            5. Chame 'add_transaction' para cada débito encontrado.
            6. Use o mês/ano atual (${today.getMonth()}/${today.getFullYear()}) se omitido no arquivo.`
-        : `Você é o CONSULTOR ESTRATEGISTA do sistema. 
-           CATEGORIAS/SUBS: ${JSON.stringify(categoriesMap)}
-           CONTEXTO ATUAL:
+        : `Você é o AGENTE CONSULTOR, um assistente de inteligência artificial de elite (estilo Gemini/Claude) integrado ao FINANCEIRO PRO 2026.
+           
+           SUAS CAPACIDADES:
+           - Você pode conversar sobre QUALQUER assunto: escrever e-mails, criar roteiros, explicar programação, filosofia, ou apenas bater papo.
+           - Você tem acesso ao contexto financeiro abaixo para ajudar o usuário se ele perguntar algo relacionado, mas NÃO está limitado a finanças.
+           - Personalidade: Eloquente, prestativo, inteligente e criativo.
+           
+           CONTEXTO FINANCEIRO (Para referência se necessário):
            - Saldo Atual: R$ ${currentBalance.toFixed(2)}
+           - Categorias Atuais: ${JSON.stringify(categoriesMap)}
            - Data: ${today.toLocaleDateString()}`;
 
       // Construct Payload manually for REST API
@@ -228,28 +234,30 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
   };
 
   return (
-    <div className="bg-[#1e1e2d] rounded-2xl shadow-2xl border border-white/5 flex flex-col h-[520px] overflow-hidden">
-      <div className="bg-slate-900/80 p-3 flex justify-between items-center border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <Bot size={14} className="text-indigo-400" />
-          <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">IA Online</span>
+    <div className="bg-slate-950 flex flex-col h-full w-full relative">
+      <div className="bg-slate-900/40 px-6 py-4 flex justify-between items-center border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Sistemas Síncronos Ativos</span>
         </div>
-        <button onClick={() => setMessages([{ role: 'model', agent: 'executor', text: 'Histórico limpo.' }])} className="text-white/20 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
+        <button onClick={() => setMessages([{ role: 'model', agent: 'executor', text: 'Sessão reiniciada. Como posso ajudar?' }])} className="p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-400/10 rounded-xl transition-all" title="Limpar Histórico">
+          <Trash2 size={16} />
+        </button>
       </div>
 
-      <div className="p-1.5 flex gap-1 bg-slate-900/40">
-        <button onClick={() => setActiveAgent('executor')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${activeAgent === 'executor' ? 'bg-indigo-600 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-          <Zap size={14} /> Executor
+      <div className="p-2 flex gap-2 bg-slate-900/60 border-b border-white/5">
+        <button onClick={() => setActiveAgent('executor')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[11px] font-black uppercase transition-all duration-300 ${activeAgent === 'executor' ? 'bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] scale-[1.02]' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}>
+          <Zap size={16} /> Executor <span className="text-[8px] opacity-50 px-1.5 py-0.5 rounded-full bg-black/20">Financeiro</span>
         </button>
-        <button onClick={() => setActiveAgent('consultant')} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${activeAgent === 'consultant' ? 'bg-indigo-600 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-          <Briefcase size={14} /> Consultor
+        <button onClick={() => setActiveAgent('consultant')} className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-[11px] font-black uppercase transition-all duration-300 ${activeAgent === 'consultant' ? 'bg-amber-500 text-white shadow-[0_0_20px_rgba(245,158,11,0.3)] scale-[1.02]' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}>
+          <Bot size={16} /> Consultor <span className="text-[8px] opacity-50 px-1.5 py-0.5 rounded-full bg-black/20">Inteligente</span>
         </button>
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-900/20">
         {messages.map((msg, idx) => (
-          <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-            <div className={`max-w-[85%] p-3 rounded-2xl text-[11px] leading-relaxed shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-white/80 border border-white/5'}`}>
+          <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+            <div className={`max-w-[85%] p-4 rounded-3xl text-[13px] leading-relaxed shadow-lg ${msg.role === 'user' ? 'bg-gradient-to-br from-slate-800 to-slate-900 text-white border border-white/10' : 'bg-white/5 text-slate-100 border border-white/10 backdrop-blur-sm'}`}>
               {msg.file && (
                 <div className="mb-2 rounded-lg overflow-hidden border border-white/10">
                   {msg.file.mimeType.startsWith('image/') ? (
@@ -264,16 +272,19 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
               )}
               <div className="whitespace-pre-wrap">{msg.text}</div>
               {msg.actions?.map(action => (
-                <div key={action.id} className="mt-3 p-3 rounded-xl bg-slate-900/50 border border-indigo-500/30">
-                  <div className="text-[9px] text-indigo-400 font-black mb-1 uppercase tracking-widest">Sugestão de Análise</div>
-                  <div className="text-[11px] font-bold text-white mb-3">
-                    {action.args.description} • R$ {action.args.amount?.toFixed(2)}
-                    <div className="text-[9px] text-slate-400 mt-1 uppercase">
-                      {action.args.category} {action.args.subCategory ? `> ${action.args.subCategory}` : ''}
-                    </div>
+                <div key={action.id} className="mt-3 p-3 rounded-xl bg-slate-900/50 border border-emerald-500/20">
+                  <div className="text-[9px] text-emerald-400 font-bold mb-2 uppercase tracking-widest flex items-center gap-2">
+                    <Zap size={10} /> Sugestão de Inteligência
+                  </div>
+                  <div className="text-[12px] font-black text-white mb-4 flex items-baseline gap-2">
+                    {action.args.description}
+                    <span className="text-emerald-400 text-sm">R$ {action.args.amount?.toFixed(2)}</span>
+                  </div>
+                  <div className="text-[9px] text-slate-500 mb-4 font-bold uppercase flex items-center gap-1">
+                    {action.args.category} {action.args.subCategory ? `› ${action.args.subCategory}` : ''}
                   </div>
                   {action.status === 'pending' && (
-                    <button onClick={() => handleConfirmAction(idx, action.id)} className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase transition-all shadow-lg">Lançar Agora</button>
+                    <button onClick={() => handleConfirmAction(idx, action.id)} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase transition-all shadow-[0_10px_20px_rgba(16,185,129,0.2)] active:scale-95">Executar Lançamento</button>
                   )}
                   {action.status === 'confirmed' && <div className="text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1 justify-center py-1"><Check size={12} /> Confirmado no Sistema</div>}
                 </div>
@@ -281,7 +292,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
             </div>
           </div>
         ))}
-        {isLoading && <div className="flex justify-center py-2"><Loader2 size={16} className="animate-spin text-indigo-500" /></div>}
+        {isLoading && <div className="flex justify-center py-4"><Loader2 size={24} className="animate-spin text-emerald-500" /></div>}
       </div>
 
       {/* Preview do Arquivo Selecionado */}
@@ -334,7 +345,9 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
           />
 
           <button className="p-2 text-white/20 hover:text-white transition-colors invisible"><Mic size={18} /></button>
-          <button onClick={handleSend} className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg transition-all ml-1"><Send size={16} /></button>
+          <button onClick={handleSend} className="p-3 bg-white text-slate-950 hover:bg-slate-200 rounded-2xl shadow-xl transition-all ml-2 flex items-center justify-center group">
+            <Send size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </button>
         </div>
       </div>
     </div>
