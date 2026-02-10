@@ -183,16 +183,21 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
       </div>
 
       {/* FOOTER */}
-      <div className="flex justify-between items-center mt-5 pt-4 border-t border-white/5 mx-1">
-        <span className="text-[10px] text-zinc-500 font-medium">
-          Saldo Final: <b className={finalBalance >= 0 ? "text-emerald-400" : "text-rose-400"}>
-            {finalBalance >= 0 ? '+ ' : ''} R$ {finalBalance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </b>
+      {/* FOOTER */}
+      <div className="flex justify-between items-center mt-6 pt-5 border-t border-[color:var(--cal-border)] mx-1 relative z-20">
+        <span className="text-[11px] font-medium" style={{ color: 'var(--cal-muted)' }}>
+          Fechamento Estimado
         </span>
 
-        <div className="bg-[#0b0e14] border border-white/5 px-3 py-1.5 rounded-lg flex items-center gap-2">
-          <span className="text-[9px] text-zinc-600 uppercase font-bold">SALDO:</span>
-          <span className={`text-xs font-bold ${finalBalance >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: 'var(--cal-dim)' }}>SALDO FINAL:</span>
+          <span
+            className="text-lg font-black tracking-tight"
+            style={{
+              color: finalBalance >= 0 ? 'var(--cal-green)' : 'var(--cal-red)',
+              textShadow: finalBalance >= 0 ? '0 0 20px rgba(16,185,129,0.4)' : '0 0 20px rgba(239,68,68,0.4)'
+            }}
+          >
             {finalBalance >= 0 ? '+' : ''} R$ {finalBalance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </span>
         </div>

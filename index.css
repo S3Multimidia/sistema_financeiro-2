@@ -10,7 +10,8 @@ body {
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8fafc; /* Slate 50 fallback */
+  background-color: #f8fafc;
+  /* Slate 50 fallback */
   overflow-x: hidden;
 }
 
@@ -25,12 +26,14 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* Slate 300 */
+  background: #cbd5e1;
+  /* Slate 300 */
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; /* Slate 400 */
+  background: #94a3b8;
+  /* Slate 400 */
 }
 
 /* Glass Utilities */
@@ -59,10 +62,21 @@ body {
 
 /* Animations */
 @keyframes blob {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-  100% { transform: translate(0px, 0px) scale(1); }
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
 }
 
 .animate-blob {
@@ -78,50 +92,66 @@ body {
 }
 
 /* =========================
-   FINANCE CALENDAR - PREMIUM
+   FINANCE CALENDAR - DARK GLASS
    ========================= */
 
-/* 1) TOKENS (ajuste aqui e o resto acompanha) */
+/* 1) TOKENS */
 :root {
-  --cal-bg: #0b1020;
-  --cal-surface: rgba(255,255,255,.04);
-  --cal-surface-2: rgba(255,255,255,.06);
-  --cal-border: rgba(255,255,255,.08);
-  --cal-border-strong: rgba(255,255,255,.14);
+  --cal-bg: #050505;
+  /* Preto Absoluto / Azul Profundo */
+  --cal-surface: rgba(30, 30, 30, 0.6);
+  /* Grafite semi-transparente */
+  --cal-surface-hover: rgba(45, 45, 45, 0.8);
+  --cal-border: rgba(255, 255, 255, 0.1);
+  /* Borda fina */
+  --cal-border-glow: rgba(255, 255, 255, 0.25);
 
-  --cal-text: rgba(255,255,255,.92);
-  --cal-muted: rgba(255,255,255,.60);
-  --cal-dim: rgba(255,255,255,.42);
+  --cal-text: #ffffff;
+  --cal-muted: rgba(255, 255, 255, 0.5);
+  /* Branco fosco */
+  --cal-dim: rgba(255, 255, 255, 0.3);
 
-  --cal-green: #22c55e;
-  --cal-red: #ef4444;
-  --cal-yellow: #f59e0b;
-  --cal-blue: #60a5fa;
+  --cal-green: #10B981;
+  /* Verde Neon */
+  --cal-red: #FF4B4B;
+  /* Vermelho Vibrante */
+  --cal-yellow: #F59E0B;
+  /* Âmbar */
+  --cal-blue: #3B82F6;
 
   --cal-radius: 16px;
-  --cal-radius-sm: 12px;
 
-  /* AQUI você controla “valores maiores” */
-  --cal-value-size: 14px;
-  --cal-day-size: 10px;
+  --cal-value-size: 15px;
+  /* Maior e Bold */
+  --cal-day-size: 11px;
 
-  --cal-shadow: 0 18px 50px rgba(0,0,0,.45);
-  --cal-glow: 0 0 0 1px rgba(96,165,250,.35), 0 0 28px rgba(96,165,250,.18);
+  --cal-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --cal-glow-today: 0 0 15px rgba(59, 130, 246, 0.4);
 }
 
 /* 2) WRAPPER DO BLOCO */
 .finance-calendar {
-  background: radial-gradient(1200px 600px at 20% 10%, rgba(96,165,250,.10), transparent 60%),
-              radial-gradient(900px 500px at 85% 30%, rgba(34,197,94,.08), transparent 65%),
-              linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  background: var(--cal-bg);
   border: 1px solid var(--cal-border);
-  border-radius: 22px;
-  padding: 18px;
+  border-radius: 24px;
+  padding: 20px;
   box-shadow: var(--cal-shadow);
   color: var(--cal-text);
-  backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
+}
+
+/* Background Gradients subtis */
+.finance-calendar::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.03), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* 3) HEADER */
@@ -130,7 +160,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
   position: relative;
   z-index: 10;
 }
@@ -140,10 +170,10 @@ body {
   align-items: center;
   gap: 10px;
   font-weight: 700;
-  letter-spacing: .2px;
-  font-size: 16px;
+  font-size: 18px;
   text-transform: uppercase;
   color: var(--cal-text);
+  letter-spacing: 0.5px;
 }
 
 .finance-calendar__dot {
@@ -151,203 +181,207 @@ body {
   height: 8px;
   border-radius: 999px;
   background: var(--cal-blue);
-  box-shadow: 0 0 10px rgba(96,165,250,.55);
+  box-shadow: 0 0 12px var(--cal-blue);
 }
 
 .finance-calendar__controls {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .finance-calendar__pill {
-  background: rgba(255,255,255,.04);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--cal-border);
   color: var(--cal-muted);
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  font-size: 10px;
-  user-select: none;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
+
 .finance-calendar__pill:hover {
-    background: rgba(255,255,255,.08);
-    color: var(--cal-text);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* 4) GRADE */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
+  gap: 8px;
   position: relative;
   z-index: 10;
 }
 
 /* 5) CABEÇALHO DOS DIAS */
 .calendar-weekday {
-  color: var(--cal-dim);
-  font-size: 9px;
-  letter-spacing: .8px;
+  color: var(--cal-muted);
+  font-size: 10px;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  padding: 6px 0;
+  padding: 8px 0;
   text-align: center;
-  font-weight: 700;
+  font-weight: 600;
+  opacity: 0.7;
 }
 
-/* 6) CÉLULA DO DIA */
+/* 6) CÉLULA DO DIA (CARD) */
 .calendar-day {
   position: relative;
-  min-height: 52px;
+  min-height: 64px;
+  /* Mais alto */
   border-radius: var(--cal-radius);
   border: 1px solid var(--cal-border);
-  background: linear-gradient(180deg, var(--cal-surface), rgba(255,255,255,.02));
-  padding: 6px;
-  overflow: visible; /* changed for tooltip */
-  transition: transform .12s ease, border-color .12s ease, background .12s ease;
+  background: var(--cal-surface);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: pointer;
 }
 
-/* “micro textura premium” */
-.calendar-day::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: .12;
-  background-image: radial-gradient(rgba(255,255,255,.18) 1px, transparent 1px);
-  background-size: 10px 10px;
-  mask-image: linear-gradient(180deg, rgba(0,0,0,.9), transparent 80%);
-  pointer-events: none;
-}
-
-/* Hover */
+/* Hover: Acender */
 .calendar-day:hover {
-  transform: translateY(-2px);
-  border-color: var(--cal-border-strong);
-  background: linear-gradient(180deg, var(--cal-surface-2), rgba(255,255,255,.02));
+  background: var(--cal-surface-hover);
+  border-color: var(--cal-border-glow);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   z-index: 20;
 }
 
-/* 7) NÚMERO DO DIA (discreto, mas legível) */
+/* 7) NÚMERO DO DIA */
 .calendar-day__num {
   font-size: var(--cal-day-size);
   color: var(--cal-muted);
-  font-weight: 700;
-  line-height: 1;
+  font-weight: 600;
 }
 
-/* 8) VALOR (MAIOR, PROTAGONISTA) */
+/* 8) VALOR DO SALDO */
 .calendar-day__value {
   margin-top: auto;
-  font-size: 11px;
+  font-size: var(--cal-value-size);
   font-weight: 800;
-  letter-spacing: .2px;
-  line-height: 1.1;
+  /* Bold */
+  letter-spacing: 0.3px;
+  line-height: 1.2;
   text-align: right;
   white-space: nowrap;
 }
 
-/* 10) ESTADOS */
-.calendar-day.is-positive .calendar-day__value { color: var(--cal-green); }
-.calendar-day.is-negative .calendar-day__value { color: var(--cal-red); }
-.calendar-day.is-event .calendar-day__num { color: var(--cal-yellow); }
-
-.calendar-day.is-positive {
-  box-shadow: inset 0 0 0 1px rgba(34,197,94,.1);
-  background: radial-gradient(80% 80% at 50% 0%, rgba(34,197,94,.05), transparent),
-              linear-gradient(180deg, var(--cal-surface), rgba(255,255,255,.02));
-}
-.calendar-day.is-negative {
-  box-shadow: inset 0 0 0 1px rgba(239,68,68,.1);
-  background: radial-gradient(80% 80% at 50% 0%, rgba(239,68,68,.05), transparent),
-              linear-gradient(180deg, var(--cal-surface), rgba(255,255,255,.02));
+/* Cores de Saldo */
+.calendar-day.is-positive .calendar-day__value {
+  color: var(--cal-green);
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+  /* Glow Verde */
 }
 
-/* Holiday Name inside day */
-.calendar-day__holiday {
-    font-size: 7px;
-    color: var(--cal-yellow);
-    text-transform: uppercase;
-    font-weight: 700;
-    margin-top: 2px;
-    opacity: 0.8;
-    line-height: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+.calendar-day.is-negative .calendar-day__value {
+  color: var(--cal-red);
+  text-shadow: 0 0 12px rgba(255, 75, 75, 0.4);
+  /* Glow Vermelho */
 }
 
-/* 11) DIA SELECIONADO (Hoje/Fds) */
-.calendar-day.is-today {
-  border-color: rgba(96,165,250,.5);
-  box-shadow: 0 0 15px rgba(96,165,250,.15), inset 0 0 0 1px rgba(96,165,250,.2);
-}
-.calendar-day.is-today .calendar-day__num {
-    color: var(--cal-blue);
-}
-
+/* Finais de Semana: Fundo mais escuro */
 .calendar-day.is-weekend {
-    background: rgba(255,255,255,0.01);
-}
-.calendar-day.is-weekend .calendar-day__num {
-    color: var(--cal-dim);
-    opacity: 0.5;
+  background: rgba(20, 20, 20, 0.8);
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
-/* 13) TOOLTIP (card flutuante) */
+.calendar-day.is-weekend:hover {
+  background: var(--cal-surface-hover);
+}
+
+/* Feriados: Badge */
+.calendar-day__holiday {
+  align-self: flex-start;
+  background: rgba(245, 158, 11, 0.15);
+  /* Orange dim */
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--cal-yellow);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-top: 4px;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dia Atual: Destaque Roxo/Azul */
+.calendar-day.is-today {
+  border: 1px double transparent;
+  background-image: linear-gradient(var(--cal-surface), var(--cal-surface)),
+    linear-gradient(135deg, #8B5CF6, #3B82F6);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: var(--cal-glow-today);
+}
+
+.calendar-day.is-today .calendar-day__num {
+  color: white;
+  font-weight: 800;
+}
+
+/* Tooltip */
 .calendar-tooltip {
   position: absolute;
   z-index: 100;
-  min-width: 180px;
-  border-radius: 12px;
-  border: 1px solid var(--cal-border);
-  background: rgba(10,14,26,.98);
-  box-shadow: 0 10px 30px rgba(0,0,0,.6);
-  padding: 10px;
-  color: var(--cal-text);
+  min-width: 200px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(5, 5, 5, 0.95);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  padding: 16px;
   bottom: 110%;
   left: 50%;
-  transform: translateX(-50%) translateY(5px);
+  transform: translateX(-50%) translateY(10px);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.2s, transform 0.2s;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   visibility: hidden;
 }
 
 .calendar-day:hover .calendar-tooltip {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 .calendar-tooltip__title {
-  font-weight: 700;
-  margin-bottom: 6px;
-  color: rgba(255,255,255,.9);
-  font-size: 10px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--cal-border);
-  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
 }
 
 .calendar-tooltip__row {
   display: flex;
   justify-content: space-between;
-  padding: 2px 0;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--cal-muted);
+  margin-bottom: 4px;
 }
 
-.calendar-tooltip__value {
-    font-weight: 700;
-    color: var(--cal-text);
+.text-green {
+  color: var(--cal-green);
+  font-weight: 600;
 }
-.text-green { color: var(--cal-green); }
-.text-red { color: var(--cal-red); }
 
+.text-red {
+  color: var(--cal-red);
+  font-weight: 600;
+}
