@@ -636,8 +636,14 @@ const App: React.FC = () => {
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
     // 1. Calcular Saldo Inicial (Acumulado de meses anteriores ao atual)
-    // Filtra tudo que é ANTES do dia 1 do mês atual/ano atual
+    // LÓGICA CORRIGIDA: O Saldo Inicial deve ser EXATAMENTE 'INITIAL_PREVIOUS_BALANCE' em Fev/2026.
+
     const previousTransactions = transactions.filter(t => {
+      // Ignorar transações antes de 2026
+      if (t.year < 2026) return false;
+      // Ignorar Janeiro de 2026 (Mês 0)
+      if (t.year === 2026 && t.month < 1) return false;
+
       if (t.year < currentYear) return true;
       if (t.year === currentYear && t.month < currentMonth) return true;
       return false;
