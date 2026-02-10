@@ -1167,7 +1167,85 @@ const App: React.FC = () => {
                         <div className="w-1 h-6 bg-indigo-500 rounded-full"></div>
                         Lançamento Inteligente
                       </h3>
-                      <TransactionForm onAdd={handleAddTransaction} categoriesMap={categoriesMap} currentMonth={currentMonth} currentYear={currentYear} isDarkMode={true} />
+                      <TransactionForm
+                        onAdd={handleAddTransaction}
+                        categoriesMap={categoriesMap}
+                        currentMonth={currentMonth}
+                        currentYear={currentYear}
+                        isDarkMode={true}
+
+                        // New Props
+                        cards={cards}
+                        debts={debts}
+                        subscriptions={subscriptions}
+
+                        onAddCardTransaction={(newTrans) => setCardTransactions(prev => [...prev, ...newTrans])}
+
+                        onAddSubscription={(newSub) => {
+                          // Add to state
+                          setSubscriptions(prev => [...prev, newSub]);
+                          // Immediate Sync (Create Transaction if valid for this month)
+                          // Logic copied from Widget
+                          const isCurrentMonth = true; // Simpler to just trigger sync logic or manual add
+                          // Actually, let's look at how Widget does it: onSync calls handleAddTransaction.
+                          // But here we are IN the Form.
+
+                          // Let's rely on the useEffect(syncSubscriptionsData) to pick it up? 
+                          // No, that syncs TO cloud.
+                          // We need to generate the transaction if applicable.
+
+                          // Better: Setup the sub and trigger the Sync Service manually or wait for auto-loop?
+                          // User expects immediate feedback.
+
+                          // Let's call the same logic as Widget's onSync: create a transaction.
+                          // BUT TransactionForm has 'onAddSubscription' which just updates the list.
+                          // The SubscriptionService.syncSubscriptions running in useEffect [subscriptions] 
+                          // should detect the new subscription and generate the transaction if missing?
+                          // YES. App.tsx line 113: syncedTransactions = SubscriptionService.syncSubscriptions(...)
+                          // This is in useEffect. So updating 'subscriptions' state should trigger it.
+                        }}
+
+                        onAddDebtTransaction={(debtId, amount, description, date) => {
+                          // Create Transaction
+                          handleAddTransaction({
+                            description: description,
+                            amount: amount,
+                            day: date.getDate(),
+                            month: date.getMonth(),
+                            year: date.getFullYear(),
+                            type: 'expense',
+                            category: 'Crediário/Dividas',
+                            completed: false,
+                            debtId: debtId
+                          }, { installments: 1, isFixed: false });
+
+                          // Allow App.useEffect to sync the Debt Balance update?
+                          // updateTransactions logic (line 602 in App.tsx) does NOT currently listen to 'add' for debt ID?
+                          // Wait, line 320 updateTransactions:
+                          // It handles 'delete' and 'update', but 'add'?
+                          // Actually, the DebtWidget logic (lines 78-87 in DebtWidget.tsx) updates the DEBT object manually using setDebts.
+
+                          // We should probably replicate that update here to be safe and immediate.
+                          const newDebtTrans: DebtTransaction = {
+                            id: Math.random().toString(36).substr(2, 9),
+                            date: date.toISOString(),
+                            description: description,
+                            amount: amount,
+                            type: 'purchase'
+                          };
+
+                          setDebts(prev => prev.map(d => {
+                            if (d.id === debtId) {
+                              return {
+                                ...d,
+                                currentBalance: d.currentBalance + amount,
+                                history: [newDebtTrans, ...d.history]
+                              };
+                            }
+                            return d;
+                          }));
+                        }}
+                      />
                     </div>
 
                     {/* 2. Agenda (Fixed Height for Scroll) */}
