@@ -996,6 +996,18 @@ const App: React.FC = () => {
                     <CalculatorIcon size={22} strokeWidth={2.5} />
                   </div>
                 </button>
+
+                {/* Agente Inteligente AI (Reativado) */}
+                <button
+                  onClick={() => setShowChat(true)}
+                  className="group relative flex items-center justify-center p-0.5"
+                  title="Agente Inteligente IA"
+                >
+                  <div className="absolute inset-0 bg-violet-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
+                  <div className="relative w-11 h-11 rounded-2xl bg-violet-600 text-white flex items-center justify-center shadow-xl shadow-violet-600/30 border border-violet-400 hover:bg-violet-500 hover:scale-105 active:scale-95 transition-all duration-300">
+                    <Sparkles size={22} strokeWidth={2.5} />
+                  </div>
+                </button>
               </div>
 
               {/* Right: Actions */}

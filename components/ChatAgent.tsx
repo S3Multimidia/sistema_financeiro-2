@@ -33,7 +33,9 @@ interface Message {
 export const ChatAgent: React.FC<ChatAgentProps> = ({
   transactions,
   currentBalance,
-  setTransactions
+  categoriesMap,
+  setTransactions,
+  setCategoriesMap
 }) => {
   const [activeAgent, setActiveAgent] = useState<AgentMode>('executor');
   const [messages, setMessages] = useState<Message[]>([
