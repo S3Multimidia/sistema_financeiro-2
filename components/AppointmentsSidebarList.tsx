@@ -19,8 +19,21 @@ export const AppointmentsSidebarList: React.FC<AppointmentsSidebarListProps> = (
   isDarkMode = false
 }) => {
   const monthAppointments = useMemo(() => {
+    const today = new Date();
+    const currentDay = today.getDate();
+    const currentMonthReal = today.getMonth();
+    const currentYearReal = today.getFullYear();
+
     return transactions
       .filter(t => t.type === 'appointment' && t.month === currentMonth && t.year === currentYear)
+      .map(app => {
+        const isOverdue = !app.completed && (
+          (currentYearReal > currentYear) ||
+          (currentYearReal === currentYear && currentMonthReal > currentMonth) ||
+          (currentYearReal === currentYear && currentMonthReal === currentMonth && currentDay > app.day)
+        );
+        return { ...app, isOverdue };
+      })
       .sort((a, b) => {
         // Ordena primeiro por não concluídos, depois por dia
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
@@ -46,9 +59,12 @@ export const AppointmentsSidebarList: React.FC<AppointmentsSidebarListProps> = (
           monthAppointments.map((app) => (
             <div
               key={app.id}
-              className={`flex items-start gap-3 p-2 rounded-xl transition-all border group ${app.completed
+              className={`flex items-start gap-3 p-2 rounded-xl transition-all border group relative ${app.completed
                 ? (isDarkMode ? 'bg-white/5 border-transparent opacity-40' : 'bg-slate-50 border-transparent opacity-60')
-                : (isDarkMode ? 'bg-white/5 border-white/5 hover:bg-white/10' : 'bg-white border-slate-100 hover:bg-indigo-50 hover:border-indigo-100')
+                : (app.isOverdue
+                  ? (isDarkMode ? 'bg-rose-500/10 border-rose-500/50' : 'bg-rose-50 border-rose-200')
+                  : (isDarkMode ? 'bg-white/5 border-white/5 hover:bg-white/10' : 'bg-white border-slate-100 hover:bg-indigo-50 hover:border-indigo-100')
+                )
                 }`}
             >
               <button
@@ -59,9 +75,9 @@ export const AppointmentsSidebarList: React.FC<AppointmentsSidebarListProps> = (
                 {app.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
               </button>
 
-              <div className={`flex flex-col items-center justify-center border rounded-lg min-w-[32px] py-1 shadow-sm ${isDarkMode ? 'bg-white/5 border-white/5 group-hover:border-white/20' : 'bg-white border-slate-200 group-hover:border-indigo-200'}`}>
-                <span className={`text-[8px] font-black leading-none uppercase ${isDarkMode ? 'text-white/30' : 'text-slate-400'}`}>Dia</span>
-                <span className={`text-xs font-black leading-none mt-0.5 ${app.completed ? (isDarkMode ? 'text-white/20' : 'text-slate-400') : (isDarkMode ? 'text-white' : 'text-indigo-600')}`}>{app.day.toString().padStart(2, '0')}</span>
+              <div className={`flex flex-col items-center justify-center border rounded-lg min-w-[32px] py-1 shadow-sm ${app.isOverdue && !app.completed ? (isDarkMode ? 'bg-rose-500/20 border-rose-500/40' : 'bg-rose-100 border-rose-300') : (isDarkMode ? 'bg-white/5 border-white/5 group-hover:border-white/20' : 'bg-white border-slate-200 group-hover:border-indigo-200')}`}>
+                <span className={`text-[8px] font-black leading-none uppercase ${app.isOverdue && !app.completed ? 'text-rose-500' : (isDarkMode ? 'text-white/30' : 'text-slate-400')}`}>Dia</span>
+                <span className={`text-xs font-black leading-none mt-0.5 ${app.completed ? (isDarkMode ? 'text-white/20' : 'text-slate-400') : (app.isOverdue ? 'text-rose-600' : (isDarkMode ? 'text-white' : 'text-indigo-600'))}`}>{app.day.toString().padStart(2, '0')}</span>
               </div>
 
               <div className="flex-1 min-w-0">
@@ -69,10 +85,16 @@ export const AppointmentsSidebarList: React.FC<AppointmentsSidebarListProps> = (
                   {app.description}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
-                  <Clock size={10} className={`${isDarkMode ? 'text-white/30' : 'text-slate-400'}`} />
-                  <span className={`text-[9px] font-black uppercase ${isDarkMode ? 'text-white/30' : 'text-slate-400'}`}>
-                    {app.time ? app.time : (app.completed ? 'Concluído' : 'Compromisso')}
-                  </span>
+                  {app.isOverdue && !app.completed ? (
+                    <span className="text-[8px] font-black bg-rose-500 text-white px-1.5 py-0.5 rounded uppercase tracking-tighter animate-pulse">Atrasado</span>
+                  ) : (
+                    <>
+                      <Clock size={10} className={`${isDarkMode ? 'text-white/30' : 'text-slate-400'}`} />
+                      <span className={`text-[9px] font-black uppercase ${isDarkMode ? 'text-white/30' : 'text-slate-400'}`}>
+                        {app.time ? app.time : (app.completed ? 'Concluído' : 'Compromisso')}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
