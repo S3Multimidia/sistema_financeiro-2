@@ -52,6 +52,17 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isLoading]);
 
+  // Dynamic Greeting on Agent Switch
+  useEffect(() => {
+    if (messages.length <= 1) {
+      const greeting = activeAgent === 'executor'
+        ? 'Agente Executor ativo. Pronto para realizar lançamentos, analisar imagens e sincronizar dados.'
+        : 'Olá.. sobre o que vamos falar?';
+
+      setMessages([{ role: 'model', agent: activeAgent, text: greeting }]);
+    }
+  }, [activeAgent]);
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
