@@ -125,17 +125,17 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
            INSTRUÇÕES PARA PDFs/EXTRATOS:
            1. Extraia EXCLUSIVAMENTE os lançamentos de DÉBITO (saídas de dinheiro). IGNORE RECEITAS (entradas).
            2. Identifique o DIA exato de cada lançamento conforme consta no arquivo.
-           3. CATEGORIZAÇÃO INTELIGENTE (ESTRITAMENTE CONFORME O MAPA):
-              - Use este mapa de Categorias e suas Sub-Categorias: ${JSON.stringify(categoriesMap)}.
-              - Identifique a 'category' principal e, quando possível, a 'subCategory' específica baseada na descrição.
-              - Se encontrar uma sub-categoria (ex: 'PADARIA OLIVEIRA') dentro de uma categoria (ex: 'ALIMENTAÇÃO'), preencha ambos os campos.
-              - Caso NÃO consiga identificar uma categoria compatível ou tenha dúvida, use OBRIGATORIAMENTE a categoria: "CATEGORIA NÃO DEFINIDA".
-           4. Status: Todos os débitos extraídos de extratos/arquivos devem ser marcados com 'completed: true' (lançados como pagos).
+           3. CATEGORIZAÇÃO ULTRA-PRECISA:
+              - Analise o mapa: ${JSON.stringify(categoriesMap)}.
+              - REGRA DE OURO: Se a descrição contiver parte do nome de uma SUB-CATEGORIA (ex: "OLIV" para "Padaria Oliveira"), você DEVE usar essa sub-categoria específica.
+              - Sempre preencha 'category' (Geral) e 'subCategory' (Específica).
+              - Se não houver correspondência clara em NENHUMA sub-categoria do mapa, use a Categoria mais lógica e deixe 'subCategory' vazio.
+              - Caso NÃO consiga identificar nem a categoria principal, use "CATEGORIA NÃO DEFINIDA".
+           4. Status: Todos os débitos extraídos devem ter 'completed: true'.
            5. Chame 'add_transaction' para cada débito encontrado.
-           6. Se a data (mês/ano) não for especificada no arquivo, use o mês/ano atual (${today.getMonth()}/${today.getFullYear()}).
-           7. Responda brevemente confirmando quantos débitos foram identificados.`
+           6. Use o mês/ano atual (${today.getMonth()}/${today.getFullYear()}) se omitido no arquivo.`
         : `Você é o CONSULTOR ESTRATEGISTA do sistema. 
-           MAPA DE CATEGORIAS: ${JSON.stringify(categoriesMap)}
+           CATEGORIAS/SUBS: ${JSON.stringify(categoriesMap)}
            CONTEXTO ATUAL:
            - Saldo Atual: R$ ${currentBalance.toFixed(2)}
            - Data: ${today.toLocaleDateString()}`;
