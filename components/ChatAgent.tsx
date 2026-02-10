@@ -140,13 +140,12 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
            - Data: ${today.toLocaleDateString()}`;
 
       // Construct Payload manually for REST API
-      const model = 'gemini-2.0-flash-exp';
+      const model = 'gemini-2.0-flash';
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
       const contents = [{
         role: "user",
         parts: [
-          { text: sysIns },
           ...(currentFile ? [{ inline_data: { mime_type: currentFile.type, data: currentFile.data.split(',')[1] } }] : []),
           { text: userText || "Analise o arquivo e extraia os débitos." }
         ]
@@ -173,10 +172,18 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
         }]
       }] : undefined;
 
+      const body: any = {
+        contents,
+        systemInstruction: {
+          parts: [{ text: sysIns }]
+        }
+      };
+      if (tools) body.tools = tools;
+
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents, tools })
+        body: JSON.stringify(body)
       });
 
       if (!response.ok) {
