@@ -140,7 +140,7 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
            - Data: ${today.toLocaleDateString()}`;
 
       // Construct Payload manually for REST API
-      const model = 'gemini-1.5-flash';
+      const model = 'gemini-1.5-flash-latest';
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
       const contents = [{
