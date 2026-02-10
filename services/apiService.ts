@@ -259,7 +259,7 @@ export const ApiService = {
         };
     },
 
-    async updateUserSettings(settings: { starting_balance?: number }) {
+    async updateUserSettings(settings: { starting_balance?: number, gemini_api_key?: string }) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
