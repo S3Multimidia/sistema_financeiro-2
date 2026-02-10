@@ -79,7 +79,8 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
         onAddTransaction({
           ...action.args,
           description: action.args.description?.toUpperCase() || 'SEM DESCRIÇÃO',
-          category: action.args.category?.toUpperCase() || 'GERAL'
+          category: action.args.category?.toUpperCase() || 'GERAL',
+          subCategory: action.args.subCategory?.toUpperCase() || undefined
         });
       }
       action.status = 'confirmed';
@@ -124,16 +125,17 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
            INSTRUÇÕES PARA PDFs/EXTRATOS:
            1. Extraia EXCLUSIVAMENTE os lançamentos de DÉBITO (saídas de dinheiro). IGNORE RECEITAS (entradas).
            2. Identifique o DIA exato de cada lançamento conforme consta no arquivo.
-           3. CATEGORIZAÇÃO INTELIGENTE:
-              - Use estas categorias existentes: [${validCategories}].
-              - Tente mapear o lançamento para a categoria mais lógica.
+           3. CATEGORIZAÇÃO INTELIGENTE (ESTRITAMENTE CONFORME O MAPA):
+              - Use este mapa de Categorias e suas Sub-Categorias: ${JSON.stringify(categoriesMap)}.
+              - Identifique a 'category' principal e, quando possível, a 'subCategory' específica baseada na descrição.
+              - Se encontrar uma sub-categoria (ex: 'PADARIA OLIVEIRA') dentro de uma categoria (ex: 'ALIMENTAÇÃO'), preencha ambos os campos.
               - Caso NÃO consiga identificar uma categoria compatível ou tenha dúvida, use OBRIGATORIAMENTE a categoria: "CATEGORIA NÃO DEFINIDA".
            4. Status: Todos os débitos extraídos de extratos/arquivos devem ser marcados com 'completed: true' (lançados como pagos).
            5. Chame 'add_transaction' para cada débito encontrado.
            6. Se a data (mês/ano) não for especificada no arquivo, use o mês/ano atual (${today.getMonth()}/${today.getFullYear()}).
            7. Responda brevemente confirmando quantos débitos foram identificados.`
         : `Você é o CONSULTOR ESTRATEGISTA do sistema. 
-           CATEGORIAS: [${validCategories}]
+           MAPA DE CATEGORIAS: ${JSON.stringify(categoriesMap)}
            CONTEXTO ATUAL:
            - Saldo Atual: R$ ${currentBalance.toFixed(2)}
            - Data: ${today.toLocaleDateString()}`;
@@ -163,7 +165,8 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
               description: { type: 'STRING', description: 'Descrição da transação' },
               amount: { type: 'NUMBER', description: 'Valor da transação (positivo)' },
               type: { type: 'STRING', description: 'income (receita), expense (despesa) ou appointment (agenda)' },
-              category: { type: 'STRING', description: 'Categoria da transação' },
+              category: { type: 'STRING', description: 'Categoria principal da transação' },
+              subCategory: { type: 'STRING', description: 'Sub-categoria específica (ex: Padaria Oliveira)' },
               completed: { type: 'BOOLEAN', description: 'Se a transação já foi paga (true) ou está pendente (false)' }
             },
             required: ['day', 'month', 'year', 'description', 'amount', 'type', 'category', 'completed']
@@ -263,7 +266,12 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
               {msg.actions?.map(action => (
                 <div key={action.id} className="mt-3 p-3 rounded-xl bg-slate-900/50 border border-indigo-500/30">
                   <div className="text-[9px] text-indigo-400 font-black mb-1 uppercase tracking-widest">Sugestão de Análise</div>
-                  <div className="text-[11px] font-bold text-white mb-3">{action.args.description} • R$ {action.args.amount?.toFixed(2)}</div>
+                  <div className="text-[11px] font-bold text-white mb-3">
+                    {action.args.description} • R$ {action.args.amount?.toFixed(2)}
+                    <div className="text-[9px] text-slate-400 mt-1 uppercase">
+                      {action.args.category} {action.args.subCategory ? `> ${action.args.subCategory}` : ''}
+                    </div>
+                  </div>
                   {action.status === 'pending' && (
                     <button onClick={() => handleConfirmAction(idx, action.id)} className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase transition-all shadow-lg">Lançar Agora</button>
                   )}
