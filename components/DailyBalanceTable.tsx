@@ -15,14 +15,14 @@ const formatCompactCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-    notation: Math.abs(value) > 10000 ? 'compact' : 'standard',
+    compactDisplay: 'short',
     maximumFractionDigits: 0
   }).format(value);
 };
 
 // Feriados Nacionais 2026 (Brasil)
 const HOLIDAYS_2026: Record<string, string> = {
-  '1-1': 'Confraternização Universal',
+  '1-1': 'Confraternização',
   '17-2': 'Carnaval',
   '3-4': 'Paixão de Cristo',
   '21-4': 'Tiradentes',
@@ -31,7 +31,7 @@ const HOLIDAYS_2026: Record<string, string> = {
   '7-9': 'Independência',
   '12-10': 'N. Sra. Aparecida',
   '2-11': 'Finados',
-  '15-11': 'Proclamação da Rep.',
+  '15-11': 'Proclamação Rep.',
   '20-11': 'Consciência Negra',
   '25-12': 'Natal'
 };
@@ -41,16 +41,15 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
     const days = [];
     let currentAccBalance = previousBalance;
 
-    // 1. Calcular propriedades do mês
     const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 (Dom) a 6 (Sáb)
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // 2. Adicionar espaços em branco antes do dia 1
+    // Fill empty days
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push({ day: null, balance: null });
+      days.push({ day: null, balance: null, income: 0, expense: 0 });
     }
 
-    // 3. Calcular saldos diários e preencher calendário
+    // Fill days
     for (let day = 1; day <= daysInMonth; day++) {
       const dayTrans = transactions.filter(t => t.day === day);
       const income = dayTrans.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
@@ -60,134 +59,145 @@ export const DailyBalanceTable: React.FC<DailyBalanceTableProps> = ({ transactio
 
       days.push({
         day,
-        balance: currentAccBalance
+        balance: currentAccBalance,
+        income,
+        expense
       });
     }
 
     return days;
   }, [transactions, previousBalance, month, year]);
 
+  const finalBalance = calendarData.length > 0 ? calendarData[calendarData.length - 1]?.balance : 0;
+
   return (
-    <div className="bg-[#18181b] rounded-3xl overflow-hidden flex flex-col h-auto border border-slate-800 shadow-2xl font-sans relative">
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -z-0 pointer-events-none"></div>
+    <div className="finance-calendar font-sans">
 
-      <div className="px-5 py-3 border-b border-slate-800 flex items-center justify-between relative z-10 shrink-0">
-        <h2 className="font-bold text-xs uppercase tracking-wider text-slate-100 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+      {/* HEADER */}
+      <div className="finance-calendar__header">
+        <div className="finance-calendar__title">
+          <div className="finance-calendar__dot"></div>
           {new Date(year, month).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-        </h2>
+        </div>
 
-        {/* Header Summary for Immediate Match */}
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
-            <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Fechamento</div>
-            <div className={`text-xs font-black ${calendarData.length > 0 && calendarData[calendarData.length - 1]?.balance < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-              {calendarData.length > 0 && calendarData[calendarData.length - 1]?.balance !== null
-                ? formatCompactCurrency(calendarData[calendarData.length - 1].balance!)
-                : 'R$ 0,00'}
-            </div>
+        <div className="finance-calendar__controls">
+          <div className="finance-calendar__pill hidden sm:block">
+            Visão Analítica
           </div>
-
-          <div className="flex gap-2 text-[9px] font-bold uppercase tracking-wide">
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div> <span className="hidden xl:inline">Positivo</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div> <span className="hidden xl:inline">Negativo</span>
-            </div>
+          <div className="finance-calendar__pill hidden sm:block">
+            Visão Executiva
           </div>
         </div>
       </div>
 
-      {/* Cabeçalho da Semana */}
-      <div className="grid grid-cols-7 border-b border-slate-800/50 bg-[#18181b]/50 relative z-10 shrink-0">
+      {/* WEEKDAYS */}
+      <div className="calendar-grid mb-1">
         {WEEKDAYS_SHORT.map((wd, index) => (
-          <div key={wd} className={`py-1.5 text-center text-[9px] font-bold uppercase tracking-widest ${index === 0 || index === 6 ? 'text-amber-500/70' : 'text-slate-500'}`}>
+          <div key={wd} className={`calendar-weekday ${index === 0 || index === 6 ? 'opacity-50' : ''}`}>
             {wd}
           </div>
         ))}
       </div>
 
-      {/* Grid de Dias */}
-      <div className="grid grid-cols-7 gap-1 p-2 bg-[#18181b] relative z-10 content-start">
+      {/* GRID */}
+      <div className="calendar-grid content-start">
         {calendarData.map((item, idx) => {
           if (item.day === null) {
             return <div key={`empty-${idx}`} className="" />;
           }
 
           const balance = item.balance ?? 0;
-          const isNegative = balance < 0;
           const dateObj = new Date(year, month, item.day);
+
           const isToday = new Date().getDate() === item.day &&
             new Date().getMonth() === month &&
             new Date().getFullYear() === year;
 
           const dayOfWeek = dateObj.getDay();
-          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 0=Dom, 6=Sab
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
           const holidayKey = `${item.day}-${month + 1}`;
           const holidayName = HOLIDAYS_2026[holidayKey];
 
-          return (
-            <div
-              key={`day-${item.day}`}
-              className={`
-                min-h-[42px] rounded-lg flex flex-col relative group transition-all duration-300 px-1 py-0.5 justify-center border
-                ${isToday
-                  ? 'bg-slate-800 border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.2)] z-20 scale-[1.05]'
-                  : isWeekend
-                    ? 'bg-[#202024] border-slate-800/50 hover:border-slate-600 hover:bg-slate-800'
-                    : 'bg-[#27272a] border-slate-800 hover:border-slate-600 hover:bg-slate-800'
-                }
-              `}
-            >
-              <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-bold ${isToday ? 'text-cyan-400' : isWeekend ? 'text-amber-500/70' : 'text-slate-500 group-hover:text-slate-300'}`}>
-                  {item.day}
-                </span>
+          // Determine State Class
+          let stateClass = '';
+          if (balance > 0) stateClass += ' is-positive';
+          else if (balance < 0) stateClass += ' is-negative';
 
-                <span className={`text-[10px] sm:text-[11px] font-black tracking-tight ${isNegative ? 'text-rose-400' : 'text-emerald-400'}`}>
-                  {balance !== null ? formatCompactCurrency(balance) : '-'}
-                </span>
+          if (isToday) stateClass += ' is-today';
+          if (isWeekend) stateClass += ' is-weekend';
+          if (holidayName) stateClass += ' is-event';
+
+          return (
+            <div key={`day-${item.day}`} className={`calendar-day ${stateClass} group`}>
+
+              {/* NUMBER Top Left/Right */}
+              <div className="flex justify-between items-start">
+                <span className="calendar-day__num">{item.day}</span>
               </div>
 
-              {/* Holiday Name */}
+              {/* HOLIDAY */}
               {holidayName && (
-                <div className="text-[7px] font-bold text-amber-400/80 uppercase truncate mt-0.5 text-center leading-tight">
+                <div className="calendar-day__holiday">
                   {holidayName}
                 </div>
               )}
 
-              {/* Tooltip Detalhado */}
-              <div className="absolute hidden group-hover:flex bottom-full left-1/2 -translate-x-1/2 mb-1 z-50 pointer-events-none flex-col items-center animate-fade-in-up">
-                <div className="bg-slate-900/95 backdrop-blur-md text-white text-[10px] px-2 py-1.5 rounded-lg shadow-xl border border-slate-700 w-max text-center z-50">
-                  <div className={`text-xs font-black ${isNegative ? 'text-rose-400' : 'text-emerald-400'}`}>
-                    R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                  {holidayName && <div className="text-amber-400 mt-1 uppercase font-bold text-[9px]">{holidayName}</div>}
+              {/* VALUE Bottom Right */}
+              <span className="calendar-day__value">
+                {balance !== null ? formatCompactCurrency(balance) : '-'}
+              </span>
+
+              {/* TOOLTIP */}
+              <div className="calendar-tooltip">
+                <div className="calendar-tooltip__title">
+                  {new Date(year, month, item.day).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </div>
+                <div className="calendar-tooltip__row">
+                  <span>Entradas</span>
+                  <span className="text-green">+ R$ {item.income?.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
+                </div>
+                <div className="calendar-tooltip__row">
+                  <span>Saídas</span>
+                  <span className="text-red">- R$ {item.expense?.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
+                </div>
+                <div className="calendar-tooltip__row border-t border-white/10 mt-1 pt-1">
+                  <b>Resultado do Dia</b>
+                  <b className={balance >= 0 ? 'text-green' : 'text-red'}>
+                    {balance >= 0 ? '+' : ''} R$ {balance?.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                  </b>
+                </div>
+                <div className="mt-2 text-[9px] text-center bg-white/5 rounded py-1 cursor-pointer hover:bg-white/10 transition-colors uppercase font-bold tracking-wider text-white/50">
+                  Ver lançamentos
                 </div>
               </div>
+
             </div>
           );
         })}
-        {/* End Padding to fill grid if needed */}
+
+        {/* Fillers */}
         {Array.from({ length: (7 - (calendarData.length % 7)) % 7 }).map((_, i) => (
-          <div key={`end-pad-${i}`} className="" />
+          <div key={`end-pad-${i}`} />
         ))}
       </div>
 
-      {/* Rodapé Resumo */}
-      <div className="bg-[#18181b] p-4 border-t border-slate-800 flex justify-between items-center relative z-10">
-        <span className="text-[10px] text-slate-500 font-medium hidden md:block">
-          Visão Geral Mensal
+      {/* FOOTER */}
+      <div className="flex justify-between items-center mt-5 pt-4 border-t border-white/5 mx-1">
+        <span className="text-[10px] text-zinc-500 font-medium">
+          Saldo Final: <b className={finalBalance >= 0 ? "text-emerald-400" : "text-rose-400"}>
+            {finalBalance >= 0 ? '+ ' : ''} R$ {finalBalance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </b>
         </span>
-        <div className="text-right flex items-center gap-3 bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50 ml-auto">
-          <span className="text-[10px] font-bold text-slate-400 uppercase">Saldo Final:</span>
-          <span className={`text-sm font-black ${calendarData[calendarData.length - 1]?.balance < 0 ? 'text-rose-400 drop-shadow-[0_0_5px_rgba(251,113,133,0.5)]' : 'text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]'}`}>
-            R$ {calendarData[calendarData.length - 1]?.balance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+
+        <div className="bg-[#0b0e14] border border-white/5 px-3 py-1.5 rounded-lg flex items-center gap-2">
+          <span className="text-[9px] text-zinc-600 uppercase font-bold">SALDO:</span>
+          <span className={`text-xs font-bold ${finalBalance >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+            {finalBalance >= 0 ? '+' : ''} R$ {finalBalance?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </span>
         </div>
       </div>
+
     </div>
   );
 };
