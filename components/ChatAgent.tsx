@@ -16,7 +16,9 @@ interface ChatAction {
 
 interface ChatAgentProps {
   transactions: Transaction[];
+  monthTransactions: Transaction[];
   currentBalance: number;
+  summary: any;
   categoriesMap: Record<string, string[]>;
   onAddTransaction: (transaction: any) => void;
   setCategoriesMap: React.Dispatch<React.SetStateAction<Record<string, string[]>>>;
@@ -32,7 +34,9 @@ interface Message {
 
 export const ChatAgent: React.FC<ChatAgentProps> = ({
   transactions,
+  monthTransactions,
   currentBalance,
+  summary,
   categoriesMap,
   onAddTransaction,
   setCategoriesMap
@@ -149,13 +153,22 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
            
            SUAS CAPACIDADES:
            - Você pode conversar sobre QUALQUER assunto: escrever e-mails, criar roteiros, explicar programação, filosofia, ou apenas bater papo.
-           - Você tem acesso ao contexto financeiro abaixo para ajudar o usuário se ele perguntar algo relacionado, mas NÃO está limitado a finanças.
+           - Você tem acesso TOTAL ao contexto financeiro do sistema para análise.
            - Personalidade: Eloquente, prestativo, inteligente e criativo.
            
-           CONTEXTO FINANCEIRO (Para referência se necessário):
-           - Saldo Atual: R$ ${currentBalance.toFixed(2)}
-           - Categorias Atuais: ${JSON.stringify(categoriesMap)}
-           - Data: ${today.toLocaleDateString()}`;
+           CONTEXTO FINANCEIRO (DADOS REAIS DO SISTEMA):
+           - Saldo Atual Real (Hoje): R$ ${currentBalance.toFixed(2)}
+           - Saldo Inicial do Mês: R$ ${summary.previousBalance.toFixed(2)}
+           - Previsão de Saldo (Final do Mês): R$ ${summary.endOfMonthBalance.toFixed(2)}
+           - Resumo do Mês: Receitas R$ ${summary.totalIncome.toFixed(2)} | Despesas R$ ${summary.totalExpense.toFixed(2)}
+           
+           LANÇAMENTOS DO MÊS ATUAL (Para responder "quanto terei dia X"):
+           ${JSON.stringify(monthTransactions.map(t => ({ day: t.day, desc: t.description, value: t.amount, type: t.type, status: t.completed ? 'pago' : 'pendente' })))}
+           
+           REGRAS PARA PREVISÕES:
+           - Se o usuário perguntar "quanto terei dia X", calcule o saldo somando ao Saldo Atual apenas os lançamentos PENDENTES que ocorrem entre hoje e o dia X. 
+           - Considere que o Saldo Atual já inclui tudo que está marcado como 'pago'.
+           - Data de Hoje: ${today.toLocaleDateString()}`;
 
       // Construct Payload manually for REST API
       const model = 'gemini-2.0-flash';

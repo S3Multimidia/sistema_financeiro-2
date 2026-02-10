@@ -1422,7 +1422,9 @@ const App: React.FC = () => {
                   <div className="flex-1 overflow-hidden relative">
                     <ChatAgent
                       transactions={transactions}
-                      currentBalance={totalOverallBalance}
+                      monthTransactions={transactions.filter(t => t.month === currentMonth && t.year === currentYear)}
+                      currentBalance={summary.currentBalance}
+                      summary={summary}
                       categoriesMap={categoriesMap}
                       onAddTransaction={(t) => {
                         updateTransactions('add', t, (prev) => [...prev, { ...t, id: Math.random().toString(36).substr(2, 9) }]);
