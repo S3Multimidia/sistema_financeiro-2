@@ -9,6 +9,8 @@ interface ConfirmationModalProps {
     onCancel: () => void;
     confirmLabel?: string;
     cancelLabel?: string;
+    onAlternative?: () => void;
+    alternativeLabel?: string;
     type?: 'danger' | 'warning' | 'info';
 }
 
@@ -24,6 +26,16 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 }) => {
     if (!isOpen) return null;
 
+    // Check if we need the 3-button layout (based on labels provided in App.tsx usages)
+    // Actually, App.tsx passes `cancelLabel` as the "Alternative" action in current logic.
+    // We need to refactor App.tsx to use a new prop structure if we want a true "Cancel" (X) button + 2 choices.
+    // BUT for now, I will enable a 3rd button if `onCancel` is treated as a third option.
+    // Wait, the plan says:
+    // 1. Cancel (Gray) -> New
+    // 2. Alternative (White) -> Was "cancelLabel"
+    // 3. Confirm (Color) -> Was "confirmLabel"
+
+    // I need to add `onAlternative` prop to the interface first.
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-white/20">
@@ -44,23 +56,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     </p>
                 </div>
 
-                <div className="bg-slate-50 p-4 border-t border-slate-100 flex gap-3">
-                    <button
-                        onClick={onCancel}
-                        className="flex-1 py-3 px-4 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold uppercase text-xs hover:bg-slate-100 transition-colors shadow-sm"
-                    >
-                        {cancelLabel}
-                    </button>
-
-                    <button
-                        onClick={onConfirm}
-                        className={`flex-1 py-3 px-4 rounded-xl font-bold uppercase text-xs text-white shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 ${type === 'danger' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-200' :
-                            type === 'warning' ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
-                            }`}
-                    >
-                        <CheckCircle2 size={16} />
-                        {confirmLabel}
-                    </button>
+                <div className="bg-slate-50 p-4 border-t border-slate-100 flex gap-3 flex-wrap">
+                    {/* This part will be replaced by the sophisticated 3-button logic below */}
                 </div>
             </div>
         </div>

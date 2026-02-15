@@ -264,6 +264,38 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               </div>
             )}
 
+            {/* Mark as Paid Toggle */}
+            <div className={`p-3 rounded-lg border flex items-center justify-between transition-all ${formData.completed ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
+              <div>
+                <span className={`text-xs font-bold block ${formData.completed ? 'text-emerald-700' : 'text-amber-700'}`}>
+                  {formData.completed ? 'Concluído' : 'Pendente'}
+                </span>
+                <span className="text-[10px] text-slate-400 block">
+                  {formData.completed ? 'Este lançamento já foi baixado.' : 'Este lançamento ainda está em aberto.'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, completed: !formData.completed })}
+                className={`px-3 py-1.5 border text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${formData.completed
+                  ? 'bg-white border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                  : 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-200'
+                  }`}
+              >
+                {formData.completed ? (
+                  <>
+                    <X size={14} />
+                    Reabrir
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={14} />
+                    Dar Baixa
+                  </>
+                )}
+              </button>
+            </div>
+
             <div className="pt-4 flex gap-3">
               <button
                 type="button"
