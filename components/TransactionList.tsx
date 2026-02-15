@@ -162,10 +162,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             const closingBalancePred = openingBalancePred + predictedDayTotal;
 
             return (
-              <div key={day} id={`day-${day}`} className="mb-8 last:mb-0 border border-slate-200/60 rounded-3xl overflow-hidden bg-white/40 shadow-sm">
+              <div key={day} id={`day-${day}`} className="mb-8 last:mb-0 border border-slate-200/60 rounded-3xl bg-white/40 shadow-sm">
 
                 {/* HEAD: SALDO INICIAL */}
-                <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-3 bg-slate-100/90 backdrop-blur-md border-b border-slate-200/50">
+                <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-3 bg-slate-100/90 backdrop-blur-md border-b border-slate-200/50 rounded-t-3xl">
                   <div className="flex items-center gap-3">
                     <span className="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm">DIA {day}</span>
                     <div className="h-px w-8 bg-slate-300 hidden sm:block"></div>
