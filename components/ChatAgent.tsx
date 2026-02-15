@@ -136,19 +136,18 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
         ? `Você é o AGENTE EXECUTOR do sistema FINANCEIRO PRO 2026. 
            Sua missão é ENTENDER mensagens de texto, IMAGENS e PDFs (extratos bancários, recibos).
            DATA ATUAL: ${today.toLocaleDateString()} (Dia/Mês/Ano).
-           
-           INSTRUÇÕES PARA PDFs/EXTRATOS:
-           1. Extraia EXCLUSIVAMENTE os lançamentos de DÉBITO (saídas de dinheiro). IGNORE RECEITAS (entradas).
-           2. Identifique o DIA exato de cada lançamento conforme consta no arquivo.
-           3. CATEGORIZAÇÃO ULTRA-PRECISA:
-              - Analise o mapa: ${JSON.stringify(categoriesMap)}.
-              - REGRA DE OURO: Se a descrição contiver parte do nome de uma SUB-CATEGORIA (ex: "OLIV" para "Padaria Oliveira"), você DEVE usar essa sub-categoria específica.
-              - Sempre preencha 'category' (Geral) e 'subCategory' (Específica).
-              - Se não houver correspondência clara em NENHUMA sub-categoria do mapa, use a Categoria mais lógica e deixe 'subCategory' vazio.
-              - Caso NÃO consiga identificar nem a categoria principal, use "CATEGORIA NÃO DEFINIDA".
-           4. Status: Todos os débitos extraídos devem ter 'completed: true'.
-           5. Chame 'add_transaction' para cada débito encontrado.
-           6. Use o mês/ano atual (${today.getMonth()}/${today.getFullYear()}) se omitido no arquivo.`
+                      INSTRUÇÕES PARA PDFs/EXTRATOS:
+            1. REGRA SUPREMA: Extraia EXCLUSIVAMENTE os lançamentos de DÉBITO (saídas/pagamentos). IGNORE ABSOLUTAMENTE TODAS as entradas/créditos.
+            2. Identifique o DIA exato de cada lançamento.
+            3. CATEGORIZAÇÃO:
+               - Analise o mapa: ${JSON.stringify(categoriesMap)}.
+               - Se a descrição contiver parte do nome de uma SUB-CATEGORIA, use-a.
+               - Sempre preencha 'category' e 'subCategory'.
+            4. Status: Todos os débitos extraídos devem ter 'completed: true'.
+            5. Chame 'add_transaction' para cada débito encontrado.
+            6. Use o mês/ano atual (${today.getMonth()}/${today.getFullYear()}) se omitido no arquivo.
+            
+            IMPORTANTE: Você não precisa pedir autorização. Apenas liste o que encontrou e execute.`
         : `Você é o AGENTE CONSULTOR, um assistente de inteligência artificial de elite (estilo Gemini/Claude) integrado ao FINANCEIRO PRO 2026.
            
            SUAS CAPACIDADES:
@@ -235,9 +234,21 @@ export const ChatAgent: React.FC<ChatAgentProps> = ({
         actions = functionCalls.map((fc: any) => ({
           id: Math.random().toString(36).substr(2, 9),
           name: fc.name,
-          args: fc.args, // REST API returns args as object directly usually, or struct
-          status: 'pending'
+          args: fc.args,
+          status: 'confirmed' // AUTO-EXECUTION: Mark as confirmed immediately
         }));
+
+        // Execute transactions immediately
+        actions.forEach(action => {
+          if (action.name === 'add_transaction') {
+            onAddTransaction({
+              ...action.args,
+              description: action.args.description?.toUpperCase() || 'SEM DESCRIÇÃO',
+              category: action.args.category?.toUpperCase() || 'GERAL',
+              subCategory: action.args.subCategory?.toUpperCase() || undefined
+            });
+          }
+        });
       }
 
       setMessages(prev => [...prev, {
