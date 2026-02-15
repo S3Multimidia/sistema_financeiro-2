@@ -405,7 +405,7 @@ const App: React.FC = () => {
       const transToEdit = transactions.find(t => t.id === payload.id);
       if (transToEdit && transToEdit.isFixed && transToEdit.installmentId && transToEdit.installmentId.startsWith('fixed_')) {
         const updates = payload.updates;
-        const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined;
+        const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined || updates.subCategory !== undefined;
 
         if (isRelevantChange && payload.cascade === true) {
           const startMonthParams = (transToEdit.year * 12) + transToEdit.month;
@@ -656,7 +656,7 @@ const App: React.FC = () => {
     if (!tx) return;
 
     // Check for fixed group
-    const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined;
+    const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined || updates.subCategory !== undefined;
 
     if (isRelevantChange && tx.isFixed && tx.installmentId?.startsWith('fixed_')) {
       setConfirmation({
@@ -667,7 +667,9 @@ const App: React.FC = () => {
         alternativeLabel: 'Nesta Apenas',
         onConfirm: () => {
           setConfirmation(null);
-          updateTransactions('update', { id, updates, cascade: true }, (prev) => []);
+          // Fix: Ensure we provide a valid optimistic update even if cascade block isn't entered (fallback)
+          // Ideally, cascade block handles everything and exits.
+          updateTransactions('update', { id, updates, cascade: true }, (prev) => prev.map(t => t.id === id ? { ...t, ...updates } : t));
         },
         onAlternative: () => {
           setConfirmation(null);
