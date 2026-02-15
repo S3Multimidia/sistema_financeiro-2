@@ -771,8 +771,14 @@ const App: React.FC = () => {
       totalExpense,
       realizedIncome,
       realizedExpense,
+      realizedIncome,
+      realizedExpense,
       // Current Balance = Starting Balance + Realized Flow of Month
       currentBalance: previousBalance + realizedIncome - realizedExpense,
+      // Expected Balance Today = Starting Balance + Projected Flow UP TO TODAY
+      currentExpectedBalance: previousBalance +
+        currentMonthTrans.filter(t => t.day <= new Date().getDate() && t.type === 'income').reduce((acc, t) => acc + t.amount, 0) -
+        currentMonthTrans.filter(t => t.day <= new Date().getDate() && t.type === 'expense').reduce((acc, t) => acc + t.amount, 0),
       // Estimated End Balance = Starting Balance + All Projected Flow of Month
       endOfMonthBalance: previousBalance + totalIncome - totalExpense,
     };
@@ -1066,7 +1072,8 @@ const App: React.FC = () => {
                   </div>
 
                   {/* Saldo Atual */}
-                  <div className="flex flex-col px-5 py-2 bg-indigo-600 text-white rounded-2xl border border-indigo-500 min-w-[160px] shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-default">
+                  <div className="flex flex-col px-5 py-2 bg-indigo-600 text-white rounded-2xl border border-indigo-500 min-w-[160px] shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-default relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 blur-2xl rounded-full group-hover:bg-white/20 transition-all"></div>
                     <span className="text-[9px] font-black text-indigo-100 uppercase tracking-[0.13em] flex items-center gap-2 mb-1">
                       <Wallet size={10} strokeWidth={3} className="text-indigo-200" /> Saldo Atual
                     </span>
@@ -1076,9 +1083,25 @@ const App: React.FC = () => {
                       </span>
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className="text-[10px] font-black text-indigo-200 leading-none">
-                          {summary.endOfMonthBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          {summary.currentExpectedBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </span>
-                        <span className="text-[8px] font-bold text-indigo-300 uppercase tracking-tighter">previsão</span>
+                        <span className="text-[8px] font-bold text-indigo-300 uppercase tracking-tighter">PREVISÃO DO DIA</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Saldo Previsto (Novo Card) */}
+                  <div className="flex flex-col px-5 py-2 bg-violet-600 text-white rounded-2xl border border-violet-500 min-w-[160px] shadow-lg shadow-violet-600/20 active:scale-95 transition-all cursor-default relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 blur-2xl rounded-full group-hover:bg-white/20 transition-all"></div>
+                    <span className="text-[9px] font-black text-violet-100 uppercase tracking-[0.13em] flex items-center gap-2 mb-1">
+                      <CalendarCheck size={10} strokeWidth={3} className="text-violet-200" /> Saldo Previsto
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-lg font-black leading-none tracking-tight">
+                        {summary.endOfMonthBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-[8px] font-bold text-violet-300 uppercase tracking-tighter">FECHAMENTO DO MÊS</span>
                       </div>
                     </div>
                   </div>
