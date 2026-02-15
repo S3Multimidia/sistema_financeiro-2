@@ -771,8 +771,6 @@ const App: React.FC = () => {
       totalExpense,
       realizedIncome,
       realizedExpense,
-      realizedIncome,
-      realizedExpense,
       // Current Balance = Starting Balance + Realized Flow of Month
       currentBalance: previousBalance + realizedIncome - realizedExpense,
       // Expected Balance Today = Starting Balance + Projected Flow UP TO TODAY
