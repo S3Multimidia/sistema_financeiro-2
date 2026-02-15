@@ -1555,6 +1555,8 @@ const App: React.FC = () => {
                 onCancel={confirmation.onCancel}
                 confirmLabel={confirmation.confirmLabel}
                 cancelLabel={confirmation.cancelLabel}
+                onAlternative={confirmation.onAlternative}
+                alternativeLabel={confirmation.alternativeLabel}
                 type={confirmation.type}
               />
             )

@@ -22,6 +22,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     onCancel,
     confirmLabel = 'Sim, Confirmar',
     cancelLabel = 'Não, Cancelar',
+    onAlternative,
+    alternativeLabel,
     type = 'warning'
 }) => {
     if (!isOpen) return null;
@@ -57,7 +59,52 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 </div>
 
                 <div className="bg-slate-50 p-4 border-t border-slate-100 flex gap-3 flex-wrap">
-                    {/* This part will be replaced by the sophisticated 3-button logic below */}
+                    <div className="flex gap-3 w-full">
+                        {onAlternative ? (
+                            <>
+                                <button
+                                    onClick={onCancel}
+                                    className="px-4 py-3 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl font-bold uppercase text-[10px] hover:bg-slate-200 transition-colors shadow-sm min-w-[80px]"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={onAlternative}
+                                    className="flex-1 py-3 px-4 bg-white border-2 border-indigo-100 text-indigo-600 rounded-xl font-bold uppercase text-[10px] hover:bg-indigo-50 hover:border-indigo-200 transition-colors shadow-sm"
+                                >
+                                    {alternativeLabel || 'Opção 2'}
+                                </button>
+                                <button
+                                    onClick={onConfirm}
+                                    className={`flex-1 py-3 px-4 rounded-xl font-bold uppercase text-[10px] text-white shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 ${type === 'danger' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-200' :
+                                        type === 'warning' ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
+                                        }`}
+                                >
+                                    <CheckCircle2 size={14} />
+                                    {confirmLabel}
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={onCancel}
+                                    className="flex-1 py-3 px-4 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold uppercase text-xs hover:bg-slate-100 transition-colors shadow-sm"
+                                >
+                                    {cancelLabel}
+                                </button>
+
+                                <button
+                                    onClick={onConfirm}
+                                    className={`flex-1 py-3 px-4 rounded-xl font-bold uppercase text-xs text-white shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 ${type === 'danger' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-200' :
+                                        type === 'warning' ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
+                                        }`}
+                                >
+                                    <CheckCircle2 size={16} />
+                                    {confirmLabel}
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
