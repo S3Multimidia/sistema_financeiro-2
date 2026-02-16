@@ -858,12 +858,96 @@ const App: React.FC = () => {
     });
   };
 
-  const handleDeleteCardTransaction = (id: string) => {
-    setCardTransactions(prev => prev.filter(t => t.id !== id));
+  const handleDeleteCardTransaction = (id: string, cascade: boolean = false) => {
+    if (cascade) {
+      // Find the target transaction to get context
+      const target = cardTransactions.find(t => t.id === id);
+      if (!target) return;
+
+      // Identify future transactions to delete
+      // Key: Same Card, Description, Original Date, and Installment Number >= Target
+      const idsToDelete = cardTransactions
+        .filter(t =>
+          t.cardId === target.cardId &&
+          t.description === target.description &&
+          t.originalDate === target.originalDate &&
+          t.totalInstallments === target.totalInstallments &&
+          t.installmentNumber >= target.installmentNumber
+        )
+        .map(t => t.id);
+
+      setCardTransactions(prev => prev.filter(t => !idsToDelete.includes(t.id)));
+
+    } else {
+      setCardTransactions(prev => prev.filter(t => t.id !== id));
+    }
   };
 
-  const handleEditCardTransaction = (id: string, updates: Partial<CardTransaction>) => {
-    setCardTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  const handleEditCardTransaction = (id: string, updates: Partial<CardTransaction>, cascade: boolean = false) => {
+    if (cascade) {
+      const target = cardTransactions.find(t => t.id === id);
+      if (!target) return;
+
+      // Identify ALL transactions of this purchase group (past, present, future)
+      const groupTransactions = cardTransactions.filter(t =>
+        t.cardId === target.cardId &&
+        t.description === target.description &&
+        t.originalDate === target.originalDate &&
+        t.totalInstallments === target.totalInstallments
+      );
+
+      // If Date Changed, we need to Recalculate Months for EVERY installment
+      if (updates.originalDate && updates.originalDate !== target.originalDate) {
+        const card = cards.find(c => c.id === target.cardId);
+        if (card) {
+          const newDate = new Date(updates.originalDate);
+
+          const recalculatedUpdates = groupTransactions.map(t => {
+            // Calculate month/year for THIS installment number based on new start date
+
+            let startMonth = newDate.getMonth();
+            let startYear = newDate.getFullYear();
+
+            if (newDate.getDate() >= card.closingDay) {
+              startMonth++;
+              if (startMonth > 11) { startMonth = 0; startYear++; }
+            }
+
+            // Add offset
+            let targetMonth = startMonth + (t.installmentNumber - 1);
+            let targetYear = startYear + Math.floor(targetMonth / 12);
+            targetMonth = targetMonth % 12;
+
+            return {
+              id: t.id,
+              changes: {
+                ...updates,
+                month: targetMonth,
+                year: targetYear,
+                originalDate: updates.originalDate // Ensure all link to new date
+              }
+            };
+          });
+
+          setCardTransactions(prev => prev.map(t => {
+            const update = recalculatedUpdates.find(u => u.id === t.id);
+            return update ? { ...t, ...update.changes } : t;
+          }));
+          return;
+        }
+      }
+
+      // If only Description/Amount changed (Cascade)
+      setCardTransactions(prev => prev.map(t => {
+        if (groupTransactions.find(g => g.id === t.id)) {
+          return { ...t, ...updates };
+        }
+        return t;
+      }));
+
+    } else {
+      setCardTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    }
   };
 
   // Handler para Pagamento Parcial
