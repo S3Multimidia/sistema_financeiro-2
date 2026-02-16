@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, Plus, Calendar, DollarSign, CreditCard as CardIcon, ChevronRight, Trash2, Pencil, Settings } from 'lucide-react';
+import { CreditCard, Plus, Calendar, DollarSign, CreditCard as CardIcon, ChevronRight, Trash2, Pencil, Settings, AlertTriangle } from 'lucide-react';
 import { CreditCard as ICreditCard, CardTransaction } from '../types';
 import { CreditCardService } from '../services/creditCardService';
 
@@ -8,8 +8,8 @@ interface CreditCardWidgetProps {
     setCards: React.Dispatch<React.SetStateAction<ICreditCard[]>>;
     cardTransactions: CardTransaction[];
     onAddTransaction: (newTrans: CardTransaction[]) => void;
-    onDeleteTransaction: (id: string) => void;
-    onEditTransaction: (id: string, updates: Partial<CardTransaction>) => void;
+    onDeleteTransaction: (id: string, cascade?: boolean) => void;
+    onEditTransaction: (id: string, updates: Partial<CardTransaction>, cascade?: boolean) => void;
 }
 
 export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
@@ -27,9 +27,13 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
     const [editingCard, setEditingCard] = useState<ICreditCard | null>(null);
     const [purchase, setPurchase] = useState({ description: '', amount: '', installments: '1', date: new Date().toISOString().split('T')[0], cardId: '' });
     const [editingTransaction, setEditingTransaction] = useState<CardTransaction | null>(null);
+    const [editingDate, setEditingDate] = useState<string>(''); // For date editing
 
     // NEW STATE: Track the month/year being viewed in details
     const [viewDate, setViewDate] = useState(new Date());
+
+    // Confirmation State
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ id: string, isInstallment: boolean } | null>(null);
 
     // HANDLERS
     const handleAddCard = () => {
@@ -92,15 +96,37 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
 
     const handleEditStart = (t: CardTransaction) => {
         setEditingTransaction(t);
+        // Format originalDate (ISO) to YYYY-MM-DD for input
+        setEditingDate(new Date(t.originalDate).toISOString().split('T')[0]);
         setView('edit_purchase');
     }
 
     const handleSaveEdit = () => {
         if (!editingTransaction) return;
+
+        const isDateChanged = editingDate !== new Date(editingTransaction.originalDate).toISOString().split('T')[0];
+        const isInstallment = editingTransaction.totalInstallments > 1;
+
+        // If date changed on an installment, we should ask? Or just Force Cascade implies updating all logic.
+        // For simplicity: If date changed AND it's installment => Cascade TRUE (logic in App.tsx calculates dates).
+        // If it's single, cascade doesn't matter much but we pass false or true.
+
+        let cascade = false;
+        if (isInstallment) {
+            if (isDateChanged) {
+                if (!confirm('Alterar a data atualizará o vencimento de TODAS as parcelas. Deseja continuar?')) return;
+                cascade = true;
+            } else if (confirm('Aplicar alteração de valor/texto para TODAS as parcelas restantes?')) {
+                cascade = true;
+            }
+        }
+
         onEditTransaction(editingTransaction.id, {
             description: editingTransaction.description,
-            amount: editingTransaction.amount
-        });
+            amount: editingTransaction.amount,
+            originalDate: isDateChanged ? new Date(editingDate).toISOString() : editingTransaction.originalDate
+        }, cascade);
+
         setView('details');
         setEditingTransaction(null);
     };
@@ -153,7 +179,54 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
     };
 
     return (
-        <div className="bg-[#1e1e2d] p-5 rounded-3xl h-full flex flex-col border border-white/5 shadow-2xl">
+        <div className="bg-[#1e1e2d] p-5 rounded-3xl h-full flex flex-col border border-white/5 shadow-2xl relative">
+
+            {/* Custom Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm rounded-3xl p-4 animate-in fade-in">
+                    <div className="bg-slate-900 border border-white/10 p-6 rounded-2xl w-full max-w-sm shadow-2xl space-y-4">
+                        <div className="flex items-center gap-3 text-amber-500 mb-2">
+                            <AlertTriangle size={24} />
+                            <h3 className="font-bold text-lg text-white">Excluir Lançamento</h3>
+                        </div>
+
+                        <p className="text-sm text-slate-300">
+                            {showDeleteConfirm.isInstallment
+                                ? 'Esta compra é parcelada. Como deseja excluir?'
+                                : 'Tem certeza que deseja excluir esta compra?'}
+                        </p>
+
+                        <div className="flex flex-col gap-2 mt-4">
+                            {showDeleteConfirm.isInstallment && (
+                                <button
+                                    onClick={() => {
+                                        onDeleteTransaction(showDeleteConfirm.id, true); // Cascade
+                                        setShowDeleteConfirm(null);
+                                    }}
+                                    className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-colors"
+                                >
+                                    Excluir Esta e Futuras
+                                </button>
+                            )}
+                            <button
+                                onClick={() => {
+                                    onDeleteTransaction(showDeleteConfirm.id, false); // Single
+                                    setShowDeleteConfirm(null);
+                                }}
+                                className={`w-full py-3 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-colors ${showDeleteConfirm.isInstallment ? 'bg-slate-800 hover:bg-slate-700' : 'bg-rose-600 hover:bg-rose-500'}`}
+                            >
+                                {showDeleteConfirm.isInstallment ? 'Excluir Apenas Esta' : 'Sim, Excluir'}
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteConfirm(null)}
+                                className="w-full py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Header */}
             <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
@@ -255,7 +328,13 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
                                             <button onClick={(e) => { e.stopPropagation(); handleEditStart(t); }} className="p-1.5 text-white/30 hover:text-indigo-400 hover:bg-white/5 rounded-lg transition-colors">
                                                 <Pencil size={12} />
                                             </button>
-                                            <button onClick={(e) => { e.stopPropagation(); if (confirm('Tem certeza? Isso apagará apenas esta parcela.')) onDeleteTransaction(t.id); }} className="p-1.5 text-white/30 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowDeleteConfirm({ id: t.id, isInstallment: t.totalInstallments > 1 });
+                                                }}
+                                                className="p-1.5 text-white/30 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors"
+                                            >
                                                 <Trash2 size={12} />
                                             </button>
                                         </div>
@@ -335,6 +414,16 @@ export const CreditCardWidget: React.FC<CreditCardWidgetProps> = ({
                             className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white placeholder:text-white/20"
                             value={editingTransaction.amount}
                             onChange={e => setEditingTransaction({ ...editingTransaction, amount: parseFloat(e.target.value) })}
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-white/30 ml-1 uppercase">Data da Compra</label>
+                        <input
+                            type="date"
+                            className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-2 text-xs text-white"
+                            value={editingDate}
+                            onChange={e => setEditingDate(e.target.value)}
                         />
                     </div>
 
