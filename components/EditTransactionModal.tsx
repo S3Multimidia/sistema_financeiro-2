@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { X, Save, DollarSign, Calendar, Tag, FileText, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { X, Save, DollarSign, Calendar, Tag, FileText, ChevronRight, CheckCircle2, Clock } from 'lucide-react';
 import { Transaction } from '../types';
 
 interface EditTransactionModalProps {
@@ -246,6 +246,40 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                   </datalist>
                 </div>
               </div>
+            )}
+
+            {formData.type === 'appointment' && (
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Hora (Opcional)</label>
+                <div className="relative">
+                  <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="time"
+                    value={formData.time || ''}
+                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.type === 'appointment' && !transaction.isFixed && (
+              <label className={`p-3 rounded-lg border flex items-center gap-3 cursor-pointer transition-all ${formData.isFixed ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100'}`}>
+                <input
+                  type="checkbox"
+                  checked={formData.isFixed || false}
+                  onChange={(e) => setFormData({ ...formData, isFixed: e.target.checked })}
+                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500"
+                />
+                <div>
+                  <span className={`text-xs font-bold block ${formData.isFixed ? 'text-indigo-700' : 'text-slate-700'}`}>
+                    Replicar para meses seguintes
+                  </span>
+                  <span className="text-[10px] text-slate-400 block">
+                    Cria cópias deste compromisso para os próximos 12 meses.
+                  </span>
+                </div>
+              </label>
             )}
 
             {formData.type !== 'appointment' && onPartialPayment && (

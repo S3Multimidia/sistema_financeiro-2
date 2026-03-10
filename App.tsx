@@ -429,7 +429,7 @@ const App: React.FC = () => {
       const transToEdit = transactions.find(t => t.id === payload.id);
       if (transToEdit && transToEdit.isFixed && transToEdit.installmentId && transToEdit.installmentId.startsWith('fixed_')) {
         const updates = payload.updates;
-        const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined || updates.subCategory !== undefined;
+        const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined || updates.subCategory !== undefined || updates.time !== undefined;
 
         if (isRelevantChange && payload.cascade === true) {
           const startMonthParams = (transToEdit.year * 12) + transToEdit.month;
@@ -679,14 +679,45 @@ const App: React.FC = () => {
     const tx = transactions.find(t => t.id === id);
     if (!tx) return;
 
+    // Nova Lógica: Tornar Compromisso Recorrente ao Editar
+    if (updates.isFixed === true && !tx.isFixed && (tx.type === 'appointment' || updates.type === 'appointment')) {
+      const fixedGroupId = 'fixed_' + Math.random().toString(36).substr(2, 9);
+      const updatedCurrent = { ...tx, ...updates, installmentId: fixedGroupId };
+
+      const futureTransactions = [];
+      const currentMonthIndex = updatedCurrent.year * 12 + updatedCurrent.month;
+
+      for (let i = 1; i < 12; i++) {
+        const targetMonthTotal = currentMonthIndex + i;
+        const targetYear = Math.floor(targetMonthTotal / 12);
+        const targetMonth = targetMonthTotal % 12;
+
+        const maxDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+        const safeDay = Math.min(updatedCurrent.day, maxDay);
+
+        futureTransactions.push({
+          ...updatedCurrent,
+          id: 'temp-' + crypto.randomUUID(), // Temp ID is fine for Optimistic update
+          day: safeDay,
+          month: targetMonth,
+          year: targetYear
+        });
+      }
+
+      // Update original via updateTransactions logic, then add futures
+      updateTransactions('update', { id, updates: { ...updates, installmentId: fixedGroupId }, cascade: false }, (prev) => prev.map(t => t.id === id ? updatedCurrent : t));
+      updateTransactions('add', futureTransactions, (prev) => [...prev, ...futureTransactions]);
+      return;
+    }
+
     // Check for fixed group
-    const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined || updates.subCategory !== undefined;
+    const isRelevantChange = updates.amount !== undefined || updates.day !== undefined || updates.description !== undefined || updates.category !== undefined || updates.subCategory !== undefined || updates.time !== undefined;
 
     if (isRelevantChange && tx.isFixed && tx.installmentId?.startsWith('fixed_')) {
       setConfirmation({
         isOpen: true,
-        title: 'Atualizar Recorrência',
-        message: 'Esta é uma despesa MENSAL FIXA. Como deseja aplicar as alterações?',
+        title: tx.type === 'appointment' ? 'Atualizar Compromisso Recorrente' : 'Atualizar Recorrência',
+        message: tx.type === 'appointment' ? 'Este é um COMPROMISSO RECORRENTE. Como deseja aplicar as alterações?' : 'Esta é uma despesa MENSAL FIXA. Como deseja aplicar as alterações?',
         confirmLabel: 'Em Todas',
         alternativeLabel: 'Nesta Apenas',
         onConfirm: () => {
