@@ -26,9 +26,11 @@ export const CreditCardService = {
             }
         }
 
+        const purchaseDateStr = purchaseDate.toISOString().split('T')[0].replace(/-/g, '');
         for (let i = 1; i <= installments; i++) {
             transactions.push({
-                id: Math.random().toString(36).substr(2, 9),
+                // BUG FIX #3: Deterministic ID prevents duplicates on re-render/sync
+                id: `ct-${card.id}-${purchaseDateStr}-${i}of${installments}`,
                 cardId: card.id,
                 description: description,
                 amount: installmentValue,
@@ -107,7 +109,8 @@ export const CreditCardService = {
                     } else {
                         // Create new
                         updatedTransactions.push({
-                            id: Math.random().toString(36).substr(2, 9),
+                            // BUG FIX #3: Deterministic ID - same card+month+year always = same ID
+                            id: `invoice-${card.id}-${targetMonth}-${targetYear}`,
                             description: `Fatura ${card.name}`,
                             amount: total,
                             type: 'expense',

@@ -32,10 +32,11 @@ export const SubscriptionService = {
 
                 if (!exists) {
                     updatedTransactions.push({
-                        id: Math.random().toString(36).substr(2, 9),
+                        // BUG FIX #3: Deterministic ID - same sub+month+year always = same ID, prevents duplicates
+                        id: `sub-${sub.id}-${targetMonth}-${targetYear}`,
                         description: sub.name,
                         amount: sub.amount,
-                        type: 'expense', // Subscriptions are generally expenses
+                        type: 'expense',
                         category: sub.category,
                         day: sub.day,
                         month: targetMonth,
@@ -43,8 +44,8 @@ export const SubscriptionService = {
                         completed: false,
                         isSubscription: true,
                         subscriptionId: sub.id,
-                        isFixed: true, // Mark as fixed expense
-                        installmentNumber: 1, // Treat as single installment per month
+                        isFixed: true,
+                        installmentNumber: 1,
                         totalInstallments: 1
                     });
                 }

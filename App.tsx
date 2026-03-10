@@ -64,6 +64,9 @@ const App: React.FC = () => {
   const CAT_STORAGE_KEY = 'finan_categories_map_2026';
   const CONFIG_STORAGE_KEY = 'finan_app_config_2026';
 
+  // BUG FIX #5: Prevent concurrent loadFromCloud calls (race condition)
+  const isLoadingFromCloud = React.useRef(false);
+
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
@@ -100,25 +103,30 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Persistence & Auto-Sync
+  // BUG FIX #1: Removed 'transactions' from dependency array to break the infinite loop.
+  // Using setTransactions(prev => ...) to access current state without adding it as dependency.
   useEffect(() => {
     localStorage.setItem('finan_cards_2026', JSON.stringify(cards));
     localStorage.setItem('finan_card_transactions_2026', JSON.stringify(cardTransactions));
     localStorage.setItem('finan_subscriptions_2026', JSON.stringify(subscriptions));
     localStorage.setItem('finan_debts_2026', JSON.stringify(debts));
 
-    // 1. Sync Credit Card Invoices to Main Transactions
-    let syncedTransactions = CreditCardService.syncInvoiceToTransactions(transactions, cardTransactions, cards);
+    setTransactions(prev => {
+      // 1. Sync Credit Card Invoices to Main Transactions
+      let synced = CreditCardService.syncInvoiceToTransactions(prev, cardTransactions, cards);
 
-    // 2. Sync Subscriptions (Forecast next 12 months)
-    syncedTransactions = SubscriptionService.syncSubscriptions(syncedTransactions, subscriptions);
+      // 2. Sync Subscriptions (Forecast next 12 months)
+      synced = SubscriptionService.syncSubscriptions(synced, subscriptions);
 
-    if (JSON.stringify(syncedTransactions) !== JSON.stringify(transactions)) {
-      // Only update if changed to avoid loop
-      setTransactions(syncedTransactions);
-    }
+      // Only update state if something actually changed (stable comparison by length + IDs)
+      if (synced.length === prev.length && synced.every((t, i) => t.id === prev[i]?.id && t.amount === prev[i]?.amount)) {
+        return prev; // No change - avoid re-render
+      }
+      return synced;
+    });
 
-  }, [cards, cardTransactions, subscriptions, transactions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cards, cardTransactions, subscriptions]); // 'transactions' REMOVED intentionally to prevent loop
 
   const [currentView, setCurrentView] = useState<'dashboard' | 'yearly'>('dashboard');
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -279,6 +287,13 @@ const App: React.FC = () => {
   };
 
   const loadFromCloud = async () => {
+    // BUG FIX #5: Prevent race condition - skip if already loading
+    if (isLoadingFromCloud.current) {
+      console.log('⏳ loadFromCloud already in progress, skipping duplicate call.');
+      return;
+    }
+    isLoadingFromCloud.current = true;
+
     try {
       setCloudStatus('syncing');
       const [
@@ -315,17 +330,16 @@ const App: React.FC = () => {
       // 4. Card Transactions
       if (cloudCardTrans && cloudCardTrans.length > 0) setCardTransactions(cloudCardTrans);
 
-      // 5. Main Transactions (Replace Strategy)
+      // 5. Main Transactions (Replace Strategy - cloud is source of truth)
       if (cloudTransactions && cloudTransactions.length > 0) {
-        // Sort
         const sorted = [...cloudTransactions].sort((a, b) => {
           if (a.year !== b.year) return b.year - a.year;
           if (a.month !== b.month) return b.month - a.month;
           return b.day - a.day;
         });
         setTransactions(sorted);
-      } else if (cloudTransactions) {
-        if (transactions.length === 0) setTransactions([]);
+      } else if (cloudTransactions && cloudTransactions.length === 0) {
+        setTransactions([]);
       }
 
       // 6. Categories (Sync)
@@ -339,6 +353,9 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Erro ao carregar da nuvem:", error);
       setCloudStatus('error');
+    } finally {
+      // BUG FIX #5: Always release the lock so future calls are not permanently blocked
+      isLoadingFromCloud.current = false;
     }
   };
 

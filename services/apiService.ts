@@ -79,6 +79,7 @@ export const ApiService = {
         const { data, error } = await supabase
             .from('transactions')
             .select('*')
+            .eq('user_id', user.id) // BUG FIX #2: Always filter by user_id
             .order('year', { ascending: false })
             .order('month', { ascending: false })
             .order('day', { ascending: false });
@@ -105,11 +106,15 @@ export const ApiService = {
     },
 
     async updateTransaction(id: string, updates: Partial<Transaction>) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
         const dbUpdates = mapToDB(updates);
         const { data, error } = await supabase
             .from('transactions')
             .update(dbUpdates)
             .eq('id', id)
+            .eq('user_id', user.id) // BUG FIX: Security - only update own records
             .select()
             .single();
 
@@ -346,23 +351,18 @@ export const ApiService = {
             .from('debts')
             .upsert(dbDebts, { onConflict: 'id' });
 
-        if (upsertError) console.error('Error syncing debts (upsert):', upsertError);
+        if (upsertError) { console.error('Error syncing debts (upsert):', upsertError); return; }
 
-        // Clean Orphans
+        // BUG FIX #4: Clean orphan debts - single call with correct supabase-js array syntax
         const currentIds = debts.map(d => d.id);
-        const { error: deleteError } = await supabase
-            .from('debts')
-            .delete()
-            .eq('user_id', user.id)
-            .not('id', 'in', `(${currentIds.join(',')})`); // .not with 'in' expects formatted list or array? 
-        // Actually supabase-js: .not('column', 'in', array)
-
-        // Let's use filter syntax clearly:
-        await supabase.from('debts').delete().eq('user_id', user.id).not('id', 'in', `(${currentIds.map(id => `"${id}"`).join(',')})`);
-        // Wait, supabase-js query builder `in` takes an array. `not` takes operator.
-        // .not('id', 'in', currentIds) -> This generates `id not in (1,2,3)`
-        // Let's rely on standard .not('id', 'in', currentIds) if typed correctly.
-        // If TypeScript complains, we cast.
+        if (currentIds.length > 0) {
+            const { error: deleteError } = await supabase
+                .from('debts')
+                .delete()
+                .eq('user_id', user.id)
+                .not('id', 'in', `(${currentIds.map(id => `'${id}'`).join(',')})`);
+            if (deleteError) console.error('Error cleaning orphan debts:', deleteError);
+        }
     },
 
     // --- Cards ---
