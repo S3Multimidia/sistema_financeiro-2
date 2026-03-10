@@ -3,7 +3,7 @@ import { Transaction, INITIAL_CATEGORIES_MAP } from './types';
 
 // Saldo Inicial em Fev/2026 conforme solicitado
 export const INITIAL_PREVIOUS_BALANCE = 3936.94;
-export const APP_VERSION = '3.2';
+export const APP_VERSION = '3.0';
 
 /**
  * CONFIGURAÇÃO DA API PERFEX
