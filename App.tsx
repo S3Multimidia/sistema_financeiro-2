@@ -66,6 +66,7 @@ const App: React.FC = () => {
 
   // BUG FIX #5: Prevent concurrent loadFromCloud calls (race condition)
   const isLoadingFromCloud = React.useRef(false);
+  const hasLoadedFromCloud = React.useRef(false);
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -349,6 +350,7 @@ const App: React.FC = () => {
         setCategoriesMap(cloudCats);
       }
 
+      hasLoadedFromCloud.current = true;
       setCloudStatus('ok');
     } catch (error) {
       console.error("Erro ao carregar da nuvem:", error);
@@ -363,6 +365,7 @@ const App: React.FC = () => {
 
   // Sync Categories
   useEffect(() => {
+    if (!hasLoadedFromCloud.current) return;
     // Debounce to avoid spamming API on every keystroke in manager
     const timer = setTimeout(() => {
       if (categoriesMap && Object.keys(categoriesMap).length > 0) {
@@ -374,24 +377,28 @@ const App: React.FC = () => {
 
   // Sync Debts
   useEffect(() => {
+    if (!hasLoadedFromCloud.current) return;
     const timer = setTimeout(() => ApiService.syncDebts(debts), 2000);
     return () => clearTimeout(timer);
   }, [debts]);
 
   // Sync Cards
   useEffect(() => {
+    if (!hasLoadedFromCloud.current) return;
     const timer = setTimeout(() => ApiService.syncCards(cards), 2000);
     return () => clearTimeout(timer);
   }, [cards]);
 
   // Sync Subscriptions
   useEffect(() => {
+    if (!hasLoadedFromCloud.current) return;
     const timer = setTimeout(() => ApiService.syncSubscriptionsData(subscriptions), 2000);
     return () => clearTimeout(timer);
   }, [subscriptions]);
 
   // Sync Card Transactions
   useEffect(() => {
+    if (!hasLoadedFromCloud.current) return;
     const timer = setTimeout(() => ApiService.syncCardTransactions(cardTransactions), 3000);
     return () => clearTimeout(timer);
   }, [cardTransactions]);

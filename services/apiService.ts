@@ -76,16 +76,35 @@ export const ApiService = {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
-        const { data, error } = await supabase
-            .from('transactions')
-            .select('*')
-            .eq('user_id', user.id) // BUG FIX #2: Always filter by user_id
-            .order('year', { ascending: false })
-            .order('month', { ascending: false })
-            .order('day', { ascending: false });
+        let allData: any[] = [];
+        let from = 0;
+        const limit = 1000;
+        let fetchMore = true;
 
-        if (error) throw error;
-        return (data || []).map(mapToApp);
+        while (fetchMore) {
+            const { data, error } = await supabase
+                .from('transactions')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('year', { ascending: false })
+                .order('month', { ascending: false })
+                .order('day', { ascending: false })
+                .range(from, from + limit - 1);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                allData = [...allData, ...data];
+                from += limit;
+                if (data.length < limit) {
+                    fetchMore = false;
+                }
+            } else {
+                fetchMore = false;
+            }
+        }
+
+        return allData.map(mapToApp);
     },
 
     async addTransaction(transaction: Omit<Transaction, 'id'>) {
@@ -453,9 +472,33 @@ export const ApiService = {
     async fetchCardTransactions() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return [];
-        const { data, error } = await supabase.from('card_transactions').select('*');
-        if (error) { console.error('Error fetching card transactions', error); return []; }
-        return data.map((t: any) => ({
+
+        let allData: any[] = [];
+        let from = 0;
+        const limit = 1000;
+        let fetchMore = true;
+
+        while (fetchMore) {
+            const { data, error } = await supabase
+                .from('card_transactions')
+                .select('*')
+                .range(from, from + limit - 1);
+
+            if (error) {
+                console.error('Error fetching card transactions', error);
+                return [];
+            }
+
+            if (data && data.length > 0) {
+                allData = [...allData, ...data];
+                from += limit;
+                if (data.length < limit) fetchMore = false;
+            } else {
+                fetchMore = false;
+            }
+        }
+
+        return allData.map((t: any) => ({
             id: t.id,
             cardId: t.card_id,
             description: t.description,
