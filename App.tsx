@@ -784,23 +784,27 @@ const App: React.FC = () => {
     const totalIncome = currentMonthTrans.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
     const totalExpense = currentMonthTrans.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
 
-    // Realized (Completed only)
+    // Realized (Completed only) - Full Month
     const realizedIncome = currentMonthTrans.filter(t => t.type === 'income' && t.completed).reduce((acc, curr) => acc + curr.amount, 0);
     const realizedExpense = currentMonthTrans.filter(t => t.type === 'expense' && t.completed).reduce((acc, curr) => acc + curr.amount, 0);
 
+    // Realized (Completed only) - UP TO TODAY
+    const realizedIncomeUpToToday = currentMonthTrans.filter(t => t.day! <= new Date().getDate() && t.type === 'income' && t.completed).reduce((acc, curr) => acc + curr.amount, 0);
+    const realizedExpenseUpToToday = currentMonthTrans.filter(t => t.day! <= new Date().getDate() && t.type === 'expense' && t.completed).reduce((acc, curr) => acc + curr.amount, 0);
+
     return {
       previousBalance,
-      previousExpectedBalance, // EXPORTANDO NOVO CAMPO
+      previousExpectedBalance, 
       totalIncome,
       totalExpense,
       realizedIncome,
       realizedExpense,
-      // Current Balance = Starting Balance + Realized Flow of Month
-      currentBalance: previousBalance + realizedIncome - realizedExpense,
+      // Current Balance = Starting Balance + Realized Flow UP TO TODAY
+      currentBalance: previousBalance + realizedIncomeUpToToday - realizedExpenseUpToToday,
       // Expected Balance Today = Starting Balance + Projected Flow UP TO TODAY
       currentExpectedBalance: previousBalance +
-        currentMonthTrans.filter(t => t.day <= new Date().getDate() && t.type === 'income').reduce((acc, t) => acc + t.amount, 0) -
-        currentMonthTrans.filter(t => t.day <= new Date().getDate() && t.type === 'expense').reduce((acc, t) => acc + t.amount, 0),
+        currentMonthTrans.filter(t => t.day! <= new Date().getDate() && t.type === 'income').reduce((acc, t) => acc + t.amount, 0) -
+        currentMonthTrans.filter(t => t.day! <= new Date().getDate() && t.type === 'expense').reduce((acc, t) => acc + t.amount, 0),
       // Estimated End Balance = Starting Balance + All Projected Flow of Month
       endOfMonthBalance: previousBalance + totalIncome - totalExpense,
     };
